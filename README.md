@@ -59,6 +59,10 @@ You'll need:
 - [ ] Real database (SQLite/Postgres via Prisma) + auth for multi-user
 - [ ] One-click submit for boards with real application APIs (Greenhouse/Lever)
 
+## Workflow
+
+Work happens on the `dev` branch; `main` is protected and only changes via pull requests with passing CI. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full flow.
+
 ## Tech
 
 Next.js (App Router) · React · Tailwind CSS · Claude API (`@anthropic-ai/sdk`) · pdf-parse · lowdb

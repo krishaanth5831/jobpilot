@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Upload, Search, Inbox, Map } from "lucide-react";
+import { Upload, Search, Inbox, Map } from "lucide-react";
 import { Dock, DockItem } from "@/components/motion-primitives/dock";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Logo } from "@/components/logo";
+
+const LogoIcon = ({ size, strokeWidth, ...props }) => (
+  <Logo size={size ? size - 2 : 16} {...props} />
+);
 
 const items = [
-  { href: "/", label: "Home", Icon: Home },
+  { href: "/", label: "Home", Icon: LogoIcon },
   { href: "/upload", label: "Upload", Icon: Upload },
   { href: "/jobs", label: "Jobs", Icon: Search },
   { href: "/queue", label: "Queue", Icon: Inbox },

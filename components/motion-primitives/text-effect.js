@@ -26,17 +26,21 @@ export function TextEffect({
   className,
   delay = 0,
   speedSegment = 1,
+  onView = false,
 }) {
   const MotionTag = motion[as] ?? motion.p;
   const segments =
     per === "char" ? String(children).split("") : String(children).split(/(\s+)/);
   const variants = presets[preset] ?? presets.blur;
+  const trigger = onView
+    ? { whileInView: "visible", viewport: { once: true, margin: "0px 0px -80px 0px" } }
+    : { animate: "visible" };
 
   return (
     <MotionTag
       className={className}
       initial="hidden"
-      animate="visible"
+      {...trigger}
       transition={{ staggerChildren: 0.06 / speedSegment, delayChildren: delay }}
       aria-label={String(children)}
     >

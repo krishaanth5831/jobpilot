@@ -48,14 +48,16 @@ export async function GET() {
   return NextResponse.json({ applications: db.data.applications });
 }
 
-// PATCH /api/applications — body: { id, status } — mark reviewed/submitted.
+// PATCH /api/applications — body: { id, status?, coverLetter? } —
+// mark reviewed/submitted and/or persist edits to the draft.
 export async function PATCH(request) {
   const db = await getDb();
-  const { id, status } = await request.json();
+  const { id, status, coverLetter } = await request.json();
   const application = db.data.applications.find((a) => a.id === id);
   if (!application) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  application.status = status;
+  if (status !== undefined) application.status = status;
+  if (coverLetter !== undefined) application.coverLetter = coverLetter;
   await db.write();
   return NextResponse.json({ application });
 }

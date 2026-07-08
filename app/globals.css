@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
+/* next-themes toggles the `dark` class on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
+  --muted: #f5f5f5;
+  --border: #e5e5e5;
+  --subtle: #737373;
+
+  /* The ONLY place color exists. Referenced exclusively by animation
+     components (border-trail, glow-effect, hero scene) — never static UI. */
+  --accent-gradient: linear-gradient(135deg, #6366f1, #22d3ee);
+  --accent-from: #6366f1;
+  --accent-to: #22d3ee;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --muted: #0a0a0a;
+  --border: #262626;
+  --subtle: #a3a3a3;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border-hairline: var(--border);
+  --color-subtle: var(--subtle);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 2px;
+}
+
+/* Dot-grid texture — monochrome depth without shadows */
+.dot-grid {
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Collapse all motion to simple fades for users who ask for it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -51,6 +51,12 @@ The `lint-and-build` job is a **required status check** on `main` — a PR canno
 - `lint-and-build` status check must pass
 - No force pushes, no branch deletion
 
+## Design rule: black & white, color only in motion
+
+The UI is strictly monochrome. **No Tailwind color utilities outside `neutral-*` / `black` / `white` in static markup.** The accent gradient is defined once (`--accent-gradient` in `app/globals.css`) and may only be referenced by animation components (`components/motion-primitives/`, `components/ai-loading.js`) and the hero scene — color means "the AI is doing something."
+
+Reviewable check: grep your diff for Tailwind color classes (`red-`, `green-`, `blue-`, `indigo-`, `cyan-`, `amber-`, …). Any hit outside `components/motion-primitives/` or the hero scene is a bug.
+
 ## Commit style
 
 Short imperative subject line ("Add X", "Fix Y"), body only when the *why* isn't obvious. Never commit secrets — `.env.local` and `data/db.json` are gitignored for a reason.

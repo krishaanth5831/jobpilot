@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { extractResumeText } from "@/lib/resume-parser";
-import { askClaudeJSON } from "@/lib/claude";
+import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { PROFILE_SCHEMA } from "@/lib/matcher";
 import { getDb } from "@/lib/db";
 
@@ -31,7 +31,9 @@ export async function POST(request) {
     return NextResponse.json({ profile });
   } catch (err) {
     console.error("resume upload failed:", err);
-    return NextResponse.json({ error: "Failed to process resume" }, { status: 500 });
+    const message =
+      err instanceof ConfigError ? err.message : "Failed to process resume";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

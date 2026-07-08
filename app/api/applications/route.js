@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { askClaudeText } from "@/lib/claude";
+import { askClaudeText, ConfigError } from "@/lib/claude";
 import { getDb } from "@/lib/db";
 
 // POST /api/applications — body: { jobId }.
@@ -38,7 +38,9 @@ export async function POST(request) {
     return NextResponse.json({ application });
   } catch (err) {
     console.error("application draft failed:", err);
-    return NextResponse.json({ error: "Failed to draft application" }, { status: 500 });
+    const message =
+      err instanceof ConfigError ? err.message : "Failed to draft application";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { askClaudeJSON } from "@/lib/claude";
+import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { ROADMAP_SCHEMA } from "@/lib/matcher";
 import { getDb } from "@/lib/db";
 
@@ -33,7 +33,9 @@ export async function POST(request) {
     return NextResponse.json({ roadmap });
   } catch (err) {
     console.error("roadmap generation failed:", err);
-    return NextResponse.json({ error: "Failed to generate roadmap" }, { status: 500 });
+    const message =
+      err instanceof ConfigError ? err.message : "Failed to generate roadmap";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

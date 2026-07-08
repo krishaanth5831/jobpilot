@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { askClaudeJSON } from "@/lib/claude";
+import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { MATCH_SCHEMA, MATCH_SYSTEM_PROMPT, buildMatchPrompt } from "@/lib/matcher";
 import { getDb } from "@/lib/db";
 
@@ -34,6 +34,7 @@ export async function POST(request) {
     return NextResponse.json({ matched: targets });
   } catch (err) {
     console.error("matching failed:", err);
-    return NextResponse.json({ error: "Matching failed" }, { status: 500 });
+    const message = err instanceof ConfigError ? err.message : "Matching failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

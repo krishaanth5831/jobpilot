@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { searchJobs } from "@/lib/job-sources";
+import { ConfigError } from "@/lib/claude";
 import { getDb } from "@/lib/db";
 
 // GET /api/jobs/search?role=software+engineer+intern&location=remote
@@ -25,6 +26,7 @@ export async function GET(request) {
     return NextResponse.json({ jobs });
   } catch (err) {
     console.error("job search failed:", err);
-    return NextResponse.json({ error: "Job search failed" }, { status: 500 });
+    const message = err instanceof ConfigError ? err.message : "Job search failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

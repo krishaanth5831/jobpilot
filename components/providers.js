@@ -1,17 +1,25 @@
 "use client";
 
+import { useEffect } from "react";
 import { ThemeProvider } from "next-themes";
-import { ReactLenis } from "lenis/react";
+import Lenis from "lenis";
 import { Toaster } from "sonner";
-import { useMounted, useMediaQuery } from "@/components/use-mounted";
+import { useMediaQuery } from "@/components/use-mounted";
 
 // Theme (class-based b&w light/dark), smooth scrolling, and b&w toasts.
+// Lenis runs imperatively in an effect (not as a wrapper component) so the
+// tree never re-parents after hydration — re-parenting remounts
+// next-themes' inline theme script on the client, which React rejects.
 export function Providers({ children }) {
-  const mounted = useMounted();
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
-  const smoothScroll = mounted && !reducedMotion;
 
-  const content = (
+  useEffect(() => {
+    if (reducedMotion) return;
+    const lenis = new Lenis({ lerp: 0.12, autoRaf: true });
+    return () => lenis.destroy();
+  }, [reducedMotion]);
+
+  return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       {children}
       <Toaster
@@ -25,13 +33,5 @@ export function Providers({ children }) {
         }}
       />
     </ThemeProvider>
-  );
-
-  return smoothScroll ? (
-    <ReactLenis root options={{ lerp: 0.12 }}>
-      {content}
-    </ReactLenis>
-  ) : (
-    content
   );
 }

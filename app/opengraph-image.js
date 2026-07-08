@@ -6,8 +6,8 @@ export const contentType = "image/png";
 
 // The logo's pixel squares (same coordinates as components/logo.js).
 const SQUARES = [
-  [140, 45], [186, 45], [245, 15], [222, 88], [224, 133], [221, 203],
-  [175, 203], [148, 175], [105, 170], [95, 212], [90, 130], [100, 85],
+  [136, 46], [182, 46], [248, 12], [226, 88], [230, 134], [242, 208],
+  [196, 208], [148, 182], [100, 176], [88, 222], [84, 130], [96, 84],
 ];
 
 export default function Image() {

@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useRef } from "react";
-import { useInView } from "motion/react";
-import { Upload, SearchCheck, Send, Map, Check, ArrowRight } from "lucide-react";
+import { Upload, SearchCheck, Send, Map, ArrowRight } from "lucide-react";
 import { ScrollProgress } from "@/components/motion-primitives/scroll-progress";
 import { TextEffect } from "@/components/motion-primitives/text-effect";
 import { TextLoop } from "@/components/motion-primitives/text-loop";
@@ -12,10 +10,9 @@ import { InView } from "@/components/motion-primitives/in-view";
 import { Spotlight } from "@/components/motion-primitives/spotlight";
 import { Tilt } from "@/components/motion-primitives/tilt";
 import { Magnetic } from "@/components/motion-primitives/magnetic";
-import { AnimatedNumber } from "@/components/motion-primitives/animated-number";
-import { InfiniteSlider } from "@/components/motion-primitives/infinite-slider";
 import { Logo } from "@/components/logo";
 import { Cursor } from "@/components/motion-primitives/cursor";
+import { ProcessDemo } from "@/components/process-demo";
 
 // The hero scene is the heaviest client-only piece — lazy-load it with a
 // grayscale wireframe poster while the real (colored) scene boots.
@@ -62,45 +59,6 @@ const steps = [
     description: "Not qualified yet? Get a concrete plan to close the gap — skills, projects, timeline.",
   },
 ];
-
-const sources = ["Adzuna", "LinkedIn", "Indeed", "Greenhouse", "Lever", "Wellfound", "Glassdoor"];
-
-// Fake match card for the live-demo strip: the score counts up on scroll.
-function DemoMatchCard() {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "0px 0px -120px 0px" });
-
-  return (
-    <div
-      ref={ref}
-      className="mx-auto w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="font-semibold">Frontend Engineer Intern</p>
-          <p className="text-sm text-neutral-500">Acme Corp · Remote</p>
-        </div>
-        <span className="rounded-full bg-black px-3 py-1 text-xs font-medium text-white dark:bg-white dark:text-black">
-          Qualified
-        </span>
-      </div>
-      <div className="mt-6 flex items-end justify-between">
-        <ul className="space-y-1.5 text-sm text-neutral-500">
-          {["React + Next.js", "Git workflow", "REST APIs"].map((req) => (
-            <li key={req} className="flex items-center gap-2">
-              <Check size={14} strokeWidth={1.5} aria-hidden="true" />
-              {req}
-            </li>
-          ))}
-        </ul>
-        <p className="text-right">
-          <AnimatedNumber value={inView ? 92 : 0} className="text-5xl font-semibold tracking-tight" />
-          <span className="block text-xs uppercase tracking-widest text-neutral-500">match score</span>
-        </p>
-      </div>
-    </div>
-  );
-}
 
 export default function Home() {
   return (
@@ -194,42 +152,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Live-demo strip */}
+      {/* Animated process demo */}
       <section className="dot-grid border-y border-neutral-200 py-28 dark:border-neutral-800">
         <div className="mx-auto max-w-6xl px-6">
           <InView>
             <h2 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">
-              An honest screen, before you apply
+              Watch an application happen
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-center text-neutral-500">
+              Resume in, honest screen, drafted letter, tracked to submission —
               Claude compares every posting against what&apos;s actually on your
-              resume — no invented skills, no wishful matching.
+              resume, nothing invented.
             </p>
           </InView>
           <InView className="mt-12" transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}>
-            <DemoMatchCard />
+            <ProcessDemo />
           </InView>
         </div>
-      </section>
-
-      {/* Sources marquee */}
-      <section className="py-20">
-        <p className="text-center font-mono text-xs uppercase tracking-widest text-neutral-500">
-          Searching across
-        </p>
-        <InfiniteSlider className="mt-8" duration={22} gap={64}>
-          {sources.map((name) => (
-            <span
-              key={name}
-              className="text-2xl font-semibold tracking-tight text-neutral-300 dark:text-neutral-700"
-            >
-              {name}
-            </span>
-          ))}
-        </InfiniteSlider>
-        <p className="mt-6 text-center text-xs text-neutral-400 dark:text-neutral-600">
-          Adzuna live today — more sources on the roadmap.
-        </p>
       </section>
 
       {/* Footer CTA */}

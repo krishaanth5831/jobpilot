@@ -7,19 +7,21 @@ import { motion, useReducedMotion } from "motion/react";
 // the ring; with `loop` a shimmer keeps traveling around it — loop is
 // reserved for the hero per the motion principles.
 // Order matters: it's the animation sequence, clockwise from the top.
+// Coordinates verified against the brand image via a rendered PNG diff —
+// keep gaps ≥6 units so squares never merge into blobs.
 const SQUARES = [
-  [140, 45],
-  [186, 45],
-  [245, 15],
-  [222, 88],
-  [224, 133],
-  [221, 203],
-  [175, 203],
-  [148, 175],
-  [105, 170],
-  [95, 212],
-  [90, 130],
-  [100, 85],
+  [136, 46],
+  [182, 46],
+  [248, 12],
+  [226, 88],
+  [230, 134],
+  [242, 208],
+  [196, 208],
+  [148, 182],
+  [100, 176],
+  [88, 222],
+  [84, 130],
+  [96, 84],
 ];
 
 const SIZE = 40;

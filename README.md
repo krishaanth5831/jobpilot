@@ -59,6 +59,10 @@ You'll need:
 - [ ] Real database (SQLite/Postgres via Prisma) + auth for multi-user
 - [ ] One-click submit for boards with real application APIs (Greenhouse/Lever)
 
+## Design & build plan
+
+The site is strictly **black & white — color only in animations and 3D renders**. The full design system, tool stack (motion-primitives, Haikei, Spline, Lenis), page-by-page specs, and phased build plan live in [docs/website-plan.md](docs/website-plan.md).
+
 ## Workflow
 
 Work happens on the `dev` branch; `main` is protected and only changes via pull requests with passing CI. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full flow.

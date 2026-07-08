@@ -36,3 +36,18 @@ export async function POST(request) {
     return NextResponse.json({ error: "Failed to generate roadmap" }, { status: 500 });
   }
 }
+
+// PATCH /api/roadmap — body: { jobId, stepIndex, done } — persist a
+// completed-step checkbox on the stored roadmap.
+export async function PATCH(request) {
+  const db = await getDb();
+  const { jobId, stepIndex, done } = await request.json();
+  const job = db.data.jobs.find((j) => j.id === jobId);
+  if (!job?.roadmap?.steps?.[stepIndex]) {
+    return NextResponse.json({ error: "Step not found" }, { status: 404 });
+  }
+
+  job.roadmap.steps[stepIndex].done = Boolean(done);
+  await db.write();
+  return NextResponse.json({ roadmap: job.roadmap });
+}

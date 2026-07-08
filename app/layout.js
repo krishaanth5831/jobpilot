@@ -14,6 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
+  // Vercel injects the deployment URL; fall back to localhost in dev.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ??
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+  ),
   title: {
     default: "jobpilot — apply where you qualify",
     template: "%s · jobpilot",

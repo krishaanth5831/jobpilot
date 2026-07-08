@@ -15,6 +15,7 @@ import { Magnetic } from "@/components/motion-primitives/magnetic";
 import { AnimatedNumber } from "@/components/motion-primitives/animated-number";
 import { InfiniteSlider } from "@/components/motion-primitives/infinite-slider";
 import { Logo } from "@/components/logo";
+import { Cursor } from "@/components/motion-primitives/cursor";
 
 // The hero scene is the heaviest client-only piece — lazy-load it with a
 // grayscale wireframe poster while the real (colored) scene boots.
@@ -105,6 +106,7 @@ export default function Home() {
   return (
     <div className="flex-1">
       <ScrollProgress />
+      <Cursor />
 
       {/* Hero */}
       <section className="relative flex min-h-svh items-center overflow-hidden">

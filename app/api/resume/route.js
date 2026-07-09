@@ -26,6 +26,12 @@ export async function POST(request) {
 
     const db = await getDb();
     db.data.profile = profile;
+    // Keep the raw text — the resume studio (review / grill-me / rebuild)
+    // works from it. A new resume invalidates the old studio artifacts.
+    db.data.resumeText = text;
+    db.data.resumeReview = null;
+    db.data.interview = null;
+    db.data.builtResume = null;
     await db.write();
 
     return NextResponse.json({ profile });
@@ -37,8 +43,14 @@ export async function POST(request) {
   }
 }
 
-// GET /api/resume — return the stored profile.
+// GET /api/resume — the stored profile plus resume-studio state.
 export async function GET() {
   const db = await getDb();
-  return NextResponse.json({ profile: db.data.profile });
+  return NextResponse.json({
+    profile: db.data.profile,
+    hasResumeText: Boolean(db.data.resumeText),
+    review: db.data.resumeReview ?? null,
+    interview: db.data.interview ?? null,
+    builtResume: db.data.builtResume ?? null,
+  });
 }

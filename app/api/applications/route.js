@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { askClaudeText, ConfigError } from "@/lib/claude";
+import { formatInsights } from "@/lib/reviewer";
 import { getDb } from "@/lib/db";
 
 // POST /api/applications — body: { jobId }.
@@ -22,7 +23,7 @@ export async function POST(request) {
     const coverLetter = await askClaudeText({
       system:
         "You write specific, honest cover letters. Ground every claim in the candidate's actual profile — never exaggerate or invent experience. Keep it under 300 words, warm but direct.",
-      prompt: `Candidate profile:\n${JSON.stringify(db.data.profile, null, 2)}\n\nJob:\n${job.title} at ${job.company}\n${job.description}\n\nWrite a tailored cover letter for this application.`,
+      prompt: `Candidate profile:\n${JSON.stringify(db.data.profile, null, 2)}\n\nJob:\n${job.title} at ${job.company}\n${job.description}${formatInsights(db.data.insights)}\n\nWrite a tailored cover letter for this application.`,
     });
 
     const application = {

@@ -53,6 +53,25 @@ export default function QueuePage() {
     setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
   }
 
+  function extractLessons(applicationId) {
+    fetch("/api/insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ applicationId }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (res.ok && data.insight?.lessons?.length) {
+          toast.success(
+            `Congrats! ${data.insight.lessons.length} lesson${
+              data.insight.lessons.length === 1 ? "" : "s"
+            } saved from this win — future resumes get the benefit`
+          );
+        }
+      })
+      .catch(() => {});
+  }
+
   async function deleteApplication(id) {
     try {
       const res = await fetch("/api/applications", {
@@ -137,9 +156,13 @@ export default function QueuePage() {
                       app={app}
                       job={jobsById.get(app.jobId)}
                       onStage={(status) => {
-                        patchApplication(app.id, { status }).catch(() =>
-                          toast.error("Couldn't update the stage")
-                        );
+                        patchApplication(app.id, { status })
+                          .then(() => {
+                            // Feedback loop: a hire gets distilled into
+                            // lessons that steer future resumes and letters.
+                            if (status === "hired") extractLessons(app.id);
+                          })
+                          .catch(() => toast.error("Couldn't update the stage"));
                       }}
                       onDelete={() => deleteApplication(app.id)}
                     />

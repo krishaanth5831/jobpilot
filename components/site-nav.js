@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Upload, Search, Inbox, Map } from "lucide-react";
+import { Upload, FileText, Search, Inbox, Map } from "lucide-react";
 import { Dock, DockItem } from "@/components/motion-primitives/dock";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
@@ -14,6 +14,7 @@ const LogoIcon = ({ size, strokeWidth, ...props }) => (
 const items = [
   { href: "/", label: "Home", Icon: LogoIcon },
   { href: "/upload", label: "Upload", Icon: Upload },
+  { href: "/resume", label: "Resume studio", Icon: FileText },
   { href: "/jobs", label: "Jobs", Icon: Search },
   { href: "/queue", label: "Queue", Icon: Inbox },
   { href: "/roadmap", label: "Roadmap", Icon: Map },

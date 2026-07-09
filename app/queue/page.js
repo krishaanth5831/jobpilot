@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Copy, ExternalLink, ChevronRight, X } from "lucide-react";
+import { Check, Copy, ExternalLink, ChevronRight, Trash2, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { EmptyState } from "@/components/empty-state";
 import { SlidingNumber } from "@/components/motion-primitives/sliding-number";
@@ -51,6 +51,21 @@ export default function QueuePage() {
     });
     if (!res.ok) throw new Error("Update failed");
     setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+  }
+
+  async function deleteApplication(id) {
+    try {
+      const res = await fetch("/api/applications", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error();
+      setApplications((prev) => prev.filter((a) => a.id !== id));
+      toast.success("Application deleted");
+    } catch {
+      toast.error("Couldn't delete the application");
+    }
   }
 
   const pending = useMemo(
@@ -126,6 +141,7 @@ export default function QueuePage() {
                           toast.error("Couldn't update the stage")
                         );
                       }}
+                      onDelete={() => deleteApplication(app.id)}
                     />
                   </li>
                 ))}
@@ -162,7 +178,7 @@ function TrackerStats({ tracked }) {
   );
 }
 
-function TrackerRow({ app, job, onStage }) {
+function TrackerRow({ app, job, onStage, onDelete }) {
   const isHired = app.status === "hired";
   const isRejected = app.status === "rejected";
 
@@ -206,6 +222,15 @@ function TrackerRow({ app, job, onStage }) {
             <X size={12} strokeWidth={2} aria-hidden="true" /> Rejected
           </span>
         )}
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label="Delete application"
+          title="Delete application"
+          className="rounded-lg p-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-900 dark:hover:text-white"
+        >
+          <Trash2 size={15} strokeWidth={1.5} aria-hidden="true" />
+        </button>
       </div>
 
       {/* Stage pills */}

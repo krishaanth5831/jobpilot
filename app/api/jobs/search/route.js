@@ -21,9 +21,19 @@ export async function GET(request) {
     for (const job of jobs) {
       if (!known.has(job.id)) db.data.jobs.push({ ...job, match: null });
     }
+    // Remember which jobs this search returned — the jobs and roadmap pages
+    // show only the latest search instead of the whole stored backlog.
+    db.data.lastSearch = {
+      role,
+      location,
+      at: new Date().toISOString(),
+      jobIds: jobs.map((j) => j.id),
+    };
     await db.write();
 
-    return NextResponse.json({ jobs });
+    // Return the stored versions so already-screened jobs keep their match.
+    const stored = new Map(db.data.jobs.map((j) => [j.id, j]));
+    return NextResponse.json({ jobs: jobs.map((j) => stored.get(j.id) ?? j) });
   } catch (err) {
     console.error("job search failed:", err);
     const message = err instanceof ConfigError ? err.message : "Job search failed";

@@ -37,10 +37,17 @@ function RoadmapContent() {
   // The displayed roadmap lives on the job itself (as in the db).
   const roadmap = selected?.roadmap ?? null;
 
+  // Only the latest search's jobs — mirrors what the jobs tab shows, so this
+  // page doesn't fill up with the whole stored backlog.
   useEffect(() => {
     fetch("/api/jobs")
       .then((res) => res.json())
-      .then((data) => setJobs(data.jobs ?? []))
+      .then((data) => {
+        const all = data.jobs ?? [];
+        setJobs(
+          data.lastSearchIds ? all.filter((j) => data.lastSearchIds.includes(j.id)) : all
+        );
+      })
       .catch(() => {});
   }, []);
 
@@ -100,7 +107,7 @@ function RoadmapContent() {
         <div className="mt-10">
           <EmptyState
             title="No gap to close yet"
-            description="Search and screen some jobs first — any you don't qualify for will show up here."
+            description="Search and screen some jobs first — anything from your latest search you don't qualify for shows up here."
             cta="Find jobs"
             href="/jobs"
           />

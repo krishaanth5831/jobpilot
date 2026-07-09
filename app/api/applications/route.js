@@ -63,3 +63,15 @@ export async function PATCH(request) {
   await db.write();
   return NextResponse.json({ application });
 }
+
+// DELETE /api/applications — body: { id } — remove an application entirely.
+export async function DELETE(request) {
+  const db = await getDb();
+  const { id } = await request.json();
+  const index = db.data.applications.findIndex((a) => a.id === id);
+  if (index === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  db.data.applications.splice(index, 1);
+  await db.write();
+  return NextResponse.json({ ok: true });
+}

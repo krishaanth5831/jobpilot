@@ -37,11 +37,16 @@ export default function JobsPage() {
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [sort, setSort] = useState("score"); // score | newest
 
-  // Stored jobs from previous sessions.
+  // Restore the latest search's results (not the whole stored backlog).
   useEffect(() => {
     fetch("/api/jobs")
       .then((res) => res.json())
-      .then((data) => setJobs(data.jobs ?? []))
+      .then((data) => {
+        const all = data.jobs ?? [];
+        setJobs(
+          data.lastSearchIds ? all.filter((j) => data.lastSearchIds.includes(j.id)) : all
+        );
+      })
       .catch(() => {});
   }, []);
 
@@ -54,13 +59,10 @@ export default function JobsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Merge fresh results over the stored list.
+      // Show exactly what this search returned — the API keeps the match for
+      // anything screened before, so replacing the list loses nothing.
       const fresh = (data.jobs ?? []).map((j) => ({ ...j, match: j.match ?? null }));
-      setJobs((prev) => {
-        const seen = new Map(prev.map((j) => [j.id, j]));
-        for (const j of fresh) if (!seen.has(j.id)) seen.set(j.id, j);
-        return [...seen.values()];
-      });
+      setJobs(fresh);
       setSearching(false);
 
       // Screen only this search's results — each job is one Claude call.

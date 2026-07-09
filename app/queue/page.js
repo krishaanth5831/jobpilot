@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Copy, ExternalLink, ChevronRight } from "lucide-react";
+import { Check, Copy, ExternalLink, ChevronRight, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { EmptyState } from "@/components/empty-state";
-import { TransitionPanel } from "@/components/motion-primitives/transition-panel";
+import { SlidingNumber } from "@/components/motion-primitives/sliding-number";
 import {
   MorphingDialog,
   MorphingDialogTrigger,
@@ -13,9 +13,20 @@ import {
   MorphingDialogClose,
 } from "@/components/motion-primitives/morphing-dialog";
 
-// Application review queue: read each drafted cover letter in a dialog
-// that morphs out of its row, tweak it, apply on the real job page
-// (job.url), then mark it submitted. jobpilot never auto-submits.
+// The application pipeline after review. "hired" and "rejected" are
+// terminal outcomes; everything else is a stage you move through.
+const STAGES = [
+  { id: "submitted", label: "Submitted" },
+  { id: "interviewing", label: "Interviewing" },
+  { id: "offer", label: "Offer" },
+  { id: "hired", label: "Hired" },
+  { id: "rejected", label: "Rejected" },
+];
+
+// Review queue + application tracker: read each drafted cover letter in a
+// dialog that morphs out of its row, apply on the real job page, then track
+// the application through interviews to an outcome. jobpilot never
+// auto-submits.
 export default function QueuePage() {
   const [applications, setApplications] = useState([]);
   const [jobsById, setJobsById] = useState(new Map());
@@ -46,7 +57,7 @@ export default function QueuePage() {
     () => applications.filter((a) => a.status === "pending_review"),
     [applications]
   );
-  const submitted = useMemo(
+  const tracked = useMemo(
     () => applications.filter((a) => a.status !== "pending_review"),
     [applications]
   );
@@ -55,7 +66,8 @@ export default function QueuePage() {
     <PageShell>
       <h1 className="text-3xl font-bold tracking-tight">Review queue</h1>
       <p className="mt-2 text-neutral-500">
-        Read each draft, tweak it, apply on the company&apos;s page, then mark it done.
+        Read each draft, tweak it, apply on the company&apos;s page, then track it
+        below all the way to an offer.
       </p>
 
       {applications.length === 0 ? (
@@ -68,22 +80,156 @@ export default function QueuePage() {
           />
         </div>
       ) : (
-        <ul className="mt-8 flex flex-col gap-3">
-          {[...pending, ...submitted].map((app) => (
-            <li key={app.id}>
-              <TransitionPanel activeIndex={app.status === "pending_review" ? 0 : 1}>
-                <ApplicationRow
-                  app={app}
-                  job={jobsById.get(app.jobId)}
-                  onPatch={(patch) => patchApplication(app.id, patch)}
-                />
-                <SubmittedRow app={app} job={jobsById.get(app.jobId)} />
-              </TransitionPanel>
-            </li>
-          ))}
-        </ul>
+        <>
+          {/* Drafts awaiting review */}
+          {pending.length > 0 && (
+            <ul className="mt-8 flex flex-col gap-3">
+              {pending.map((app) => (
+                <li key={app.id}>
+                  <ApplicationRow
+                    app={app}
+                    job={jobsById.get(app.jobId)}
+                    onPatch={(patch) => patchApplication(app.id, patch)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+          {pending.length === 0 && (
+            <p className="mt-8 text-sm text-neutral-500">
+              No drafts waiting for review.
+            </p>
+          )}
+
+          {/* Application tracker */}
+          {tracked.length > 0 && (
+            <section className="mt-14">
+              <div className="flex flex-wrap items-end justify-between gap-4 border-b border-neutral-200 pb-4 dark:border-neutral-800">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight">
+                    Application tracker
+                  </h2>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    Move each application along as you hear back.
+                  </p>
+                </div>
+                <TrackerStats tracked={tracked} />
+              </div>
+              <ul className="mt-5 flex flex-col gap-3">
+                {tracked.map((app) => (
+                  <li key={app.id}>
+                    <TrackerRow
+                      app={app}
+                      job={jobsById.get(app.jobId)}
+                      onStage={(status) => {
+                        patchApplication(app.id, { status }).catch(() =>
+                          toast.error("Couldn't update the stage")
+                        );
+                      }}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
       )}
     </PageShell>
+  );
+}
+
+function TrackerStats({ tracked }) {
+  const active = tracked.filter(
+    (a) => a.status !== "hired" && a.status !== "rejected"
+  ).length;
+  const hired = tracked.filter((a) => a.status === "hired").length;
+
+  return (
+    <div className="flex gap-5 font-mono text-sm">
+      <span>
+        <SlidingNumber value={active} className="text-xl font-semibold" />
+        <span className="block text-[10px] uppercase tracking-widest text-neutral-500">
+          in play
+        </span>
+      </span>
+      <span>
+        <SlidingNumber value={hired} className="text-xl font-semibold" />
+        <span className="block text-[10px] uppercase tracking-widest text-neutral-500">
+          hired
+        </span>
+      </span>
+    </div>
+  );
+}
+
+function TrackerRow({ app, job, onStage }) {
+  const isHired = app.status === "hired";
+  const isRejected = app.status === "rejected";
+
+  return (
+    <div
+      className={`rounded-2xl border p-4 ${
+        isHired
+          ? "border-black dark:border-white"
+          : "border-neutral-200 dark:border-neutral-800"
+      } ${isRejected ? "opacity-60" : ""}`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`truncate font-semibold ${isRejected ? "line-through" : ""}`}>
+            {job ? `${job.title} · ${job.company}` : app.jobId}
+          </p>
+          <p className="mt-0.5 font-mono text-xs text-neutral-500">
+            applied {new Date(app.createdAt).toLocaleDateString()}
+            {job?.url && (
+              <>
+                {" · "}
+                <a
+                  href={job.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 hover:underline"
+                >
+                  job page <ExternalLink size={10} strokeWidth={1.5} aria-hidden="true" />
+                </a>
+              </>
+            )}
+          </p>
+        </div>
+        {isHired && (
+          <span className="flex items-center gap-1.5 rounded-full bg-black px-3 py-1 text-xs font-medium text-white dark:bg-white dark:text-black">
+            <Check size={12} strokeWidth={2} aria-hidden="true" /> Hired
+          </span>
+        )}
+        {isRejected && (
+          <span className="flex items-center gap-1.5 rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-500 dark:border-neutral-700">
+            <X size={12} strokeWidth={2} aria-hidden="true" /> Rejected
+          </span>
+        )}
+      </div>
+
+      {/* Stage pills */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {STAGES.map(({ id, label }) => {
+          const current = app.status === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onStage(id)}
+              aria-pressed={current}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                current
+                  ? "bg-black text-white dark:bg-white dark:text-black"
+                  : "border border-neutral-200 text-neutral-500 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -109,7 +255,7 @@ function ApplicationRow({ app, job, onPatch }) {
     try {
       if (draft !== app.coverLetter) await onPatch({ coverLetter: draft });
       await onPatch({ status: "submitted" });
-      toast.success("Marked as submitted — nice work");
+      toast.success("Marked as submitted — track it below");
     } catch {
       toast.error("Couldn't update the application");
     }
@@ -190,18 +336,5 @@ function ApplicationRow({ app, job, onPatch }) {
         </div>
       </MorphingDialogContainer>
     </MorphingDialog>
-  );
-}
-
-// Submitted rows collapse to a quiet ✓ line.
-function SubmittedRow({ app, job }) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-neutral-100 px-5 py-3 text-sm text-neutral-500 dark:border-neutral-900">
-      <Check size={14} strokeWidth={1.5} aria-hidden="true" />
-      <span className="truncate">
-        {job ? `${job.title} · ${job.company}` : app.jobId}
-      </span>
-      <span className="ml-auto font-mono text-xs uppercase">submitted</span>
-    </div>
   );
 }

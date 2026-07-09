@@ -33,6 +33,9 @@ export default function JobsPage() {
   const [matching, setMatching] = useState(false);
   const [drafting, setDrafting] = useState(null); // jobId being drafted
   const [filter, setFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [remoteOnly, setRemoteOnly] = useState(false);
+  const [sort, setSort] = useState("score"); // score | newest
 
   // Stored jobs from previous sessions.
   useEffect(() => {
@@ -60,12 +63,12 @@ export default function JobsPage() {
       });
       setSearching(false);
 
-      // Kick off matching for everything unmatched.
+      // Screen only this search's results — each job is one Claude call.
       setMatching(true);
       const matchRes = await fetch("/api/match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ all: true }),
+        body: JSON.stringify({ jobIds: fresh.map((j) => j.id) }),
       });
       const matchData = await matchRes.json();
       if (matchRes.ok) {
@@ -100,17 +103,29 @@ export default function JobsPage() {
     }
   }
 
+  const sources = useMemo(
+    () => [...new Set(jobs.map((j) => j.source).filter(Boolean))].sort(),
+    [jobs]
+  );
+
   const visible = useMemo(() => {
     const filtered = jobs.filter((job) => {
-      if (filter === "qualified") return job.match?.qualified;
-      if (filter === "notyet") return job.match && !job.match.qualified;
+      if (filter === "qualified" && !job.match?.qualified) return false;
+      if (filter === "notyet" && (!job.match || job.match.qualified)) return false;
+      if (sourceFilter !== "all" && job.source !== sourceFilter) return false;
+      if (remoteOnly && !`${job.location}`.toLowerCase().includes("remote")) return false;
       return true;
     });
+    if (sort === "newest") {
+      return filtered.toSorted(
+        (a, b) => new Date(b.posted_at ?? 0) - new Date(a.posted_at ?? 0)
+      );
+    }
     // Matched-and-scored first, best score on top.
     return filtered.toSorted(
       (a, b) => (b.match?.score ?? -1) - (a.match?.score ?? -1)
     );
-  }, [jobs, filter]);
+  }, [jobs, filter, sourceFilter, remoteOnly, sort]);
 
   return (
     <PageShell>
@@ -166,9 +181,9 @@ export default function JobsPage() {
         </div>
       </form>
 
-      {/* Filter pills */}
+      {/* Filters */}
       {jobs.length > 0 && (
-        <div className="mt-6 flex items-center gap-1">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
           <AnimatedBackground
             defaultValue={filter}
             onValueChange={(id) => id && setFilter(id)}
@@ -185,6 +200,46 @@ export default function JobsPage() {
               </button>
             ))}
           </AnimatedBackground>
+
+          {sources.length > 1 && (
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              aria-label="Job source"
+              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+            >
+              <option value="all">All sources</option>
+              {sources.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setRemoteOnly((v) => !v)}
+            aria-pressed={remoteOnly}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+              remoteOnly
+                ? "bg-black text-white dark:bg-white dark:text-black"
+                : "border border-neutral-200 text-neutral-500 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+            }`}
+          >
+            Remote only
+          </button>
+
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            aria-label="Sort results"
+            className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+          >
+            <option value="score">Best match</option>
+            <option value="newest">Newest</option>
+          </select>
+
           {matching && <AiLabel className="ml-auto">Screening…</AiLabel>}
         </div>
       )}
@@ -254,6 +309,11 @@ function JobCard({ job, matching, drafting, onDraft }) {
             </h2>
             <p className="mt-0.5 text-sm text-neutral-500">
               {job.company} · {job.location}
+              {job.source && (
+                <span className="ml-2 rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-400 dark:border-neutral-800 dark:text-neutral-600">
+                  {job.source}
+                </span>
+              )}
             </p>
             {job.salary && (
               <p className="mt-1 font-mono text-xs text-neutral-500">{job.salary}</p>

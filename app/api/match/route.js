@@ -13,9 +13,13 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const targets = body.all
-    ? db.data.jobs.filter((j) => j.match === null)
-    : db.data.jobs.filter((j) => j.id === body.jobId);
+  // Prefer explicit jobIds (the jobs a search just returned) — `all` grows
+  // unbounded with the stored backlog and each job is one Claude call.
+  const targets = Array.isArray(body.jobIds)
+    ? db.data.jobs.filter((j) => body.jobIds.includes(j.id) && j.match === null)
+    : body.all
+      ? db.data.jobs.filter((j) => j.match === null)
+      : db.data.jobs.filter((j) => j.id === body.jobId);
 
   if (targets.length === 0) {
     return NextResponse.json({ error: "No jobs to match" }, { status: 404 });

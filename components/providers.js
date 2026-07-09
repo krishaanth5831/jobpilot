@@ -1,24 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
 import { ThemeProvider } from "next-themes";
-import Lenis from "lenis";
 import { Toaster } from "sonner";
-import { useMediaQuery } from "@/components/use-mounted";
 
-// Theme (class-based b&w light/dark), smooth scrolling, and b&w toasts.
-// Lenis runs imperatively in an effect (not as a wrapper component) so the
-// tree never re-parents after hydration — re-parenting remounts
-// next-themes' inline theme script on the client, which React rejects.
+// Theme (class-based b&w light/dark) and b&w toasts. Scrolling is native —
+// scroll-hijacking libraries (Lenis) broke trackpad scrolling by capturing
+// wheel events, and the scroll-triggered animations work fine without them.
 export function Providers({ children }) {
-  const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)", true);
-
-  useEffect(() => {
-    if (reducedMotion) return;
-    const lenis = new Lenis({ lerp: 0.12, autoRaf: true });
-    return () => lenis.destroy();
-  }, [reducedMotion]);
-
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       {children}

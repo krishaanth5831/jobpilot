@@ -76,6 +76,11 @@ export default function JobsPage() {
       if (matchRes.ok) {
         const byId = new Map(matchData.matched.map((j) => [j.id, j]));
         setJobs((prev) => prev.map((j) => byId.get(j.id) ?? j));
+        if (matchData.failed > 0) {
+          toast.warning(`${matchData.failed} job(s) couldn't be screened — search again to retry`);
+        }
+      } else {
+        toast.error(matchData.error || "Screening failed");
       }
     } catch (err) {
       toast.error(err.message || "Search failed");

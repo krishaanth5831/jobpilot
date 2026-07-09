@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { AiCard, AiLabel } from "@/components/ai-loading";
 import { EmptyState } from "@/components/empty-state";
@@ -73,6 +73,21 @@ function RoadmapContent() {
       toast.error(err.message || "Failed to generate the roadmap");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function deleteRoadmap() {
+    try {
+      const res = await fetch("/api/roadmap", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: selectedId }),
+      });
+      if (!res.ok) throw new Error();
+      setJobRoadmap(selectedId, null);
+      toast.success("Roadmap deleted");
+    } catch {
+      toast.error("Couldn't delete the roadmap");
     }
   }
 
@@ -167,13 +182,24 @@ function RoadmapContent() {
                         ? `Plan for ${selected.title} at ${selected.company}`
                         : `Ready to plan for ${selected.title} at ${selected.company}`}
                     </p>
-                    <button
-                      type="button"
-                      onClick={generate}
-                      className="rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
-                    >
-                      {roadmap ? "Regenerate roadmap" : "Build my roadmap"}
-                    </button>
+                    <span className="flex items-center gap-2">
+                      {roadmap && (
+                        <button
+                          type="button"
+                          onClick={deleteRoadmap}
+                          className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition hover:border-neutral-500 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500"
+                        >
+                          <Trash2 size={14} strokeWidth={1.5} aria-hidden="true" /> Delete
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={generate}
+                        className="rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+                      >
+                        {roadmap ? "Regenerate roadmap" : "Build my roadmap"}
+                      </button>
+                    </span>
                   </div>
                 )}
               </AiCard>

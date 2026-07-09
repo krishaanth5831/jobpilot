@@ -53,3 +53,17 @@ export async function PATCH(request) {
   await db.write();
   return NextResponse.json({ roadmap: job.roadmap });
 }
+
+// DELETE /api/roadmap — body: { jobId } — discard a generated roadmap.
+export async function DELETE(request) {
+  const db = await getDb();
+  const { jobId } = await request.json();
+  const job = db.data.jobs.find((j) => j.id === jobId);
+  if (!job?.roadmap) {
+    return NextResponse.json({ error: "Roadmap not found" }, { status: 404 });
+  }
+
+  delete job.roadmap;
+  await db.write();
+  return NextResponse.json({ ok: true });
+}

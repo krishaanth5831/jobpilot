@@ -13,6 +13,7 @@ import { Magnetic } from "@/components/motion-primitives/magnetic";
 import { Logo } from "@/components/logo";
 import { Cursor } from "@/components/motion-primitives/cursor";
 import { ProcessDemo } from "@/components/process-demo";
+import { ScoreExplainer } from "@/components/score-explainer";
 
 // The hero scene is the heaviest client-only piece — lazy-load it with a
 // grayscale wireframe poster while the real (colored) scene boots.
@@ -169,6 +170,11 @@ export default function Home() {
             <ProcessDemo />
           </InView>
         </div>
+      </section>
+
+      {/* Score explainer */}
+      <section className="mx-auto max-w-6xl px-6 py-28">
+        <ScoreExplainer />
       </section>
 
       {/* Footer CTA */}

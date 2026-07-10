@@ -452,6 +452,18 @@ function BuildSection({ interview, builtResume, onBuilt }) {
     toast.success("Resume copied as markdown");
   }
 
+  async function copyClaudePrompt() {
+    try {
+      const res = await fetch("/api/resume/prompt");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      await navigator.clipboard.writeText(data.prompt);
+      toast.success("Prompt copied — paste it into claude.ai for the highest-quality rebuild");
+    } catch (err) {
+      toast.error(err.message || "Couldn't build the prompt");
+    }
+  }
+
   return (
     <section className="mt-14">
       <SectionHeader
@@ -476,13 +488,26 @@ function BuildSection({ interview, builtResume, onBuilt }) {
                   ? `Uses your original resume plus ${answered} interview answer${answered === 1 ? "" : "s"}.`
                   : "Works from the original resume alone — the interview above makes it much better."}
               </p>
-              <button type="button" onClick={build} className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
-                <Sparkles size={14} strokeWidth={1.5} aria-hidden="true" />
-                {builtResume ? "Rebuild again" : "Build my resume"}
-              </button>
+              <span className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={copyClaudePrompt} className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2.5 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500">
+                  <Copy size={14} strokeWidth={1.5} aria-hidden="true" /> Copy Claude prompt
+                </button>
+                <button type="button" onClick={build} className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
+                  <Sparkles size={14} strokeWidth={1.5} aria-hidden="true" />
+                  {builtResume ? "Rebuild again" : "Build my resume"}
+                </button>
+              </span>
             </div>
           )}
         </AiCard>
+
+        {!busy && (
+          <p className="mt-3 text-xs text-neutral-500">
+            Want the best possible result? &ldquo;Copy Claude prompt&rdquo; packages your
+            resume, its gaps, and your answers into one prompt — paste it into
+            claude.ai and let a stronger model do the rebuild there.
+          </p>
+        )}
 
         {builtResume && !busy && (
           <div className="mt-4 rounded-2xl border border-neutral-200 dark:border-neutral-800">

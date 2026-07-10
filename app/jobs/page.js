@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Search, MapPin, ExternalLink } from "lucide-react";
+import { Search, MapPin, ExternalLink, Sparkles } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { AiLabel } from "@/components/ai-loading";
 import { EmptyState } from "@/components/empty-state";
@@ -36,8 +36,11 @@ export default function JobsPage() {
   const [sourceFilter, setSourceFilter] = useState("all");
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [sort, setSort] = useState("score"); // score | newest
+  const [recs, setRecs] = useState(null);
+  const [recommending, setRecommending] = useState(false);
 
-  // Restore the latest search's results (not the whole stored backlog).
+  // Restore the latest search's results (not the whole stored backlog)
+  // and any stored recommendations.
   useEffect(() => {
     fetch("/api/jobs")
       .then((res) => res.json())
@@ -48,13 +51,35 @@ export default function JobsPage() {
         );
       })
       .catch(() => {});
+    fetch("/api/recommend")
+      .then((res) => res.json())
+      .then((data) => setRecs(data.recommendations))
+      .catch(() => {});
   }, []);
 
-  async function search(event) {
+  async function recommend() {
+    setRecommending(true);
+    try {
+      const res = await fetch("/api/recommend", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setRecs(data.recommendations);
+    } catch (err) {
+      toast.error(err.message || "Recommendation failed");
+    } finally {
+      setRecommending(false);
+    }
+  }
+
+  function search(event) {
     event.preventDefault();
+    runSearch(role);
+  }
+
+  async function runSearch(roleValue) {
     setSearching(true);
     try {
-      const params = new URLSearchParams({ role, location });
+      const params = new URLSearchParams({ role: roleValue, location });
       const res = await fetch(`/api/jobs/search?${params}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -187,6 +212,57 @@ export default function JobsPage() {
           </div>
         </div>
       </form>
+
+      {/* Profile-based recommendations */}
+      <div className="mt-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={recommend}
+            disabled={recommending || searching || matching}
+            className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+          >
+            <Sparkles size={14} strokeWidth={1.5} aria-hidden="true" />
+            {recs ? "Refresh recommendations" : "Recommend for me"}
+          </button>
+          {recommending ? (
+            <AiLabel>Reading your resume for the right roles…</AiLabel>
+          ) : (
+            !recs && (
+              <p className="text-sm text-neutral-500">
+                Jobs, internships, and programs you actually qualify for — from
+                your resume, not guesswork.
+              </p>
+            )
+          )}
+        </div>
+
+        {recs && !recommending && (
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+            {recs.map((rec) => (
+              <li key={rec.query}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRole(rec.query);
+                    runSearch(rec.query);
+                  }}
+                  disabled={searching || matching}
+                  className="h-full w-full rounded-2xl border border-neutral-200 p-4 text-left transition hover:border-neutral-400 disabled:opacity-50 dark:border-neutral-800 dark:hover:border-neutral-600"
+                >
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="font-medium">{rec.query}</span>
+                    <span className="shrink-0 rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-400 dark:border-neutral-800 dark:text-neutral-600">
+                      {rec.kind}
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-sm text-neutral-500">{rec.reason}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* Filters */}
       {jobs.length > 0 && (

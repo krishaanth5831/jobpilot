@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Upload, SearchCheck, Send, Map, ArrowRight } from "lucide-react";
+import {
+  Upload,
+  SearchCheck,
+  Send,
+  Map,
+  ArrowRight,
+  FileText,
+  Download,
+  Sparkles,
+  ClipboardPaste,
+  Inbox,
+  ChartNoAxesColumn,
+  Trophy,
+} from "lucide-react";
 import { ScrollProgress } from "@/components/motion-primitives/scroll-progress";
 import { TextEffect } from "@/components/motion-primitives/text-effect";
 import { TextLoop } from "@/components/motion-primitives/text-loop";
@@ -47,7 +60,7 @@ const steps = [
   {
     Icon: SearchCheck,
     title: "Match",
-    description: "Search real job boards. Every posting is screened against your actual experience.",
+    description: "Six sources at once — job boards, company career pages, community GitHub lists. Every posting screened against your actual experience.",
   },
   {
     Icon: Send,
@@ -58,6 +71,58 @@ const steps = [
     Icon: Map,
     title: "Roadmap",
     description: "Not qualified yet? Get a concrete plan to close the gap — skills, projects, timeline.",
+  },
+];
+
+// Everything built around the core loop — kept honest and up to date.
+const toolkit = [
+  {
+    Icon: FileText,
+    title: "Resume studio",
+    description:
+      "A blunt review with concrete fixes, a grill-me interview that digs out what you left unsaid, and a rebuild that never invents — downloadable as a typeset PDF.",
+  },
+  {
+    Icon: Download,
+    title: "Tailored resumes",
+    description:
+      "One click re-emphasizes your real material for a specific job — selection, never addition — with a ready-to-send PDF per application.",
+  },
+  {
+    Icon: Sparkles,
+    title: "Recommendations",
+    description:
+      "Jobs, internships, and exploratory programs you actually qualify for today, suggested from your resume instead of guesswork.",
+  },
+  {
+    Icon: ClipboardPaste,
+    title: "Paste any job",
+    description:
+      "Found a posting on LinkedIn or a company site? Paste it in and it runs through the same screen-and-draft pipeline.",
+  },
+  {
+    Icon: Inbox,
+    title: "Tracker & follow-ups",
+    description:
+      "Move every application from submitted to offer. Gone quiet for ten days? A polite follow-up note is one click away.",
+  },
+  {
+    Icon: Map,
+    title: "Re-screen as you grow",
+    description:
+      "Close roadmap gaps, add the new skills to your profile, then re-run the verdict and watch the score move.",
+  },
+  {
+    Icon: ChartNoAxesColumn,
+    title: "Your funnel, measured",
+    description:
+      "Qualification rate, response rate, and match scores over time — proof that the work is working.",
+  },
+  {
+    Icon: Trophy,
+    title: "Wins teach the next one",
+    description:
+      "Every hire is distilled into lessons that sharpen future reviews, rebuilds, and cover letters automatically.",
   },
 ];
 
@@ -175,6 +240,37 @@ export default function Home() {
       {/* Score explainer */}
       <section className="mx-auto max-w-6xl px-6 py-28">
         <ScoreExplainer />
+      </section>
+
+      {/* The full toolkit */}
+      <section className="border-y border-neutral-200 py-28 dark:border-neutral-800">
+        <div className="mx-auto max-w-6xl px-6">
+          <InView>
+            <h2 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">
+              The whole application, covered
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-center text-neutral-500">
+              Search is just the start. Everything from the first resume review
+              to the offer lives in one loop — and each win makes the next
+              application stronger.
+            </p>
+          </InView>
+          <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {toolkit.map(({ Icon, title, description }, i) => (
+              <InView
+                key={title}
+                transition={{ duration: 0.35, ease: "easeOut", delay: (i % 4) * 0.08 }}
+              >
+                <div className="relative h-full overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
+                  <Spotlight />
+                  <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
+                  <h3 className="mt-4 font-semibold">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-neutral-500">{description}</p>
+                </div>
+              </InView>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Footer CTA */}

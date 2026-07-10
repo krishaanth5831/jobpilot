@@ -46,7 +46,8 @@ export async function POST(request) {
           db.data.profile,
           db.data.resumeText,
           interview,
-          db.data.insights
+          db.data.insights,
+          db.data.resumeReview
         ),
         schema: INTERVIEW_SCHEMA,
       });

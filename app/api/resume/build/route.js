@@ -16,10 +16,10 @@ export async function POST() {
     const result = await askClaudeJSON({
       system: BUILD_SYSTEM_PROMPT,
       prompt: buildBuildPrompt(
-        db.data.profile,
         db.data.resumeText,
         db.data.interview,
-        db.data.insights
+        db.data.insights,
+        db.data.resumeReview
       ),
       schema: BUILD_SCHEMA,
     });

@@ -68,7 +68,11 @@ export default function ResumePage() {
       {ready && (
         <>
           <ReviewSection review={review} onReview={setReview} />
-          <InterviewSection interview={interview} onChange={setInterview} />
+          <InterviewSection
+            interview={interview}
+            hasReview={Boolean(review)}
+            onChange={setInterview}
+          />
           <BuildSection
             interview={interview}
             builtResume={builtResume}
@@ -263,7 +267,7 @@ function ReviewSection({ review, onReview }) {
 const MIN_ANSWERS_TO_FINISH = 4;
 const MAX_QUESTIONS = 10;
 
-function InterviewSection({ interview, onChange }) {
+function InterviewSection({ interview, hasReview, onChange }) {
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState("");
 
@@ -300,7 +304,7 @@ function InterviewSection({ interview, onChange }) {
       <SectionHeader
         step={2}
         title="Grill me"
-        description="Short pointed questions to dig out what your resume leaves unsaid — numbers, unlisted projects, skills you forgot you have."
+        description="Works through your resume's gaps one question at a time — each answer supplies the material the rebuild needs to fix that gap."
       />
 
       {!interview && (
@@ -313,8 +317,10 @@ function InterviewSection({ interview, onChange }) {
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <p className="text-sm text-neutral-500">
-                  Up to {MAX_QUESTIONS} questions, a couple of sentences each. Your
-                  answers feed the rebuild below.
+                  Up to {MAX_QUESTIONS} questions, a couple of sentences each.{" "}
+                  {hasReview
+                    ? "Questions follow the gaps your review found, worst first."
+                    : "Run the review first for the sharpest questions — it gives the interview its gap list."}
                 </p>
                 <button type="button" onClick={() => step({})} className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
                   <Flame size={14} strokeWidth={1.5} aria-hidden="true" /> Grill me
@@ -446,16 +452,6 @@ function BuildSection({ interview, builtResume, onBuilt }) {
     toast.success("Resume copied as markdown");
   }
 
-  function downloadResume() {
-    const blob = new Blob([builtResume.markdown], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "resume.md";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <section className="mt-14">
       <SectionHeader
@@ -498,9 +494,9 @@ function BuildSection({ interview, builtResume, onBuilt }) {
                 <button type="button" onClick={copyResume} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600">
                   <Copy size={12} strokeWidth={1.5} aria-hidden="true" /> Copy
                 </button>
-                <button type="button" onClick={downloadResume} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600">
-                  <Download size={12} strokeWidth={1.5} aria-hidden="true" /> Download
-                </button>
+                <a href="/api/resume/pdf" download="resume.pdf" className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
+                  <Download size={12} strokeWidth={1.5} aria-hidden="true" /> Download PDF
+                </a>
               </div>
             </div>
             <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap p-5 font-mono text-xs leading-relaxed text-neutral-600 dark:text-neutral-300">

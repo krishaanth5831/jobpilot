@@ -2,7 +2,8 @@
 const nextConfig = {
   // pdf-parse (pdf.js) loads its worker module at runtime; bundling it
   // breaks the worker path, so resolve it from node_modules instead.
-  serverExternalPackages: ["pdf-parse"],
+  // pdfkit reads its font data files from disk at runtime — same problem.
+  serverExternalPackages: ["pdf-parse", "pdfkit"],
 };
 
 export default nextConfig;

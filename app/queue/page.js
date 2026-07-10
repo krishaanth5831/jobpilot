@@ -13,6 +13,10 @@ import {
   MorphingDialogClose,
 } from "@/components/motion-primitives/morphing-dialog";
 
+// An application sitting in "submitted" this long with no reply gets a
+// follow-up nudge.
+const NUDGE_AFTER_DAYS = 10;
+
 // The application pipeline after review. "hired" and "rejected" are
 // terminal outcomes; everything else is a stage you move through.
 const STAGES = [
@@ -202,8 +206,35 @@ function TrackerStats({ tracked }) {
 }
 
 function TrackerRow({ app, job, onStage, onDelete }) {
+  const [nudging, setNudging] = useState(false);
+  // Snapshot "now" once per mount — day precision, and render stays pure.
+  const [now] = useState(() => Date.now());
   const isHired = app.status === "hired";
   const isRejected = app.status === "rejected";
+
+  const quietDays =
+    app.status === "submitted"
+      ? Math.floor((now - new Date(app.submittedAt ?? app.createdAt)) / 86400000)
+      : 0;
+
+  async function draftFollowUp() {
+    setNudging(true);
+    try {
+      const res = await fetch("/api/applications/followup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: app.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      await navigator.clipboard.writeText(data.followUp);
+      toast.success("Follow-up note copied — paste it into an email or the portal");
+    } catch (err) {
+      toast.error(err.message || "Couldn't draft the follow-up");
+    } finally {
+      setNudging(false);
+    }
+  }
 
   return (
     <div
@@ -255,6 +286,24 @@ function TrackerRow({ app, job, onStage, onDelete }) {
           <Trash2 size={15} strokeWidth={1.5} aria-hidden="true" />
         </button>
       </div>
+
+      {/* Gone-quiet nudge */}
+      {quietDays >= NUDGE_AFTER_DAYS && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-neutral-300 px-3 py-2 dark:border-neutral-700">
+          <p className="text-sm text-neutral-500">
+            No reply in <span className="font-mono">{quietDays}</span> days — a
+            short follow-up can restart the conversation.
+          </p>
+          <button
+            type="button"
+            onClick={draftFollowUp}
+            disabled={nudging}
+            className="rounded-lg border border-neutral-300 px-3 py-1 text-xs font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+          >
+            {nudging ? "Drafting…" : "Draft follow-up"}
+          </button>
+        </div>
+      )}
 
       {/* Stage pills */}
       <div className="mt-3 flex flex-wrap gap-1.5">

@@ -3,17 +3,24 @@ import { resumeMarkdownToPdf } from "@/lib/resume-pdf";
 import { getDb } from "@/lib/db";
 
 // GET /api/resume/pdf — the rebuilt resume typeset as a downloadable PDF.
-export async function GET() {
+// With ?jobId=…, serves the resume tailored to that job instead.
+export async function GET(request) {
   const db = await getDb();
-  if (!db.data.builtResume?.markdown) {
+  const jobId = new URL(request.url).searchParams.get("jobId");
+  const source = jobId ? db.data.tailoredResumes?.[jobId] : db.data.builtResume;
+  if (!source?.markdown) {
     return NextResponse.json(
-      { error: "No rebuilt resume yet — build one in the resume studio first" },
+      {
+        error: jobId
+          ? "No tailored resume for this job yet"
+          : "No rebuilt resume yet — build one in the resume studio first",
+      },
       { status: 404 }
     );
   }
 
   try {
-    const pdf = await resumeMarkdownToPdf(db.data.builtResume.markdown);
+    const pdf = await resumeMarkdownToPdf(source.markdown);
     return new NextResponse(pdf, {
       headers: {
         "Content-Type": "application/pdf",

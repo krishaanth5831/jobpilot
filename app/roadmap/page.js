@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Check, Trash2 } from "lucide-react";
@@ -27,6 +28,7 @@ function RoadmapContent() {
   const [jobs, setJobs] = useState([]);
   const [selectedId, setSelectedId] = useState(preselected);
   const [loading, setLoading] = useState(false);
+  const [rescreening, setRescreening] = useState(false);
 
   // Unqualified-but-matched jobs are roadmap candidates.
   const candidates = useMemo(
@@ -73,6 +75,33 @@ function RoadmapContent() {
       toast.error(err.message || "Failed to generate the roadmap");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function rescreen() {
+    const before = selected.match.score;
+    setRescreening(true);
+    try {
+      const res = await fetch("/api/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: selectedId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      const updated = data.matched[0];
+      setJobs((prev) => prev.map((j) => (j.id === selectedId ? updated : j)));
+      if (updated.match.qualified) {
+        toast.success(
+          `You qualify now — score ${before} → ${updated.match.score}. Draft the application from the jobs tab!`
+        );
+      } else {
+        toast.success(`Score ${before} → ${updated.match.score}`);
+      }
+    } catch (err) {
+      toast.error(err.message || "Re-screening failed");
+    } finally {
+      setRescreening(false);
     }
   }
 
@@ -207,6 +236,29 @@ function RoadmapContent() {
           )}
 
           {roadmap && !loading && <Timeline roadmap={roadmap} onToggle={toggleStep} />}
+
+          {/* Close the loop: improved profile → new verdict */}
+          {selected && !loading && (
+            <div className="mt-10 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-dashed border-neutral-300 p-4 dark:border-neutral-700">
+              <p className="text-sm text-neutral-500">
+                Closed some of these gaps? Add the new skills through the{" "}
+                <Link href="/resume" className="underline hover:text-black dark:hover:text-white">
+                  Resume studio
+                </Link>{" "}
+                interview first, then see if the verdict moves.
+              </p>
+              <button
+                type="button"
+                onClick={rescreen}
+                disabled={rescreening}
+                className="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+              >
+                {rescreening
+                  ? "Re-screening…"
+                  : `Re-screen me (now ${selected.match.score}/100)`}
+              </button>
+            </div>
+          )}
         </>
       )}
     </PageShell>

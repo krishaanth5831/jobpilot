@@ -42,6 +42,7 @@ export async function POST(request) {
           prompt: buildMatchPrompt(db.data.profile, job),
           schema: MATCH_SCHEMA,
         });
+        job.screened_at = new Date().toISOString();
         matched.push(job);
       } catch (err) {
         console.error(`matching failed for ${job.id}:`, err);

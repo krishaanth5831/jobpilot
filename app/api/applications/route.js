@@ -59,7 +59,13 @@ export async function PATCH(request) {
   const application = db.data.applications.find((a) => a.id === id);
   if (!application) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (status !== undefined) application.status = status;
+  if (status !== undefined) {
+    application.status = status;
+    // First transition to submitted starts the follow-up clock.
+    if (status === "submitted" && !application.submittedAt) {
+      application.submittedAt = new Date().toISOString();
+    }
+  }
   if (coverLetter !== undefined) application.coverLetter = coverLetter;
   await db.write();
   return NextResponse.json({ application });

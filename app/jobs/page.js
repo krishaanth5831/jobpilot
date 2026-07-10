@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Search, MapPin, ExternalLink, Sparkles } from "lucide-react";
+import { Search, MapPin, ExternalLink, Sparkles, ClipboardPaste, Download } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { AiLabel } from "@/components/ai-loading";
 import { EmptyState } from "@/components/empty-state";
@@ -38,6 +38,10 @@ export default function JobsPage() {
   const [sort, setSort] = useState("score"); // score | newest
   const [recs, setRecs] = useState(null);
   const [recommending, setRecommending] = useState(false);
+  const [showPaste, setShowPaste] = useState(false);
+  const [pasting, setPasting] = useState(false);
+  const [tailoredIds, setTailoredIds] = useState(new Set());
+  const [tailoring, setTailoring] = useState(null); // jobId being tailored
 
   // Restore the latest search's results (not the whole stored backlog)
   // and any stored recommendations.
@@ -49,6 +53,7 @@ export default function JobsPage() {
         setJobs(
           data.lastSearchIds ? all.filter((j) => data.lastSearchIds.includes(j.id)) : all
         );
+        setTailoredIds(new Set(data.tailoredJobIds ?? []));
       })
       .catch(() => {});
     fetch("/api/recommend")
@@ -74,6 +79,73 @@ export default function JobsPage() {
   function search(event) {
     event.preventDefault();
     runSearch(role);
+  }
+
+  async function pasteJob(event) {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    setPasting(true);
+    try {
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.get("title"),
+          company: form.get("company"),
+          url: form.get("url"),
+          description: form.get("description"),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setJobs((prev) => [data.job, ...prev]);
+      setShowPaste(false);
+
+      // Same pipeline as searched jobs: screen it right away.
+      setMatching(true);
+      const matchRes = await fetch("/api/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobIds: [data.job.id] }),
+      });
+      const matchData = await matchRes.json();
+      if (matchRes.ok) {
+        const byId = new Map(matchData.matched.map((j) => [j.id, j]));
+        setJobs((prev) => prev.map((j) => byId.get(j.id) ?? j));
+      } else {
+        toast.error(matchData.error || "Screening failed");
+      }
+    } catch (err) {
+      toast.error(err.message || "Couldn't add the job");
+    } finally {
+      setPasting(false);
+      setMatching(false);
+    }
+  }
+
+  async function tailorJob(job) {
+    setTailoring(job.id);
+    try {
+      const res = await fetch("/api/resume/tailor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: job.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setTailoredIds((prev) => new Set([...prev, job.id]));
+      toast.success(`Resume tailored for ${job.company}`, {
+        action: {
+          label: "Download PDF",
+          onClick: () =>
+            (window.location.href = `/api/resume/pdf?jobId=${encodeURIComponent(job.id)}`),
+        },
+      });
+    } catch (err) {
+      toast.error(err.message || "Tailoring failed");
+    } finally {
+      setTailoring(null);
+    }
   }
 
   async function runSearch(roleValue) {
@@ -225,6 +297,15 @@ export default function JobsPage() {
             <Sparkles size={14} strokeWidth={1.5} aria-hidden="true" />
             {recs ? "Refresh recommendations" : "Recommend for me"}
           </button>
+          <button
+            type="button"
+            onClick={() => setShowPaste((v) => !v)}
+            aria-expanded={showPaste}
+            className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+          >
+            <ClipboardPaste size={14} strokeWidth={1.5} aria-hidden="true" />
+            Paste a job
+          </button>
           {recommending ? (
             <AiLabel>Reading your resume for the right roles…</AiLabel>
           ) : (
@@ -236,6 +317,61 @@ export default function JobsPage() {
             )
           )}
         </div>
+
+        {/* Screen a job found anywhere — same pipeline as searched jobs */}
+        {showPaste && (
+          <form
+            onSubmit={pasteJob}
+            className="mt-3 rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input
+                name="title"
+                required
+                placeholder="Job title *"
+                aria-label="Job title"
+                className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+              />
+              <input
+                name="company"
+                placeholder="Company"
+                aria-label="Company"
+                className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+              />
+            </div>
+            <input
+              name="url"
+              type="url"
+              placeholder="Link to the posting (where you'd apply)"
+              aria-label="Job URL"
+              className="mt-3 w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+            />
+            <textarea
+              name="description"
+              required
+              rows={6}
+              placeholder="Paste the full job description *"
+              aria-label="Job description"
+              className="mt-3 w-full resize-y rounded-xl border border-neutral-200 bg-transparent p-3 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+            />
+            <div className="mt-3 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowPaste(false)}
+                className="text-sm text-neutral-500 transition hover:text-black dark:hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={pasting || matching}
+                className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+              >
+                {pasting ? "Adding…" : "Add & screen"}
+              </button>
+            </div>
+          </form>
+        )}
 
         {recs && !recommending && (
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -363,6 +499,9 @@ export default function JobsPage() {
                 matching={matching && !job.match}
                 drafting={drafting === job.id}
                 onDraft={() => draftApplication(job)}
+                tailored={tailoredIds.has(job.id)}
+                tailoring={tailoring === job.id}
+                onTailor={() => tailorJob(job)}
               />
             </InView>
           ))}
@@ -372,11 +511,11 @@ export default function JobsPage() {
   );
 }
 
-function JobCard({ job, matching, drafting, onDraft }) {
+function JobCard({ job, matching, drafting, onDraft, tailored, tailoring, onTailor }) {
   return (
     <Tilt rotationFactor={2}>
       <article className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
-        {(matching || drafting) && <BorderTrail size={64} duration={2.4} />}
+        {(matching || drafting || tailoring) && <BorderTrail size={64} duration={2.4} />}
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="font-semibold">
@@ -449,16 +588,36 @@ function JobCard({ job, matching, drafting, onDraft }) {
                 {job.match.reasoning}
               </p>
               {job.match.qualified ? (
-                <Magnetic>
-                  <button
-                    type="button"
-                    onClick={onDraft}
-                    disabled={drafting}
-                    className="shrink-0 rounded-xl bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
-                  >
-                    {drafting ? "Drafting…" : "Draft application"}
-                  </button>
-                </Magnetic>
+                <span className="flex shrink-0 items-center gap-2">
+                  {tailored ? (
+                    <a
+                      href={`/api/resume/pdf?jobId=${encodeURIComponent(job.id)}`}
+                      download="resume.pdf"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-300 px-3 py-2 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+                    >
+                      <Download size={13} strokeWidth={1.5} aria-hidden="true" /> Tailored PDF
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={onTailor}
+                      disabled={tailoring || drafting}
+                      className="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+                    >
+                      {tailoring ? "Tailoring…" : "Tailor resume"}
+                    </button>
+                  )}
+                  <Magnetic>
+                    <button
+                      type="button"
+                      onClick={onDraft}
+                      disabled={drafting}
+                      className="shrink-0 rounded-xl bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+                    >
+                      {drafting ? "Drafting…" : "Draft application"}
+                    </button>
+                  </Magnetic>
+                </span>
               ) : (
                 <Link
                   href={`/roadmap?jobId=${encodeURIComponent(job.id)}`}

@@ -20,7 +20,11 @@ export async function GET(request) {
   }
 
   try {
-    const pdf = await resumeMarkdownToPdf(source.markdown);
+    // Every PDF (rebuilt or tailored) uses the template chosen in the studio.
+    const pdf = await resumeMarkdownToPdf(
+      source.markdown,
+      db.data.resumeTemplate?.selected
+    );
     return new NextResponse(pdf, {
       headers: {
         "Content-Type": "application/pdf",

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Check, Copy, Download, Flame, RefreshCw, Sparkles, Trophy } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { TemplatePreview } from "@/components/template-preview";
+import { TEMPLATES, DEFAULT_TEMPLATE } from "@/lib/resume-templates";
 import { AiCard, AiLabel } from "@/components/ai-loading";
 import { EmptyState } from "@/components/empty-state";
 import { AnimatedNumber } from "@/components/motion-primitives/animated-number";
@@ -21,6 +23,7 @@ export default function ResumePage() {
   const [review, setReview] = useState(null);
   const [interview, setInterview] = useState(null);
   const [builtResume, setBuiltResume] = useState(null);
+  const [template, setTemplate] = useState(null);
   const [insights, setInsights] = useState([]);
 
   useEffect(() => {
@@ -34,6 +37,7 @@ export default function ResumePage() {
         setReview(data.review);
         setInterview(data.interview);
         setBuiltResume(data.builtResume);
+        setTemplate(data.template);
         setInsights(insightData.insights ?? []);
         setLoaded(true);
       })
@@ -76,9 +80,12 @@ export default function ResumePage() {
           <BuildSection
             interview={interview}
             builtResume={builtResume}
+            template={template}
+            onTemplate={setTemplate}
             onBuilt={(data) => {
               setBuiltResume(data.builtResume);
               setProfile(data.profile);
+              if (data.template) setTemplate(data.template);
             }}
           />
           <InsightsSection insights={insights} />
@@ -428,7 +435,7 @@ function InterviewSection({ interview, hasReview, onChange }) {
 
 /* ---------- 03 · Rebuild ---------- */
 
-function BuildSection({ interview, builtResume, onBuilt }) {
+function BuildSection({ interview, builtResume, template, onTemplate, onBuilt }) {
   const [busy, setBusy] = useState(false);
   const answered = interview?.questions.filter((q) => q.answer !== null).length ?? 0;
 
@@ -529,7 +536,120 @@ function BuildSection({ interview, builtResume, onBuilt }) {
             </pre>
           </div>
         )}
+
+        {builtResume && !busy && (
+          <TemplatePicker
+            markdown={builtResume.markdown}
+            template={template}
+            onTemplate={onTemplate}
+          />
+        )}
       </div>
     </section>
+  );
+}
+
+// Ten templates, previewed with the user's actual resume. The 3 Claude
+// recommends for this profile come first; the chosen one styles every PDF
+// download, including tailored resumes.
+function TemplatePicker({ markdown, template, onTemplate }) {
+  const [busy, setBusy] = useState(false);
+  const picks = template?.picks ?? null;
+  const selected = template?.selected ?? DEFAULT_TEMPLATE;
+  const reasonById = new Map((picks ?? []).map((p) => [p.id, p.reason]));
+
+  const ordered = [
+    ...(picks ?? [])
+      .map((p) => TEMPLATES.find((t) => t.id === p.id))
+      .filter(Boolean),
+    ...TEMPLATES.filter((t) => !reasonById.has(t.id)),
+  ];
+
+  async function post(body, okMessage) {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/resume/template", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      onTemplate(data.template);
+      if (okMessage) toast.success(okMessage);
+    } catch (err) {
+      toast.error(err.message || "Template update failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-xs font-medium uppercase tracking-widest text-neutral-500">
+            Template
+          </h3>
+          <p className="mt-1 text-sm text-neutral-500">
+            Previewed with your actual resume — the one you pick styles every
+            PDF download, tailored versions included.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => post({ recommend: true }, "Top 3 templates picked for your profile")}
+          disabled={busy}
+          className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+        >
+          <Sparkles size={13} strokeWidth={1.5} aria-hidden="true" />
+          {picks ? "Re-recommend" : "Recommend 3 for me"}
+        </button>
+      </div>
+
+      <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        {ordered.map((t) => {
+          const reason = reasonById.get(t.id);
+          const isSelected = t.id === selected;
+          return (
+            <li key={t.id}>
+              <button
+                type="button"
+                onClick={() => post({ id: t.id }, `${t.name} will style your PDFs`)}
+                disabled={busy}
+                aria-pressed={isSelected}
+                className="w-full text-left disabled:opacity-60"
+              >
+                <span
+                  className={`block overflow-hidden rounded-xl border-2 transition ${
+                    isSelected
+                      ? "border-black dark:border-white"
+                      : "border-neutral-200 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                  }`}
+                >
+                  <TemplatePreview template={t} markdown={markdown} />
+                </span>
+                <span className="mt-1.5 flex items-center gap-1.5 px-0.5">
+                  <span className="text-xs font-medium">{t.name}</span>
+                  {isSelected && (
+                    <Check size={11} strokeWidth={2.5} aria-hidden="true" />
+                  )}
+                  {reason && (
+                    <span className="ml-auto rounded-full bg-black px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white dark:bg-white dark:text-black">
+                      pick
+                    </span>
+                  )}
+                </span>
+                {reason && (
+                  <span className="mt-0.5 block px-0.5 text-[11px] leading-snug text-neutral-500">
+                    {reason}
+                  </span>
+                )}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

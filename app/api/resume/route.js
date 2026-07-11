@@ -52,5 +52,6 @@ export async function GET() {
     review: db.data.resumeReview ?? null,
     interview: db.data.interview ?? null,
     builtResume: db.data.builtResume ?? null,
+    template: db.data.resumeTemplate ?? null,
   });
 }

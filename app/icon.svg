@@ -1,17 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
   <rect width="320" height="320" rx="56" fill="#000"/>
-  <g transform="translate(-26,23)" fill="#fff">
-    <rect x="136" y="46" width="40" height="40"/>
-    <rect x="182" y="46" width="40" height="40"/>
-    <rect x="248" y="12" width="40" height="40"/>
-    <rect x="226" y="88" width="40" height="40"/>
-    <rect x="230" y="134" width="40" height="40"/>
-    <rect x="242" y="208" width="40" height="40"/>
-    <rect x="196" y="208" width="40" height="40"/>
-    <rect x="148" y="182" width="40" height="40"/>
-    <rect x="100" y="176" width="40" height="40"/>
-    <rect x="88" y="222" width="40" height="40"/>
-    <rect x="84" y="130" width="40" height="40"/>
-    <rect x="96" y="84" width="40" height="40"/>
+  <g transform="translate(160,160) scale(2.4) translate(-50,-53)">
+    <path d="M 22,5 L 78,5 L 95,20 L 95,58 L 50,101 L 5,58 L 5,20 Z" fill="#fff"/>
+    <path d="M 30,24 L 70,24 L 58,39 L 45,39 L 45,54 L 30,70 Z" fill="#000"/>
+    <path d="M 70,78 L 30,78 L 42,63 L 55,63 L 55,48 L 70,32 Z" fill="#000"/>
   </g>
 </svg>

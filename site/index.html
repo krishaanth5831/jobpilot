@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jobpilot — apply where you qualify</title>
+<meta name="description" content="An AI job application copilot: honest screening against your real resume, drafted applications, gap roadmaps, and a resume studio. Runs locally with your own API keys.">
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320"><rect width="320" height="320" rx="56" fill="black"/><g transform="translate(160,160) scale(2.4) translate(-50,-53)"><path d="M 22,5 L 78,5 L 95,20 L 95,58 L 50,101 L 5,58 L 5,20 Z" fill="white"/><path d="M 30,24 L 70,24 L 58,39 L 45,39 L 45,54 L 30,70 Z" fill="black"/><path d="M 70,78 L 30,78 L 42,63 L 55,63 L 55,48 L 70,32 Z" fill="black"/></g></svg>'>
+<style>
+  :root { --bg:#ffffff; --fg:#000000; --muted:#737373; --line:#e5e5e5; --card:#fafafa; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#000000; --fg:#ffffff; --muted:#a3a3a3; --line:#262626; --card:#0a0a0a; }
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font:16px/1.6 ui-sans-serif,-apple-system,"Helvetica Neue",Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+  header { display:flex; align-items:center; gap:12px; padding:28px 0; }
+  header .name { font-weight:600; font-size:18px; letter-spacing:-0.01em; }
+  .logo { color:var(--fg); }
+  .logo .cut { fill:var(--bg); }
+  .hero { padding:72px 0 88px; }
+  h1 { font-size:clamp(42px,7vw,76px); font-weight:700; letter-spacing:-0.03em; line-height:1.05; }
+  .sub { margin-top:20px; max-width:560px; color:var(--muted); font-size:19px; }
+  .cta { margin-top:36px; display:flex; gap:14px; flex-wrap:wrap; }
+  .btn { display:inline-block; padding:13px 26px; border-radius:12px; font-weight:500; text-decoration:none; transition:opacity .15s,border-color .15s; }
+  .btn.primary { background:var(--fg); color:var(--bg); }
+  .btn.primary:hover { opacity:.85; }
+  .btn.ghost { border:1px solid var(--line); color:var(--fg); }
+  .btn.ghost:hover { border-color:var(--muted); }
+  .badge { display:inline-block; margin-bottom:22px; border:1px solid var(--line); border-radius:999px; padding:5px 14px; font-size:13px; color:var(--muted); }
+  section { padding:72px 0; border-top:1px solid var(--line); }
+  h2 { font-size:clamp(26px,4vw,36px); font-weight:600; letter-spacing:-0.02em; }
+  .lead { margin-top:10px; max-width:560px; color:var(--muted); }
+  .grid { margin-top:36px; display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); }
+  .card { border:1px solid var(--line); background:var(--card); border-radius:16px; padding:22px; }
+  .card .num { font-family:ui-monospace,monospace; font-size:12px; color:var(--muted); }
+  .card h3 { margin-top:6px; font-size:17px; font-weight:600; }
+  .card p { margin-top:8px; font-size:14px; color:var(--muted); }
+  .score { display:flex; gap:40px; flex-wrap:wrap; margin-top:32px; }
+  .score ol { list-style:none; flex:1; min-width:280px; display:flex; flex-direction:column; gap:18px; }
+  .score li strong { display:block; }
+  .score li span { color:var(--muted); font-size:14px; }
+  pre { margin-top:24px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 24px; overflow-x:auto; font:13.5px/1.8 ui-monospace,monospace; color:var(--fg); }
+  pre .c { color:var(--muted); }
+  .keys { margin-top:18px; font-size:14px; color:var(--muted); max-width:640px; }
+  .keys a { color:var(--fg); }
+  footer { border-top:1px solid var(--line); padding:36px 0 64px; color:var(--muted); font-size:14px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  footer a { color:var(--fg); text-decoration:none; }
+  footer a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg class="logo" viewBox="0 0 100 106" width="34" height="36" role="img" aria-label="jobpilot logo">
+      <path d="M 22,5 L 78,5 L 95,20 L 95,58 L 50,101 L 5,58 L 5,20 Z" fill="currentColor"/>
+      <path class="cut" d="M 30,24 L 70,24 L 58,39 L 45,39 L 45,54 L 30,70 Z"/>
+      <path class="cut" d="M 70,78 L 30,78 L 42,63 L 55,63 L 55,48 L 70,32 Z"/>
+    </svg>
+    <span class="name">jobpilot</span>
+  </header>
+
+  <div class="hero">
+    <span class="badge">Early access — runs on your machine, with your keys</span>
+    <h1>Apply where<br>you qualify.</h1>
+    <p class="sub">An AI job application copilot. It screens every posting against what's actually on your resume, drafts the applications you qualify for, and hands you a concrete roadmap for the ones you don't — yet.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/krishaanth5831/jobpilot">Get the code on GitHub</a>
+      <a class="btn ghost" href="#run">Run it locally</a>
+    </div>
+  </div>
+
+  <section>
+    <h2>Four steps, no wasted applications</h2>
+    <div class="grid">
+      <div class="card"><span class="num">01</span><h3>Upload</h3><p>Drop in your resume. Claude reads it and builds your structured candidate profile — nothing invented.</p></div>
+      <div class="card"><span class="num">02</span><h3>Match</h3><p>Six sources at once: job boards, company career pages, and community GitHub lists. Every posting screened against your actual experience with a 0–100 score.</p></div>
+      <div class="card"><span class="num">03</span><h3>Apply</h3><p>Qualified? A tailored cover letter and a per-job tailored resume PDF are drafted for your review. You always hit send.</p></div>
+      <div class="card"><span class="num">04</span><h3>Roadmap</h3><p>Not qualified yet? Get a concrete plan to close the gap — then re-screen and watch the score move.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The whole application, covered</h2>
+    <p class="lead">Search is just the start — everything from the first resume review to the offer lives in one loop, and each win makes the next application stronger.</p>
+    <div class="grid">
+      <div class="card"><h3>Resume studio</h3><p>A blunt review with concrete fixes, a grill-me interview that digs out what you left unsaid, and a rebuild that never invents.</p></div>
+      <div class="card"><h3>10 resume templates</h3><p>Live previews built from your actual resume, with the top 3 recommended for your profile. Downloads as a typeset PDF.</p></div>
+      <div class="card"><h3>Recommendations</h3><p>Roles, internships, and programs you actually qualify for — anchored to your field, never generic drift.</p></div>
+      <div class="card"><h3>Paste any job</h3><p>Found a posting anywhere? Paste it in and it runs the same screen-and-draft pipeline.</p></div>
+      <div class="card"><h3>Tracker &amp; follow-ups</h3><p>Submitted → interviewing → offer. Gone quiet for ten days? A polite follow-up note is one click away.</p></div>
+      <div class="card"><h3>Your funnel, measured</h3><p>Qualification rate, response rate, match scores over time — proof the work is working.</p></div>
+      <div class="card"><h3>Wins teach the next one</h3><p>Every hire is distilled into lessons that sharpen future reviews, rebuilds, and cover letters.</p></div>
+      <div class="card"><h3>Settings, not config files</h3><p>Paste your API keys in the UI once — no editing env files, changes apply instantly.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>An honest 0–100, not keyword bingo</h2>
+    <div class="score">
+      <ol>
+        <li><strong>Only what's on the page.</strong><span>Claude judges from what's actually written on your resume — it never assumes skills you didn't list.</span></li>
+        <li><strong>Must-haves vs nice-to-haves.</strong><span>Every requirement is marked met or missing. Qualified means every must-have is met; the score says how comfortably.</span></li>
+        <li><strong>The verdict, with receipts.</strong><span>What matched, what's missing, and why — and the missing list feeds straight into your roadmap.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="run">
+    <h2>Run it locally</h2>
+    <p class="lead">jobpilot is a Next.js app with a local store — your resume, your keys, and your data never leave your machine.</p>
+    <pre><span class="c"># 1. Grab it</span>
+git clone https://github.com/krishaanth5831/jobpilot.git
+cd jobpilot &amp;&amp; npm install
+
+<span class="c"># 2. Start it</span>
+npm run dev
+
+<span class="c"># 3. Open http://localhost:3000/settings and paste your keys</span></pre>
+    <p class="keys">You'll need a <a href="https://platform.claude.com">Claude API key</a> (required) and free keys from <a href="https://developer.adzuna.com">Adzuna</a> and <a href="https://rapidapi.com">RapidAPI/JSearch</a> for the widest job coverage — all pasted straight into the Settings page.</p>
+  </section>
+
+  <footer>
+    <span>jobpilot — built with Next.js and the Claude API.</span>
+    <a href="https://github.com/krishaanth5831/jobpilot">github.com/krishaanth5831/jobpilot</a>
+  </footer>
+</div>
+</body>
+</html>

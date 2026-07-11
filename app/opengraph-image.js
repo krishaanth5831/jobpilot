@@ -4,11 +4,10 @@ export const alt = "jobpilot — apply where you qualify";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// The logo's pixel squares (same coordinates as components/logo.js).
-const SQUARES = [
-  [136, 46], [182, 46], [248, 12], [226, 88], [230, 134], [242, 208],
-  [196, 208], [148, 182], [100, 176], [88, 222], [84, 130], [96, 84],
-];
+// The shield mark (same paths as components/logo.js).
+const SHIELD = "M 22,5 L 78,5 L 95,20 L 95,58 L 50,101 L 5,58 L 5,20 Z";
+const HOOK_TOP = "M 30,24 L 70,24 L 58,39 L 45,39 L 45,54 L 30,70 Z";
+const HOOK_BOTTOM = "M 70,78 L 30,78 L 42,63 L 55,63 L 55,48 L 70,32 Z";
 
 export default function Image() {
   return new ImageResponse(
@@ -38,10 +37,10 @@ export default function Image() {
             AI job copilot — honest matches, drafted applications, gap roadmaps.
           </div>
         </div>
-        <svg viewBox="0 0 383 267" width={430} height={300}>
-          {SQUARES.map(([x, y]) => (
-            <rect key={`${x}-${y}`} x={x} y={y} width={40} height={40} fill="#fff" />
-          ))}
+        <svg viewBox="0 0 100 106" width={320} height={339}>
+          <path d={SHIELD} fill="#fff" />
+          <path d={HOOK_TOP} fill="#000" />
+          <path d={HOOK_BOTTOM} fill="#000" />
         </svg>
       </div>
     ),

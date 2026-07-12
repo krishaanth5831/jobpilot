@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { askClaudeText } from "@/lib/claude";
+import { askClaudeText, ConfigError } from "@/lib/claude";
+import { formatInsights } from "@/lib/reviewer";
 import { getDb } from "@/lib/db";
 
 // POST /api/applications — body: { jobId }.
@@ -22,7 +23,7 @@ export async function POST(request) {
     const coverLetter = await askClaudeText({
       system:
         "You write specific, honest cover letters. Ground every claim in the candidate's actual profile — never exaggerate or invent experience. Keep it under 300 words, warm but direct.",
-      prompt: `Candidate profile:\n${JSON.stringify(db.data.profile, null, 2)}\n\nJob:\n${job.title} at ${job.company}\n${job.description}\n\nWrite a tailored cover letter for this application.`,
+      prompt: `Candidate profile:\n${JSON.stringify(db.data.profile, null, 2)}\n\nJob:\n${job.title} at ${job.company}\n${job.description}${formatInsights(db.data.insights)}\n\nWrite a tailored cover letter for this application.`,
     });
 
     const application = {
@@ -38,7 +39,9 @@ export async function POST(request) {
     return NextResponse.json({ application });
   } catch (err) {
     console.error("application draft failed:", err);
-    return NextResponse.json({ error: "Failed to draft application" }, { status: 500 });
+    const message =
+      err instanceof ConfigError ? err.message : "Failed to draft application";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -48,14 +51,34 @@ export async function GET() {
   return NextResponse.json({ applications: db.data.applications });
 }
 
-// PATCH /api/applications — body: { id, status } — mark reviewed/submitted.
+// PATCH /api/applications — body: { id, status?, coverLetter? } —
+// mark reviewed/submitted and/or persist edits to the draft.
 export async function PATCH(request) {
   const db = await getDb();
-  const { id, status } = await request.json();
+  const { id, status, coverLetter } = await request.json();
   const application = db.data.applications.find((a) => a.id === id);
   if (!application) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  application.status = status;
+  if (status !== undefined) {
+    application.status = status;
+    // First transition to submitted starts the follow-up clock.
+    if (status === "submitted" && !application.submittedAt) {
+      application.submittedAt = new Date().toISOString();
+    }
+  }
+  if (coverLetter !== undefined) application.coverLetter = coverLetter;
   await db.write();
   return NextResponse.json({ application });
+}
+
+// DELETE /api/applications — body: { id } — remove an application entirely.
+export async function DELETE(request) {
+  const db = await getDb();
+  const { id } = await request.json();
+  const index = db.data.applications.findIndex((a) => a.id === id);
+  if (index === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  db.data.applications.splice(index, 1);
+  await db.write();
+  return NextResponse.json({ ok: true });
 }

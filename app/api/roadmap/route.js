@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { askClaudeJSON } from "@/lib/claude";
+import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { ROADMAP_SCHEMA } from "@/lib/matcher";
 import { getDb } from "@/lib/db";
 
@@ -33,6 +33,37 @@ export async function POST(request) {
     return NextResponse.json({ roadmap });
   } catch (err) {
     console.error("roadmap generation failed:", err);
-    return NextResponse.json({ error: "Failed to generate roadmap" }, { status: 500 });
+    const message =
+      err instanceof ConfigError ? err.message : "Failed to generate roadmap";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+// PATCH /api/roadmap — body: { jobId, stepIndex, done } — persist a
+// completed-step checkbox on the stored roadmap.
+export async function PATCH(request) {
+  const db = await getDb();
+  const { jobId, stepIndex, done } = await request.json();
+  const job = db.data.jobs.find((j) => j.id === jobId);
+  if (!job?.roadmap?.steps?.[stepIndex]) {
+    return NextResponse.json({ error: "Step not found" }, { status: 404 });
+  }
+
+  job.roadmap.steps[stepIndex].done = Boolean(done);
+  await db.write();
+  return NextResponse.json({ roadmap: job.roadmap });
+}
+
+// DELETE /api/roadmap — body: { jobId } — discard a generated roadmap.
+export async function DELETE(request) {
+  const db = await getDb();
+  const { jobId } = await request.json();
+  const job = db.data.jobs.find((j) => j.id === jobId);
+  if (!job?.roadmap) {
+    return NextResponse.json({ error: "Roadmap not found" }, { status: 404 });
+  }
+
+  delete job.roadmap;
+  await db.write();
+  return NextResponse.json({ ok: true });
 }

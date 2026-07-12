@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { extractResumeText } from "@/lib/resume-parser";
-import { askClaudeJSON } from "@/lib/claude";
+import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { PROFILE_SCHEMA } from "@/lib/matcher";
 import { getDb } from "@/lib/db";
 
@@ -26,17 +26,32 @@ export async function POST(request) {
 
     const db = await getDb();
     db.data.profile = profile;
+    // Keep the raw text — the resume studio (review / grill-me / rebuild)
+    // works from it. A new resume invalidates the old studio artifacts.
+    db.data.resumeText = text;
+    db.data.resumeReview = null;
+    db.data.interview = null;
+    db.data.builtResume = null;
     await db.write();
 
     return NextResponse.json({ profile });
   } catch (err) {
     console.error("resume upload failed:", err);
-    return NextResponse.json({ error: "Failed to process resume" }, { status: 500 });
+    const message =
+      err instanceof ConfigError ? err.message : "Failed to process resume";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-// GET /api/resume — return the stored profile.
+// GET /api/resume — the stored profile plus resume-studio state.
 export async function GET() {
   const db = await getDb();
-  return NextResponse.json({ profile: db.data.profile });
+  return NextResponse.json({
+    profile: db.data.profile,
+    hasResumeText: Boolean(db.data.resumeText),
+    review: db.data.resumeReview ?? null,
+    interview: db.data.interview ?? null,
+    builtResume: db.data.builtResume ?? null,
+    template: db.data.resumeTemplate ?? null,
+  });
 }

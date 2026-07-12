@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { askClaudeJSON } from "@/lib/claude";
+import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { MATCH_SCHEMA, MATCH_SYSTEM_PROMPT, buildMatchPrompt } from "@/lib/matcher";
 import { getDb } from "@/lib/db";
 
@@ -13,27 +13,53 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const targets = body.all
-    ? db.data.jobs.filter((j) => j.match === null)
-    : db.data.jobs.filter((j) => j.id === body.jobId);
+  // Prefer explicit jobIds (the jobs a search just returned) — `all` grows
+  // unbounded with the stored backlog and each job is one Claude call.
+  const targets = Array.isArray(body.jobIds)
+    ? db.data.jobs.filter((j) => body.jobIds.includes(j.id) && j.match === null)
+    : body.all
+      ? db.data.jobs.filter((j) => j.match === null)
+      : db.data.jobs.filter((j) => j.id === body.jobId);
 
   if (targets.length === 0) {
     return NextResponse.json({ error: "No jobs to match" }, { status: 404 });
   }
 
-  try {
-    for (const job of targets) {
-      job.match = await askClaudeJSON({
-        system: MATCH_SYSTEM_PROMPT,
-        prompt: buildMatchPrompt(db.data.profile, job),
-        schema: MATCH_SCHEMA,
-      });
-    }
-    await db.write();
+  // Screen jobs in parallel (bounded so a big batch doesn't trip rate
+  // limits) and keep every success — one failed call must not throw away
+  // the verdicts that already came back.
+  const CONCURRENCY = 6;
+  const matched = [];
+  let firstError = null;
+  let next = 0;
 
-    return NextResponse.json({ matched: targets });
-  } catch (err) {
-    console.error("matching failed:", err);
-    return NextResponse.json({ error: "Matching failed" }, { status: 500 });
+  async function worker() {
+    while (next < targets.length) {
+      const job = targets[next++];
+      try {
+        job.match = await askClaudeJSON({
+          system: MATCH_SYSTEM_PROMPT,
+          prompt: buildMatchPrompt(db.data.profile, job),
+          schema: MATCH_SCHEMA,
+        });
+        job.screened_at = new Date().toISOString();
+        matched.push(job);
+      } catch (err) {
+        console.error(`matching failed for ${job.id}:`, err);
+        firstError ??= err;
+      }
+    }
   }
+  await Promise.all(
+    Array.from({ length: Math.min(CONCURRENCY, targets.length) }, worker)
+  );
+  await db.write();
+
+  if (matched.length === 0 && firstError) {
+    const message =
+      firstError instanceof ConfigError ? firstError.message : "Matching failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  return NextResponse.json({ matched, failed: targets.length - matched.length });
 }

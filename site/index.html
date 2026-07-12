@@ -7,9 +7,9 @@
 <meta name="description" content="An AI job application copilot: honest screening against your real resume, drafted applications, gap roadmaps, and a resume studio. Runs locally with your own API keys.">
 <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320"><rect width="320" height="320" rx="56" fill="black"/><g transform="translate(160,160) scale(2.4) translate(-50,-53)"><path d="M 22,5 L 78,5 L 95,20 L 95,58 L 50,101 L 5,58 L 5,20 Z" fill="white"/><path d="M 30,24 L 70,24 L 58,39 L 45,39 L 45,54 L 30,70 Z" fill="black"/><path d="M 70,78 L 30,78 L 42,63 L 55,63 L 55,48 L 70,32 Z" fill="black"/></g></svg>'>
 <style>
-  :root { --bg:#ffffff; --fg:#000000; --muted:#737373; --line:#e5e5e5; --card:#fafafa; }
+  :root { --bg:#ffffff; --fg:#000000; --muted:#737373; --line:#e5e5e5; --card:#fafafa; --chrome:#181818; }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#000000; --fg:#ffffff; --muted:#a3a3a3; --line:#262626; --card:#0a0a0a; }
+    :root { --bg:#000000; --fg:#ffffff; --muted:#a3a3a3; --line:#262626; --card:#0a0a0a; --chrome:#111111; }
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:var(--bg); color:var(--fg); font:16px/1.6 ui-sans-serif,-apple-system,"Helvetica Neue",Arial,sans-serif; -webkit-font-smoothing:antialiased; }
@@ -18,7 +18,7 @@
   header .name { font-weight:600; font-size:18px; letter-spacing:-0.01em; }
   .logo { color:var(--fg); }
   .logo .cut { fill:var(--bg); }
-  .hero { padding:72px 0 88px; }
+  .hero { padding:64px 0 72px; }
   h1 { font-size:clamp(42px,7vw,76px); font-weight:700; letter-spacing:-0.03em; line-height:1.05; }
   .sub { margin-top:20px; max-width:560px; color:var(--muted); font-size:19px; }
   .cta { margin-top:36px; display:flex; gap:14px; flex-wrap:wrap; }
@@ -30,20 +30,57 @@
   .badge { display:inline-block; margin-bottom:22px; border:1px solid var(--line); border-radius:999px; padding:5px 14px; font-size:13px; color:var(--muted); }
   section { padding:72px 0; border-top:1px solid var(--line); }
   h2 { font-size:clamp(26px,4vw,36px); font-weight:600; letter-spacing:-0.02em; }
-  .lead { margin-top:10px; max-width:560px; color:var(--muted); }
+  .lead { margin-top:10px; max-width:600px; color:var(--muted); }
   .grid { margin-top:36px; display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); }
   .card { border:1px solid var(--line); background:var(--card); border-radius:16px; padding:22px; }
   .card .num { font-family:ui-monospace,monospace; font-size:12px; color:var(--muted); }
   .card h3 { margin-top:6px; font-size:17px; font-weight:600; }
   .card p { margin-top:8px; font-size:14px; color:var(--muted); }
+
+  /* Browser-framed screenshots */
+  .frame { border-radius:14px; overflow:hidden; border:1px solid var(--line); background:var(--chrome); box-shadow:0 24px 60px -30px rgba(0,0,0,.5); }
+  .frame .bar { display:flex; align-items:center; gap:6px; padding:10px 14px; }
+  .frame .dot { width:10px; height:10px; border-radius:50%; background:#3a3a3a; }
+  .frame img { display:block; width:100%; height:auto; }
+
+  /* Cycling deck */
+  .deck { position:relative; margin-top:44px; }
+  .deck .frame { position:relative; }
+  .deck .stack { position:relative; aspect-ratio:1440/1080; }
+  .deck .stack img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top center; opacity:0; transition:opacity .9s ease; }
+  .deck .stack img.on { opacity:1; }
+  .deck .dots { display:flex; justify-content:center; gap:8px; margin-top:16px; }
+  .deck .dots button { width:8px; height:8px; border-radius:50%; border:none; background:var(--line); cursor:pointer; padding:0; }
+  .deck .dots button.on { background:var(--fg); }
+
+  /* Walkthrough */
+  .step { display:grid; grid-template-columns:1fr 1.35fr; gap:40px; align-items:center; margin-top:64px; }
+  .step:nth-child(even) { grid-template-columns:1.35fr 1fr; }
+  .step:nth-child(even) .copy { order:2; }
+  .step .num { font-family:ui-monospace,monospace; font-size:13px; color:var(--muted); }
+  .step h3 { margin-top:6px; font-size:22px; font-weight:600; letter-spacing:-0.01em; }
+  .step p { margin-top:10px; font-size:15px; color:var(--muted); }
+  .step p b { color:var(--fg); font-weight:600; }
+  @media (max-width:760px) { .step, .step:nth-child(even) { grid-template-columns:1fr; } .step:nth-child(even) .copy { order:0; } }
+
+  /* Scroll reveal — only ever hidden when JS is running (progressive enhancement) */
+  .js .reveal { opacity:0; transform:translateY(22px); transition:opacity .6s ease, transform .6s ease; }
+  .js .reveal.in { opacity:1; transform:none; }
+  @media (prefers-reduced-motion: reduce) { .js .reveal { opacity:1; transform:none; transition:none; } }
+
+  /* Setup */
+  .faq { margin-top:28px; border:1px solid var(--line); border-left:3px solid var(--fg); background:var(--card); border-radius:12px; padding:18px 22px; max-width:720px; }
+  .faq b { font-weight:600; }
+  .os { margin-top:24px; display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; overflow-x:auto; font:13px/1.8 ui-monospace,monospace; color:var(--fg); margin-top:12px; }
+  pre .c { color:var(--muted); }
+  .bigpre { margin-top:24px; padding:20px 24px; border-radius:14px; font-size:13.5px; }
+  .keys { margin-top:18px; font-size:14px; color:var(--muted); max-width:680px; }
+  .keys a, .faq a { color:var(--fg); }
   .score { display:flex; gap:40px; flex-wrap:wrap; margin-top:32px; }
   .score ol { list-style:none; flex:1; min-width:280px; display:flex; flex-direction:column; gap:18px; }
   .score li strong { display:block; }
   .score li span { color:var(--muted); font-size:14px; }
-  pre { margin-top:24px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 24px; overflow-x:auto; font:13.5px/1.8 ui-monospace,monospace; color:var(--fg); }
-  pre .c { color:var(--muted); }
-  .keys { margin-top:18px; font-size:14px; color:var(--muted); max-width:640px; }
-  .keys a { color:var(--fg); }
   footer { border-top:1px solid var(--line); padding:36px 0 64px; color:var(--muted); font-size:14px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
   footer a { color:var(--fg); text-decoration:none; }
   footer a:hover { text-decoration:underline; }
@@ -66,38 +103,85 @@
     <p class="sub">An AI job application copilot. It screens every posting against what's actually on your resume, drafts the applications you qualify for, and hands you a concrete roadmap for the ones you don't — yet.</p>
     <div class="cta">
       <a class="btn primary" href="https://github.com/krishaanth5831/jobpilot">Get the code on GitHub</a>
-      <a class="btn ghost" href="#run">Run it locally</a>
+      <a class="btn ghost" href="#how">See how it works</a>
+    </div>
+
+    <div class="deck reveal" aria-label="jobpilot screenshots">
+      <div class="frame">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="stack">
+          <img class="on" src="screenshots/jobs.png" alt="jobpilot jobs page: search results with Qualified verdicts and 0–100 scores">
+          <img src="screenshots/studio.png" alt="jobpilot resume studio: blunt review with a score and per-issue fixes">
+          <img src="screenshots/stats.png" alt="jobpilot stats page: funnel bars and match-score trend">
+          <img src="screenshots/home.png" alt="jobpilot landing page">
+        </div>
+      </div>
+      <div class="dots" role="tablist" aria-label="screenshot selector"></div>
     </div>
   </div>
 
-  <section>
-    <h2>Four steps, no wasted applications</h2>
-    <div class="grid">
-      <div class="card"><span class="num">01</span><h3>Upload</h3><p>Drop in your resume. Claude reads it and builds your structured candidate profile — nothing invented.</p></div>
-      <div class="card"><span class="num">02</span><h3>Match</h3><p>Six sources at once: job boards, company career pages, and community GitHub lists. Every posting screened against your actual experience with a 0–100 score.</p></div>
-      <div class="card"><span class="num">03</span><h3>Apply</h3><p>Qualified? A tailored cover letter and a per-job tailored resume PDF are drafted for your review. You always hit send.</p></div>
-      <div class="card"><span class="num">04</span><h3>Roadmap</h3><p>Not qualified yet? Get a concrete plan to close the gap — then re-screen and watch the score move.</p></div>
+  <section id="how">
+    <h2 class="reveal">How to use it, start to finish</h2>
+    <p class="lead reveal">Real screenshots from a live run (demo data). Six steps from a blank install to a tracked application.</p>
+
+    <div class="step reveal">
+      <div class="copy">
+        <span class="num">STEP 1</span>
+        <h3>Paste your API keys</h3>
+        <p>Open <b>Settings</b> and paste your keys — <b>Claude</b> (required, powers everything AI), plus free <b>Adzuna</b> and <b>RapidAPI/JSearch</b> keys for the widest job coverage. They're saved to a gitignored file on your machine and apply instantly. No config files, no restarts.</p>
+      </div>
+      <div class="frame"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><img loading="lazy" src="screenshots/settings.png" alt="Settings page with fields for Claude, Adzuna and RapidAPI keys"></div>
+    </div>
+
+    <div class="step reveal">
+      <div class="copy">
+        <span class="num">STEP 2</span>
+        <h3>Upload your resume</h3>
+        <p>Drop in a PDF. Claude extracts a structured profile — skills, experience, projects, education — and shows you exactly what it read. <b>Nothing is invented</b>: if it's not on your resume, it's not in your profile.</p>
+      </div>
+      <div class="frame"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><img loading="lazy" src="screenshots/upload.png" alt="Upload page showing the extracted candidate profile"></div>
+    </div>
+
+    <div class="step reveal">
+      <div class="copy">
+        <span class="num">STEP 3</span>
+        <h3>Sharpen it in the Resume studio</h3>
+        <p>Get a blunt review where <b>every issue comes with a concrete fix</b>, answer the grill-me interview that digs out what you left unsaid, then rebuild — with 10 typeset PDF templates, previewed with your actual content, and the top 3 recommended for your profile.</p>
+      </div>
+      <div class="frame"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><img loading="lazy" src="screenshots/studio.png" alt="Resume studio review with score and per-issue fixes"></div>
+    </div>
+
+    <div class="step reveal">
+      <div class="copy">
+        <span class="num">STEP 4</span>
+        <h3>Search — or let it recommend</h3>
+        <p>One search hits <b>six sources</b>: Adzuna, Greenhouse and Lever company boards, LinkedIn/Indeed/Glassdoor via JSearch, Remotive, and community GitHub lists — deduped, location-strict, and <b>screened against your resume</b> with an honest 0–100 verdict. Or press "Recommend for me" for searches anchored to your actual field.</p>
+      </div>
+      <div class="frame"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><img loading="lazy" src="screenshots/jobs.png" alt="Jobs page with qualified verdicts, scores and filters"></div>
+    </div>
+
+    <div class="step reveal">
+      <div class="copy">
+        <span class="num">STEP 5</span>
+        <h3>Draft, tailor, apply, track</h3>
+        <p>Qualified jobs get a <b>drafted cover letter</b> and a <b>per-job tailored resume PDF</b> — you review and hit send yourself, always. Then track each application through interviewing to an offer; anything quiet for ten days gets a drafted follow-up note.</p>
+      </div>
+      <div class="frame"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><img loading="lazy" src="screenshots/queue.png" alt="Queue page with application tracker stages"></div>
+    </div>
+
+    <div class="step reveal">
+      <div class="copy">
+        <span class="num">STEP 6</span>
+        <h3>Watch the funnel move</h3>
+        <p>Stats shows your whole pipeline — qualification rate, response rate, match scores over time. Close roadmap gaps, re-screen, and watch the line climb. And every win gets distilled into <b>lessons that sharpen your next application</b>.</p>
+      </div>
+      <div class="frame"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><img loading="lazy" src="screenshots/stats.png" alt="Stats page with funnel and score trend"></div>
     </div>
   </section>
 
   <section>
-    <h2>The whole application, covered</h2>
-    <p class="lead">Search is just the start — everything from the first resume review to the offer lives in one loop, and each win makes the next application stronger.</p>
-    <div class="grid">
-      <div class="card"><h3>Resume studio</h3><p>A blunt review with concrete fixes, a grill-me interview that digs out what you left unsaid, and a rebuild that never invents.</p></div>
-      <div class="card"><h3>10 resume templates</h3><p>Live previews built from your actual resume, with the top 3 recommended for your profile. Downloads as a typeset PDF.</p></div>
-      <div class="card"><h3>Recommendations</h3><p>Roles, internships, and programs you actually qualify for — anchored to your field, never generic drift.</p></div>
-      <div class="card"><h3>Paste any job</h3><p>Found a posting anywhere? Paste it in and it runs the same screen-and-draft pipeline.</p></div>
-      <div class="card"><h3>Tracker &amp; follow-ups</h3><p>Submitted → interviewing → offer. Gone quiet for ten days? A polite follow-up note is one click away.</p></div>
-      <div class="card"><h3>Your funnel, measured</h3><p>Qualification rate, response rate, match scores over time — proof the work is working.</p></div>
-      <div class="card"><h3>Wins teach the next one</h3><p>Every hire is distilled into lessons that sharpen future reviews, rebuilds, and cover letters.</p></div>
-      <div class="card"><h3>Settings, not config files</h3><p>Paste your API keys in the UI once — no editing env files, changes apply instantly.</p></div>
-    </div>
-  </section>
-
-  <section>
-    <h2>An honest 0–100, not keyword bingo</h2>
-    <div class="score">
+    <h2 class="reveal">An honest 0–100, not keyword bingo</h2>
+    <div class="score reveal">
       <ol>
         <li><strong>Only what's on the page.</strong><span>Claude judges from what's actually written on your resume — it never assumes skills you didn't list.</span></li>
         <li><strong>Must-haves vs nice-to-haves.</strong><span>Every requirement is marked met or missing. Qualified means every must-have is met; the score says how comfortably.</span></li>
@@ -106,18 +190,56 @@
     </div>
   </section>
 
+  <section id="setup">
+    <h2 class="reveal">Before you start: what you need</h2>
+    <p class="lead reveal">Two tools, both free: <b>Node.js</b> (version 20 or newer) and <b>git</b>. That's it.</p>
+
+    <div class="faq reveal">
+      <b>Do I need to install Next.js?</b> No. Next.js is just one of the project's dependencies — <code>npm install</code> downloads it (and everything else) automatically. You only install Node.js; npm comes bundled with it.
+    </div>
+
+    <div class="os">
+      <div class="card reveal">
+        <h3>macOS</h3>
+        <p>With <a style="color:var(--fg)" href="https://brew.sh">Homebrew</a>, or download the installer from <a style="color:var(--fg)" href="https://nodejs.org">nodejs.org</a>.</p>
+        <pre>brew install node git
+
+<span class="c"># verify</span>
+node -v   <span class="c"># v20 or newer</span></pre>
+      </div>
+      <div class="card reveal">
+        <h3>Windows</h3>
+        <p>With winget (built into Windows 10/11), or the installer from <a style="color:var(--fg)" href="https://nodejs.org">nodejs.org</a>.</p>
+        <pre>winget install OpenJS.NodeJS.LTS
+winget install Git.Git
+
+<span class="c"># verify (new terminal)</span>
+node -v</pre>
+      </div>
+      <div class="card reveal">
+        <h3>Linux</h3>
+        <p>Via your package manager, or <a style="color:var(--fg)" href="https://github.com/nvm-sh/nvm">nvm</a> if your distro ships an old Node.</p>
+        <pre>sudo apt install nodejs npm git
+
+<span class="c"># verify</span>
+node -v   <span class="c"># v20 or newer</span></pre>
+      </div>
+    </div>
+  </section>
+
   <section id="run">
-    <h2>Run it locally</h2>
-    <p class="lead">jobpilot is a Next.js app with a local store — your resume, your keys, and your data never leave your machine.</p>
-    <pre><span class="c"># 1. Grab it</span>
+    <h2 class="reveal">Run it locally</h2>
+    <p class="lead reveal">jobpilot is a local app — your resume, your keys, and your data never leave your machine.</p>
+    <pre class="bigpre reveal"><span class="c"># 1. Grab it</span>
 git clone https://github.com/krishaanth5831/jobpilot.git
-cd jobpilot &amp;&amp; npm install
+cd jobpilot
+npm install   <span class="c"># installs Next.js and everything else automatically</span>
 
 <span class="c"># 2. Start it</span>
 npm run dev
 
-<span class="c"># 3. Open http://localhost:3000/settings and paste your keys</span></pre>
-    <p class="keys">You'll need a <a href="https://platform.claude.com">Claude API key</a> (required) and free keys from <a href="https://developer.adzuna.com">Adzuna</a> and <a href="https://rapidapi.com">RapidAPI/JSearch</a> for the widest job coverage — all pasted straight into the Settings page.</p>
+<span class="c"># 3. Open http://localhost:3000/settings and paste your keys (Step 1 above)</span></pre>
+    <p class="keys reveal">Get your keys: <a href="https://platform.claude.com">Claude API</a> (required) · <a href="https://developer.adzuna.com">Adzuna</a> (free) · <a href="https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch">JSearch on RapidAPI</a> (free tier) — each takes a couple of minutes and pastes straight into the Settings page.</p>
   </section>
 
   <footer>
@@ -125,5 +247,41 @@ npm run dev
     <a href="https://github.com/krishaanth5831/jobpilot">github.com/krishaanth5831/jobpilot</a>
   </footer>
 </div>
+
+<script>
+  document.body.classList.add("js");
+
+  // Scroll-reveal
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+  }, { threshold: 0.12 });
+  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+
+  // Screenshot deck: crossfade every 4.5s, dot navigation, reduced-motion aware
+  const slides = [...document.querySelectorAll(".deck .stack img")];
+  const dotsBox = document.querySelector(".deck .dots");
+  let current = 0, timer = null;
+  const show = (n) => {
+    slides[current].classList.remove("on");
+    dotsBox.children[current]?.classList.remove("on");
+    current = n % slides.length;
+    slides[current].classList.add("on");
+    dotsBox.children[current]?.classList.add("on");
+  };
+  slides.forEach((_, n) => {
+    const b = document.createElement("button");
+    b.setAttribute("aria-label", "screenshot " + (n + 1));
+    if (n === 0) b.classList.add("on");
+    b.addEventListener("click", () => { show(n); restart(); });
+    dotsBox.appendChild(b);
+  });
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const restart = () => {
+    if (reduced) return;
+    clearInterval(timer);
+    timer = setInterval(() => show(current + 1), 4500);
+  };
+  restart();
+</script>
 </body>
 </html>

@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useInView } from "motion/react";
+import { motion, useInView, useReducedMotion } from "motion/react";
 
-// Animates children once when they scroll into view.
+// Animates children once when they scroll into view. With reduced motion,
+// content renders in its final state immediately — never hidden.
 export function InView({
   children,
   variants = {
@@ -17,13 +18,14 @@ export function InView({
 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, viewOptions);
+  const reduced = useReducedMotion();
   const MotionTag = motion[as] ?? motion.div;
 
   return (
     <MotionTag
       ref={ref}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
+      initial={reduced ? false : "hidden"}
+      animate={reduced || isInView ? "visible" : "hidden"}
       variants={variants}
       transition={transition}
       className={className}

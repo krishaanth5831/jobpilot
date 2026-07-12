@@ -60,7 +60,7 @@ const steps = [
   {
     Icon: SearchCheck,
     title: "Match",
-    description: "Six sources at once — job boards, company career pages, community GitHub lists. Every posting screened against your actual experience.",
+    description: "LinkedIn, Indeed, and Glassdoor via Google's job index, plus Adzuna — worldwide coverage, every posting screened against your actual experience.",
   },
   {
     Icon: Send,

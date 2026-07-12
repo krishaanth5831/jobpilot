@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { extractResumeText } from "@/lib/resume-parser";
 import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { PROFILE_SCHEMA } from "@/lib/matcher";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/resume — multipart form with a "resume" PDF file.
 // Parses the PDF, has Claude extract a structured profile, stores it.
 export async function POST(request) {
+  // Auth check FIRST — never spend a Claude call on an unauthenticated request.
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+
   try {
     const formData = await request.formData();
     const file = formData.get("resume");
@@ -24,14 +28,13 @@ export async function POST(request) {
       schema: PROFILE_SCHEMA,
     });
 
-    const db = await getDb();
-    db.data.profile = profile;
+    data.profile = profile;
     // Keep the raw text — the resume studio (review / grill-me / rebuild)
     // works from it. A new resume invalidates the old studio artifacts.
-    db.data.resumeText = text;
-    db.data.resumeReview = null;
-    db.data.interview = null;
-    db.data.builtResume = null;
+    data.resumeText = text;
+    data.resumeReview = null;
+    data.interview = null;
+    data.builtResume = null;
     await db.write();
 
     return NextResponse.json({ profile });
@@ -45,13 +48,14 @@ export async function POST(request) {
 
 // GET /api/resume — the stored profile plus resume-studio state.
 export async function GET() {
-  const db = await getDb();
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   return NextResponse.json({
-    profile: db.data.profile,
-    hasResumeText: Boolean(db.data.resumeText),
-    review: db.data.resumeReview ?? null,
-    interview: db.data.interview ?? null,
-    builtResume: db.data.builtResume ?? null,
-    template: db.data.resumeTemplate ?? null,
+    profile: data.profile,
+    hasResumeText: Boolean(data.resumeText),
+    review: data.resumeReview ?? null,
+    interview: data.interview ?? null,
+    builtResume: data.builtResume ?? null,
+    template: data.resumeTemplate ?? null,
   });
 }

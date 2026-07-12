@@ -34,6 +34,22 @@ const GROUPS = [
     linkLabel: "rapidapi.com → JSearch",
     fields: [{ key: "RAPIDAPI_KEY", label: "RapidAPI key", secret: true }],
   },
+  {
+    title: "Accounts (optional)",
+    description:
+      "Let people sign in with Google, GitHub, or Microsoft and keep their own data. All free to set up. Restart the server after saving these.",
+    href: "https://authjs.dev/getting-started/authentication/oauth",
+    linkLabel: "authjs.dev setup guide",
+    fields: [
+      { key: "AUTH_SECRET", label: "Auth secret (run: npx auth secret)", secret: true },
+      { key: "AUTH_GOOGLE_ID", label: "Google client ID", secret: true },
+      { key: "AUTH_GOOGLE_SECRET", label: "Google client secret", secret: true },
+      { key: "AUTH_GITHUB_ID", label: "GitHub client ID", secret: true },
+      { key: "AUTH_GITHUB_SECRET", label: "GitHub client secret", secret: true },
+      { key: "AUTH_MICROSOFT_ENTRA_ID_ID", label: "Microsoft client ID", secret: true },
+      { key: "AUTH_MICROSOFT_ENTRA_ID_SECRET", label: "Microsoft client secret", secret: true },
+    ],
+  },
 ];
 
 export default function SettingsPage() {

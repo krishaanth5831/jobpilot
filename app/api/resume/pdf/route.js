@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { resumeMarkdownToPdf } from "@/lib/resume-pdf";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // GET /api/resume/pdf — the rebuilt resume typeset as a downloadable PDF.
 // With ?jobId=…, serves the resume tailored to that job instead.
 export async function GET(request) {
-  const db = await getDb();
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   const jobId = new URL(request.url).searchParams.get("jobId");
-  const source = jobId ? db.data.tailoredResumes?.[jobId] : db.data.builtResume;
+  const source = jobId ? data.tailoredResumes?.[jobId] : data.builtResume;
   if (!source?.markdown) {
     return NextResponse.json(
       {
@@ -23,7 +24,7 @@ export async function GET(request) {
     // Every PDF (rebuilt or tailored) uses the template chosen in the studio.
     const pdf = await resumeMarkdownToPdf(
       source.markdown,
-      db.data.resumeTemplate?.selected
+      data.resumeTemplate?.selected
     );
     return new NextResponse(pdf, {
       headers: {

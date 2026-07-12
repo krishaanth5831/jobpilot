@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { searchJobs } from "@/lib/job-sources";
 import { fuzzyJobKey } from "@/lib/job-sources/dedupe";
 import { ConfigError } from "@/lib/claude";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // GET /api/jobs/search?role=software+engineer+intern&location=remote
 // Fetches jobs from the configured job boards and stores them (unmatched).
@@ -17,12 +17,13 @@ export async function GET(request) {
   try {
     let jobs = await searchJobs({ role, location });
 
-    const db = await getDb();
+    const { db, data } = await getUserData();
+    if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
     // A job already stored under another board's id (fuzzy company+title
     // match) is the same job — swap in the stored one, keeping its verdict
     // instead of paying to screen a duplicate.
     const storedByKey = new Map();
-    for (const j of db.data.jobs) {
+    for (const j of data.jobs) {
       const key = fuzzyJobKey(j);
       if (key && !storedByKey.has(key)) storedByKey.set(key, j);
     }
@@ -33,13 +34,13 @@ export async function GET(request) {
     // Two incoming jobs can collapse onto one stored job — dedupe by id.
     jobs = [...new Map(jobs.map((j) => [j.id, j])).values()];
 
-    const known = new Set(db.data.jobs.map((j) => j.id));
+    const known = new Set(data.jobs.map((j) => j.id));
     for (const job of jobs) {
-      if (!known.has(job.id)) db.data.jobs.push({ ...job, match: null });
+      if (!known.has(job.id)) data.jobs.push({ ...job, match: null });
     }
     // Remember which jobs this search returned — the jobs and roadmap pages
     // show only the latest search instead of the whole stored backlog.
-    db.data.lastSearch = {
+    data.lastSearch = {
       role,
       location,
       at: new Date().toISOString(),
@@ -48,7 +49,7 @@ export async function GET(request) {
     await db.write();
 
     // Return the stored versions so already-screened jobs keep their match.
-    const stored = new Map(db.data.jobs.map((j) => [j.id, j]));
+    const stored = new Map(data.jobs.map((j) => [j.id, j]));
     return NextResponse.json({ jobs: jobs.map((j) => stored.get(j.id) ?? j) });
   } catch (err) {
     console.error("job search failed:", err);

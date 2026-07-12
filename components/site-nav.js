@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Upload, FileText, Search, Inbox, Map, ChartNoAxesColumn, KeyRound } from "lucide-react";
 import { Dock, DockItem } from "@/components/motion-primitives/dock";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserMenu } from "@/components/user-menu";
 import { Logo } from "@/components/logo";
 
 const LogoIcon = ({ size, strokeWidth, ...props }) => (
@@ -23,7 +24,9 @@ const items = [
 ];
 
 // Floating macOS-style dock, bottom-center on every page.
-export function SiteNav() {
+// `authEnabled` comes from the server layout: the account button only
+// exists when OAuth providers are configured.
+export function SiteNav({ authEnabled = false }) {
   const pathname = usePathname();
 
   return (
@@ -53,6 +56,11 @@ export function SiteNav() {
         <DockItem>
           <ThemeToggle className="flex h-full w-full items-center justify-center rounded-xl border border-transparent transition hover:bg-neutral-100 dark:hover:bg-neutral-900" />
         </DockItem>
+        {authEnabled && (
+          <DockItem>
+            <UserMenu />
+          </DockItem>
+        )}
       </Dock>
     </div>
   );

@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import { cleanDescription } from "@/lib/job-sources/clean";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // GET /api/jobs — all stored jobs (with any match verdicts), plus the ids
 // the latest search returned so pages can scope to it. Older jobs stay
 // stored because applications and roadmaps reference them.
 export async function GET() {
-  const db = await getDb();
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   return NextResponse.json({
-    jobs: db.data.jobs,
-    lastSearchIds: db.data.lastSearch?.jobIds ?? null,
-    tailoredJobIds: Object.keys(db.data.tailoredResumes ?? {}),
+    jobs: data.jobs,
+    lastSearchIds: data.lastSearch?.jobIds ?? null,
+    tailoredJobIds: Object.keys(data.tailoredResumes ?? {}),
   });
 }
 
@@ -26,7 +27,8 @@ export async function POST(request) {
     );
   }
 
-  const db = await getDb();
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   const job = {
     id: `pasted:${Date.now()}`,
     source: "pasted",
@@ -39,10 +41,10 @@ export async function POST(request) {
     posted_at: new Date().toISOString(),
     match: null,
   };
-  db.data.jobs.push(job);
+  data.jobs.push(job);
   // Pasted jobs join the current working set so they show up on the page.
-  if (db.data.lastSearch) db.data.lastSearch.jobIds.push(job.id);
-  else db.data.lastSearch = { role: "(pasted)", location: "", at: job.posted_at, jobIds: [job.id] };
+  if (data.lastSearch) data.lastSearch.jobIds.push(job.id);
+  else data.lastSearch = { role: "(pasted)", location: "", at: job.posted_at, jobIds: [job.id] };
   await db.write();
 
   return NextResponse.json({ job });

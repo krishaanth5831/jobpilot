@@ -6,7 +6,7 @@ import {
   MAX_INTERVIEW_QUESTIONS,
   buildInterviewPrompt,
 } from "@/lib/reviewer";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // The grill-me interview: Claude asks one pointed question at a time to
 // extract resume-worthy material the resume leaves out. State lives in the
@@ -16,16 +16,17 @@ import { getDb } from "@/lib/db";
 // { answer } to answer the pending question, { finish: true } to stop early,
 // { restart: true } to throw the transcript away and start over.
 export async function POST(request) {
-  const db = await getDb();
-  if (!db.data.profile || !db.data.resumeText) {
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  if (!data.profile || !data.resumeText) {
     return NextResponse.json({ error: "Upload a resume first" }, { status: 400 });
   }
 
   const body = await request.json().catch(() => ({}));
   let interview =
-    body.restart || !db.data.interview
+    body.restart || !data.interview
       ? { questions: [], done: false }
-      : db.data.interview;
+      : data.interview;
 
   const pending = interview.questions.find((q) => q.answer === null);
   if (typeof body.answer === "string" && pending) {
@@ -43,11 +44,11 @@ export async function POST(request) {
       const next = await askClaudeJSON({
         system: INTERVIEW_SYSTEM_PROMPT,
         prompt: buildInterviewPrompt(
-          db.data.profile,
-          db.data.resumeText,
+          data.profile,
+          data.resumeText,
           interview,
-          db.data.insights,
-          db.data.resumeReview
+          data.insights,
+          data.resumeReview
         ),
         schema: INTERVIEW_SCHEMA,
       });
@@ -55,7 +56,7 @@ export async function POST(request) {
       else interview.questions.push({ question: next.question, focus: next.focus, answer: null });
     }
 
-    db.data.interview = interview;
+    data.interview = interview;
     await db.write();
     return NextResponse.json({ interview });
   } catch (err) {

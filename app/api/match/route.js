@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { MATCH_SCHEMA, MATCH_SYSTEM_PROMPT, buildMatchPrompt } from "@/lib/matcher";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/match — body: { jobId } (or { all: true } to match every unmatched job).
 // Claude compares the stored profile against the job description and returns
 // { qualified, score, matched_requirements, missing_requirements, reasoning }.
 export async function POST(request) {
-  const db = await getDb();
-  if (!db.data.profile) {
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  if (!data.profile) {
     return NextResponse.json({ error: "Upload a resume first" }, { status: 400 });
   }
 
@@ -16,10 +17,10 @@ export async function POST(request) {
   // Prefer explicit jobIds (the jobs a search just returned) — `all` grows
   // unbounded with the stored backlog and each job is one Claude call.
   const targets = Array.isArray(body.jobIds)
-    ? db.data.jobs.filter((j) => body.jobIds.includes(j.id) && j.match === null)
+    ? data.jobs.filter((j) => body.jobIds.includes(j.id) && j.match === null)
     : body.all
-      ? db.data.jobs.filter((j) => j.match === null)
-      : db.data.jobs.filter((j) => j.id === body.jobId);
+      ? data.jobs.filter((j) => j.match === null)
+      : data.jobs.filter((j) => j.id === body.jobId);
 
   if (targets.length === 0) {
     return NextResponse.json({ error: "No jobs to match" }, { status: 404 });
@@ -39,7 +40,7 @@ export async function POST(request) {
       try {
         job.match = await askClaudeJSON({
           system: MATCH_SYSTEM_PROMPT,
-          prompt: buildMatchPrompt(db.data.profile, job),
+          prompt: buildMatchPrompt(data.profile, job),
           schema: MATCH_SCHEMA,
         });
         job.screened_at = new Date().toISOString();

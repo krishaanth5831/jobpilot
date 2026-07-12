@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { buildClaudePastePrompt } from "@/lib/reviewer";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // GET /api/resume/prompt — a self-contained rebuild prompt to paste into
 // claude.ai. Pure text assembly from stored data; costs no API call.
 export async function GET() {
-  const db = await getDb();
-  if (!db.data.resumeText) {
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  if (!data.resumeText) {
     return NextResponse.json(
       { error: "Upload a resume first — the prompt is built from it" },
       { status: 400 }
@@ -15,10 +16,10 @@ export async function GET() {
 
   return NextResponse.json({
     prompt: buildClaudePastePrompt(
-      db.data.resumeText,
-      db.data.interview,
-      db.data.insights,
-      db.data.resumeReview
+      data.resumeText,
+      data.interview,
+      data.insights,
+      data.resumeReview
     ),
   });
 }

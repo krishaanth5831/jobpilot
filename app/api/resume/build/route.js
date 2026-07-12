@@ -8,14 +8,15 @@ import {
   TEMPLATE_REC_SYSTEM_PROMPT,
   buildTemplateRecPrompt,
 } from "@/lib/reviewer";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/resume/build — rebuild the resume from the original text plus
 // the grill-me interview answers. Also replaces the stored profile with the
 // enriched one, so job matching sees everything the interview surfaced.
 export async function POST() {
-  const db = await getDb();
-  if (!db.data.profile || !db.data.resumeText) {
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  if (!data.profile || !data.resumeText) {
     return NextResponse.json({ error: "Upload a resume first" }, { status: 400 });
   }
 
@@ -23,16 +24,16 @@ export async function POST() {
     const result = await askClaudeJSON({
       system: BUILD_SYSTEM_PROMPT,
       prompt: buildBuildPrompt(
-        db.data.resumeText,
-        db.data.interview,
-        db.data.insights,
-        db.data.resumeReview
+        data.resumeText,
+        data.interview,
+        data.insights,
+        data.resumeReview
       ),
       schema: BUILD_SCHEMA,
     });
 
-    db.data.profile = result.profile;
-    db.data.builtResume = {
+    data.profile = result.profile;
+    data.builtResume = {
       markdown: result.resume_markdown,
       createdAt: new Date().toISOString(),
     };
@@ -46,8 +47,8 @@ export async function POST() {
         schema: TEMPLATE_REC_SCHEMA,
       });
       const top3 = picks.slice(0, 3);
-      db.data.resumeTemplate = {
-        selected: db.data.resumeTemplate?.selected ?? top3[0]?.id,
+      data.resumeTemplate = {
+        selected: data.resumeTemplate?.selected ?? top3[0]?.id,
         picks: top3,
       };
     } catch (err) {
@@ -57,8 +58,8 @@ export async function POST() {
 
     return NextResponse.json({
       profile: result.profile,
-      builtResume: db.data.builtResume,
-      template: db.data.resumeTemplate ?? null,
+      builtResume: data.builtResume,
+      template: data.resumeTemplate ?? null,
     });
   } catch (err) {
     console.error("resume build failed:", err);

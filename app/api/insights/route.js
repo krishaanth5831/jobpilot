@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { INSIGHTS_SCHEMA, INSIGHTS_SYSTEM_PROMPT, buildInsightsPrompt } from "@/lib/reviewer";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // The success feedback loop. When an application is marked hired, the
 // winning resume + cover letter are distilled into transferable lessons.
@@ -12,10 +12,11 @@ import { getDb } from "@/lib/db";
 // hired application. Idempotent: a second call for the same application
 // returns the stored record instead of re-extracting.
 export async function POST(request) {
-  const db = await getDb();
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   const { applicationId } = await request.json();
 
-  const application = db.data.applications.find((a) => a.id === applicationId);
+  const application = data.applications.find((a) => a.id === applicationId);
   if (!application) {
     return NextResponse.json({ error: "Application not found" }, { status: 404 });
   }
@@ -26,22 +27,22 @@ export async function POST(request) {
     );
   }
 
-  db.data.insights ??= [];
-  const already = db.data.insights.find((i) => i.applicationId === applicationId);
+  data.insights ??= [];
+  const already = data.insights.find((i) => i.applicationId === applicationId);
   if (already) return NextResponse.json({ insight: already });
 
-  const job = db.data.jobs.find((j) => j.id === application.jobId);
+  const job = data.jobs.find((j) => j.id === application.jobId);
   if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
   try {
     const { lessons } = await askClaudeJSON({
       system: INSIGHTS_SYSTEM_PROMPT,
       prompt: buildInsightsPrompt({
-        profile: db.data.profile,
-        resumeText: db.data.resumeText ?? "",
+        profile: data.profile,
+        resumeText: data.resumeText ?? "",
         coverLetter: application.coverLetter ?? "",
         job,
-        existing: db.data.insights.flatMap((i) => i.lessons),
+        existing: data.insights.flatMap((i) => i.lessons),
       }),
       schema: INSIGHTS_SCHEMA,
     });
@@ -55,7 +56,7 @@ export async function POST(request) {
       createdAt: new Date().toISOString(),
       lessons,
     };
-    db.data.insights.push(insight);
+    data.insights.push(insight);
     await db.write();
 
     return NextResponse.json({ insight });
@@ -69,6 +70,7 @@ export async function POST(request) {
 
 // GET /api/insights — every recorded win and its lessons, newest first.
 export async function GET() {
-  const db = await getDb();
-  return NextResponse.json({ insights: (db.data.insights ?? []).toReversed() });
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  return NextResponse.json({ insights: (data.insights ?? []).toReversed() });
 }

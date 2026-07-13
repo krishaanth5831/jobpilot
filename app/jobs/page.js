@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Search, MapPin, ExternalLink, Sparkles, ClipboardPaste, Download } from "lucide-react";
+import { Search, MapPin, ExternalLink, Sparkles, ClipboardPaste, Download, Building2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { AiLabel } from "@/components/ai-loading";
 import { EmptyState } from "@/components/empty-state";
@@ -36,8 +36,9 @@ export default function JobsPage() {
   const [sourceFilter, setSourceFilter] = useState("all");
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [sort, setSort] = useState("score"); // score | newest
-  const [recs, setRecs] = useState(null);
+  const [recs, setRecs] = useState(null); // { field, roles, companies }
   const [recommending, setRecommending] = useState(false);
+  const [searchedAs, setSearchedAs] = useState(null);
   const [showPaste, setShowPaste] = useState(false);
   const [pasting, setPasting] = useState(false);
   const [tailoredIds, setTailoredIds] = useState(new Set());
@@ -58,7 +59,7 @@ export default function JobsPage() {
       .catch(() => {});
     fetch("/api/recommend")
       .then((res) => res.json())
-      .then((data) => setRecs(data.recommendations))
+      .then((data) => setRecs(data.roles || data.companies ? data : null))
       .catch(() => {});
   }, []);
 
@@ -68,7 +69,7 @@ export default function JobsPage() {
       const res = await fetch("/api/recommend", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setRecs(data.recommendations);
+      setRecs(data);
     } catch (err) {
       toast.error(err.message || "Recommendation failed");
     } finally {
@@ -148,14 +149,21 @@ export default function JobsPage() {
     }
   }
 
-  async function runSearch(roleValue) {
+  async function runSearch(roleValue, { raw = false } = {}) {
     setSearching(true);
+    setSearchedAs(null);
     try {
       const params = new URLSearchParams({ role: roleValue, location });
+      if (raw) params.set("raw", "1");
       const res = await fetch(`/api/jobs/search?${params}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      // Show what jobpilot actually searched for (the rewritten title) when
+      // it differs from what was typed.
+      if (data.searchedAs && data.searchedAs.toLowerCase() !== roleValue.trim().toLowerCase()) {
+        setSearchedAs(data.searchedAs);
+      }
       // Show exactly what this search returned — the API keeps the match for
       // anything screened before, so replacing the list loses nothing.
       const fresh = (data.jobs ?? []).map((j) => ({ ...j, match: j.match ?? null }));
@@ -285,6 +293,14 @@ export default function JobsPage() {
         </div>
       </form>
 
+      {searchedAs && !searching && (
+        <p className="mt-2 text-sm text-neutral-500">
+          Searched job boards for{" "}
+          <span className="font-medium text-black dark:text-white">{searchedAs}</span> — the
+          common title recruiters post.
+        </p>
+      )}
+
       {/* Profile-based recommendations */}
       <div className="mt-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -374,29 +390,65 @@ export default function JobsPage() {
         )}
 
         {recs && !recommending && (
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-            {recs.map((rec) => (
-              <li key={rec.query}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRole(rec.query);
-                    runSearch(rec.query);
-                  }}
-                  disabled={searching || matching}
-                  className="h-full w-full rounded-2xl border border-neutral-200 p-4 text-left transition hover:border-neutral-400 disabled:opacity-50 dark:border-neutral-800 dark:hover:border-neutral-600"
-                >
-                  <span className="flex items-start justify-between gap-3">
-                    <span className="font-medium">{rec.query}</span>
-                    <span className="shrink-0 rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-400 dark:border-neutral-800 dark:text-neutral-600">
-                      {rec.kind}
-                    </span>
-                  </span>
-                  <span className="mt-1 block text-sm text-neutral-500">{rec.reason}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-4 space-y-5">
+            {recs.roles?.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
+                  Roles to search{recs.field ? ` · ${recs.field}` : ""}
+                </p>
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {recs.roles.map((rec) => (
+                    <li key={rec.title}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRole(rec.title);
+                          runSearch(rec.title);
+                        }}
+                        disabled={searching || matching}
+                        className="h-full w-full rounded-2xl border border-neutral-200 p-4 text-left transition hover:border-neutral-400 disabled:opacity-50 dark:border-neutral-800 dark:hover:border-neutral-600"
+                      >
+                        <span className="flex items-start justify-between gap-3">
+                          <span className="font-medium">{rec.title}</span>
+                          <span className="shrink-0 rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-400 dark:border-neutral-800 dark:text-neutral-600">
+                            {rec.kind}
+                          </span>
+                        </span>
+                        <span className="mt-1 block text-sm text-neutral-500">{rec.reason}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {recs.companies?.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
+                  Companies to target — click to see their openings
+                </p>
+                <ul className="flex flex-wrap gap-2">
+                  {recs.companies.map((c) => (
+                    <li key={c.name}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRole(c.name);
+                          runSearch(c.name, { raw: true });
+                        }}
+                        disabled={searching || matching}
+                        title={c.reason}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-3 py-1.5 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+                      >
+                        <Building2 size={13} strokeWidth={1.5} aria-hidden="true" />
+                        {c.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

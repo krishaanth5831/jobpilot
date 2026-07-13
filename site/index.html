@@ -152,8 +152,8 @@
     <div class="step reveal">
       <div class="copy">
         <span class="num">FEATURE 02</span>
-        <h3>Searches LinkedIn, Indeed, Glassdoor &amp; Adzuna — and screens every result</h3>
-        <p>One search covers <b>Google's worldwide job index</b> (which carries LinkedIn, Indeed, Glassdoor, and company career pages) plus Adzuna's per-country boards — strong coverage across Europe and the Americas, strictly filtered to the location you asked for. Every posting gets an honest <b>0–100 verdict against your resume</b>: what matched, what's missing, and why. Or press "Recommend for me" for searches anchored to your actual field.</p>
+        <h3>Searches LinkedIn, Indeed, Glassdoor &amp; Adzuna worldwide — and screens every result</h3>
+        <p>Type a role however you phrase it — jobpilot <b>rewrites it into the title recruiters actually post</b> ("electrical engineering undergraduate internship" → "Electrical Engineer Intern"), so a keyword board actually returns results. One search covers <b>Google's worldwide job index</b> (LinkedIn, Indeed, Glassdoor, company career pages) plus Adzuna's per-country boards, filtered to <b>any country, continent, or city</b> you name. Every posting gets an honest <b>0–100 verdict against your resume</b>: what matched, what's missing, and why. Or press "Recommend for me" for <b>common job titles in your field and real companies to target</b>.</p>
       </div>
       <div class="frame"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><img loading="lazy" src="screenshots/jobs.png" alt="Jobs page with qualified verdicts, scores and filters"></div>
     </div>
@@ -297,7 +297,7 @@
     <div class="setup-step reveal">
       <div class="head"><span class="n">9</span><h3>Open it in your browser</h3></div>
       <div class="body">
-        <p>Go to <b>http://localhost:3000</b> — the jobpilot landing page should load.</p>
+        <p>Go to <b>http://localhost:3000</b> — you'll get a sign-in screen. Click <b>Create an account</b>, enter an email and password, and you're in. (That account holds your resume, jobs, and keys — see the note at the bottom.)</p>
       </div>
     </div>
 
@@ -321,7 +321,7 @@
     </div>
 
     <div class="note reveal">
-      <b>Optional — accounts for multiple people:</b> if you host jobpilot somewhere shared, you can turn on free Google / GitHub / Microsoft sign-in so each person's data is private to their account. Copy <b>.env.example</b>'s "Accounts" section into <b>.env.local</b> (or use the Settings page), create the free OAuth app at the provider you want, and restart. With no providers configured, the app just runs in single-user mode — no login, nothing to set up.
+      <b>Accounts &amp; your keys:</b> jobpilot has simple email + password sign-up built in (free, self-hosted — no third party). <b>Every account is private</b>: each person pastes their own API keys and sees only their own resume, jobs, and applications, so nobody ever spends anyone else's credits. Host it on one shared machine and everyone can sign in from any device; run it on your own laptop and it's just yours. Prefer social login? Google / GitHub / Microsoft are optional extras — see <b>.env.example</b>.
     </div>
   </section>
 

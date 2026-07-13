@@ -21,18 +21,20 @@ export async function POST() {
   }
 
   try {
-    const { recommendations } = await askClaudeJSON({
+    const { field, roles, companies } = await askClaudeJSON({
       system: RECOMMEND_SYSTEM_PROMPT,
       prompt: buildRecommendPrompt(data.profile),
       schema: RECOMMEND_SCHEMA,
     });
 
     data.recommendations = {
-      items: recommendations,
+      field,
+      roles,
+      companies,
       createdAt: new Date().toISOString(),
     };
     await db.write();
-    return NextResponse.json({ recommendations });
+    return NextResponse.json({ field, roles, companies });
   } catch (err) {
     console.error("recommendation failed:", err);
     const message = err instanceof ConfigError ? err.message : "Recommendation failed";
@@ -44,7 +46,10 @@ export async function POST() {
 export async function GET() {
   const { db, data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  const rec = data.recommendations;
   return NextResponse.json({
-    recommendations: data.recommendations?.items ?? null,
+    field: rec?.field ?? null,
+    roles: rec?.roles ?? null,
+    companies: rec?.companies ?? null,
   });
 }

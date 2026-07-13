@@ -56,14 +56,11 @@ async function optimizeRole(role) {
 // GET /api/jobs/search?role=software+engineer+intern&location=remote
 // Fetches jobs from the configured job boards and stores them (unmatched).
 // `raw=1` skips the title rewrite (used when searching a specific company).
-// `merge=1` adds the results to the current pool instead of replacing it
-// (used when drilling into a country from the filter).
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const role = searchParams.get("role");
   const location = searchParams.get("location") ?? "";
   const raw = searchParams.get("raw") === "1";
-  const merge = searchParams.get("merge") === "1";
   if (!role) {
     return NextResponse.json({ error: "role query param is required" }, { status: 400 });
   }
@@ -103,14 +100,11 @@ export async function GET(request) {
     }
     // Remember which jobs this search returned — the jobs and roadmap pages
     // show only the latest search instead of the whole stored backlog.
-    // Merge mode keeps the existing pool and adds these ids (drilling into a
-    // country enriches the current results); otherwise this search replaces it.
-    const prevIds = merge ? data.lastSearch?.jobIds ?? [] : [];
     data.lastSearch = {
-      role: merge ? data.lastSearch?.role ?? searchedAs : searchedAs,
-      location: merge ? data.lastSearch?.location ?? "" : location,
+      role: searchedAs,
+      location,
       at: new Date().toISOString(),
-      jobIds: [...new Set([...prevIds, ...jobs.map((j) => j.id)])],
+      jobIds: jobs.map((j) => j.id),
     };
     await db.write();
 

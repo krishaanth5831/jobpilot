@@ -15,7 +15,6 @@ import { AnimatedNumber } from "@/components/motion-primitives/animated-number";
 import { AnimatedBackground } from "@/components/motion-primitives/animated-background";
 import { Disclosure } from "@/components/motion-primitives/disclosure";
 import { InView } from "@/components/motion-primitives/in-view";
-import { MAJOR_MARKET_NAMES } from "@/lib/job-sources/location";
 
 const FILTERS = [
   { id: "all", label: "All" },
@@ -41,9 +40,6 @@ export default function JobsPage() {
   const [sourceFilter, setSourceFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
   const [remoteOnly, setRemoteOnly] = useState(false);
-  const [lastRole, setLastRole] = useState(""); // role behind the current pool
-  const [deepSearched, setDeepSearched] = useState(new Set()); // countries already drilled
-  const [drilling, setDrilling] = useState(false);
   const [sort, setSort] = useState("score"); // score | newest
   const [recs, setRecs] = useState(null); // { field, roles, companies }
   const [recommending, setRecommending] = useState(false);
@@ -186,44 +182,10 @@ export default function JobsPage() {
     }
   }
 
-  // Drilling into a country runs a thorough search just for it (all title
-  // variants, both phrasings) and merges the listings in — so any country
-  // gets the same depth as typing it in the search box.
-  async function selectCountry(c) {
-    setCountryFilter(c);
-    if (c === "all" || !lastRole || deepSearched.has(c)) return;
-    setDeepSearched((prev) => new Set(prev).add(c));
-    setDrilling(true);
-    try {
-      const params = new URLSearchParams({ role: lastRole, location: c, merge: "1" });
-      const res = await fetch(`/api/jobs/search?${params}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      const incoming = (data.jobs ?? []).map((j) => ({ ...j, match: j.match ?? null }));
-      setJobs((prev) => {
-        const byId = new Map(prev.map((j) => [j.id, j]));
-        for (const j of incoming) if (!byId.has(j.id)) byId.set(j.id, j);
-        return [...byId.values()];
-      });
-      await screenJobs(incoming.filter((j) => !j.match).slice(0, SCREEN_BATCH).map((j) => j.id));
-    } catch (err) {
-      toast.error(err.message || "Couldn't load that country");
-      setDeepSearched((prev) => {
-        const n = new Set(prev);
-        n.delete(c);
-        return n;
-      });
-    } finally {
-      setDrilling(false);
-    }
-  }
-
   async function runSearch(roleValue, { raw = false } = {}) {
     setSearching(true);
     setSearchedAs(null);
     setCountryFilter("all");
-    setLastRole(roleValue);
-    setDeepSearched(new Set());
     try {
       const params = new URLSearchParams({ role: roleValue, location });
       if (raw) params.set("raw", "1");
@@ -278,15 +240,15 @@ export default function JobsPage() {
     [jobs]
   );
 
-  // Every major market is offered (so you can drill into one that came back
-  // empty), plus any other country that showed up, each with its live count.
+  // Countries present in the worldwide pool, each with its live count — the
+  // filter narrows the already-pulled listings to one country.
   const countryCounts = useMemo(() => {
     const m = new Map();
     for (const j of jobs) if (j.countryName) m.set(j.countryName, (m.get(j.countryName) ?? 0) + 1);
     return m;
   }, [jobs]);
   const countries = useMemo(
-    () => [...new Set([...MAJOR_MARKET_NAMES, ...countryCounts.keys()])].sort(),
+    () => [...countryCounts.keys()].sort(),
     [countryCounts]
   );
 
@@ -552,10 +514,9 @@ export default function JobsPage() {
           {countries.length > 1 && (
             <select
               value={countryFilter}
-              onChange={(e) => selectCountry(e.target.value)}
-              disabled={drilling}
-              aria-label="Country — pick one to pull its full listings"
-              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 disabled:opacity-50 dark:border-neutral-800 dark:hover:border-neutral-600"
+              onChange={(e) => setCountryFilter(e.target.value)}
+              aria-label="Filter by country"
+              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
             >
               <option value="all">All countries ({jobs.length})</option>
               {countries.map((c) => (
@@ -605,9 +566,7 @@ export default function JobsPage() {
             <option value="newest">Newest</option>
           </select>
 
-          {drilling ? (
-            <AiLabel className="ml-auto">Pulling {countryFilter} listings…</AiLabel>
-          ) : matching ? (
+          {matching ? (
             <AiLabel className="ml-auto">Screening…</AiLabel>
           ) : (
             unscreenedVisible.length > 0 && (

@@ -29,6 +29,9 @@ const items = [
 export function SiteNav({ authEnabled = false }) {
   const pathname = usePathname();
 
+  // The sign-in screen is a clean full-page experience — no dock.
+  if (pathname === "/signin") return null;
+
   return (
     <div className="fixed inset-x-0 bottom-5 z-40 flex justify-center">
       <Dock>

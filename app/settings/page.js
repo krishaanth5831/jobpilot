@@ -10,6 +10,7 @@ import { PageShell } from "@/components/page-shell";
 // The server only ever reports presence + last 4 characters, never values.
 const GROUPS = [
   {
+    scope: "user",
     title: "Claude",
     description: "Powers everything AI: screening, letters, the resume studio.",
     href: "https://platform.claude.com",
@@ -17,6 +18,7 @@ const GROUPS = [
     fields: [{ key: "ANTHROPIC_API_KEY", label: "API key", secret: true, required: true }],
   },
   {
+    scope: "user",
     title: "Adzuna",
     description: "Broad job-board aggregator (free tier).",
     href: "https://developer.adzuna.com",
@@ -28,6 +30,7 @@ const GROUPS = [
     ],
   },
   {
+    scope: "user",
     title: "JSearch (RapidAPI)",
     description: "Surfaces LinkedIn, Indeed, and Glassdoor postings (free tier).",
     href: "https://rapidapi.com",
@@ -35,9 +38,10 @@ const GROUPS = [
     fields: [{ key: "RAPIDAPI_KEY", label: "RapidAPI key", secret: true }],
   },
   {
-    title: "Accounts (optional)",
+    scope: "auth",
+    title: "Social logins (optional)",
     description:
-      "Let people sign in with Google, GitHub, or Microsoft and keep their own data. All free to set up. Restart the server after saving these.",
+      "Email + password sign-in already works out of the box. Optionally also let people continue with Google, GitHub, or Microsoft — all free to set up. Restart the server after saving these.",
     href: "https://authjs.dev/getting-started/authentication/oauth",
     linkLabel: "authjs.dev setup guide",
     fields: [
@@ -53,18 +57,25 @@ const GROUPS = [
 ];
 
 export default function SettingsPage() {
-  const [status, setStatus] = useState(null);
+  const [info, setInfo] = useState(null); // { keys, authKeys, isOwner }
   const [drafts, setDrafts] = useState({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings")
       .then((res) => res.json())
-      .then((data) => setStatus(data.keys))
+      .then((data) => setInfo(data))
       .catch(() => toast.error("Couldn't load settings"));
   }, []);
 
   const dirty = Object.keys(drafts).length > 0;
+
+  // Owners see the server-wide sign-in config; everyone else only their keys.
+  const visibleGroups = GROUPS.filter(
+    (g) => g.scope !== "auth" || info?.isOwner
+  );
+  const statusFor = (group) =>
+    (group.scope === "auth" ? info?.authKeys : info?.keys) ?? null;
 
   async function save() {
     setSaving(true);
@@ -76,9 +87,9 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setStatus(data.keys);
+      setInfo(data);
       setDrafts({});
-      toast.success("Saved to .env.local — active immediately, no restart needed");
+      toast.success("Saved to your account — active immediately");
     } catch (err) {
       toast.error(err.message || "Couldn't save settings");
     } finally {
@@ -94,14 +105,14 @@ export default function SettingsPage() {
     <PageShell>
       <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
       <p className="mt-2 text-neutral-500">
-        Paste your API keys once — they&apos;re stored in{" "}
-        <code className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-sm dark:bg-neutral-900">
-          .env.local
-        </code>{" "}
-        (never committed) and take effect immediately.
+        Paste your API keys once — they&apos;re saved to your account on this
+        server (never shared with other users) and take effect immediately.
       </p>
 
-      {GROUPS.map(({ title, description, href, linkLabel, fields }) => (
+      {visibleGroups.map((group) => {
+        const { title, description, href, linkLabel, fields } = group;
+        const statusMap = statusFor(group);
+        return (
         <section key={title} className="mt-10">
           <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-3 dark:border-neutral-800">
             <div>
@@ -120,17 +131,17 @@ export default function SettingsPage() {
 
           <div className="mt-4 flex flex-col gap-4">
             {fields.map(({ key, label, secret, required }) => {
-              const info = status?.[key];
+              const fieldInfo = statusMap?.[key];
               const cleared = drafts[key] === "";
               return (
                 <label key={key} className="block">
                   <span className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
                     {label}
                     {required && <span className="normal-case tracking-normal">(required)</span>}
-                    {info?.set && !cleared ? (
+                    {fieldInfo?.set && !cleared ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-black px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-white dark:bg-white dark:text-black">
                         <Check size={10} strokeWidth={2.5} aria-hidden="true" />
-                        configured {info.hint}
+                        configured {fieldInfo.hint}
                       </span>
                     ) : (
                       <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-neutral-500 dark:border-neutral-700">
@@ -153,12 +164,12 @@ export default function SettingsPage() {
                         })
                       }
                       placeholder={
-                        info?.set ? "Paste a new value to replace" : "Paste your key"
+                        fieldInfo?.set ? "Paste a new value to replace" : "Paste your key"
                       }
                       aria-label={`${title} ${label}`}
                       className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2.5 font-mono text-sm outline-none placeholder:font-sans placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
                     />
-                    {info?.set && !cleared && (
+                    {fieldInfo?.set && !cleared && (
                       <button
                         type="button"
                         onClick={() => clearKey(key)}
@@ -174,7 +185,8 @@ export default function SettingsPage() {
             })}
           </div>
         </section>
-      ))}
+        );
+      })}
 
       <div className="mt-10 flex flex-wrap items-center gap-4">
         <button
@@ -190,9 +202,9 @@ export default function SettingsPage() {
       </div>
 
       <p className="mt-8 text-xs text-neutral-500">
-        Keys never leave this machine: they&apos;re stored in the gitignored{" "}
-        .env.local, and this page only ever sees whether a key is set plus its
-        last four characters.
+        Keys never leave this server, and they belong to your account alone —
+        other users can&apos;t see or use them. This page only ever shows
+        whether a key is set plus its last four characters.
       </p>
     </PageShell>
   );

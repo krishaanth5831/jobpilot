@@ -15,12 +15,17 @@ import { AnimatedNumber } from "@/components/motion-primitives/animated-number";
 import { AnimatedBackground } from "@/components/motion-primitives/animated-background";
 import { Disclosure } from "@/components/motion-primitives/disclosure";
 import { InView } from "@/components/motion-primitives/in-view";
+import { MAJOR_MARKET_NAMES } from "@/lib/job-sources/location";
 
 const FILTERS = [
   { id: "all", label: "All" },
   { id: "qualified", label: "Qualified" },
   { id: "notyet", label: "Not yet" },
 ];
+
+// A search pulls a big worldwide pool, but each screening is a paid Claude
+// call — so we only auto-screen this many, and the user screens more on demand.
+const SCREEN_BATCH = 20;
 
 // Job search + match results. Qualified jobs go to the apply queue;
 // unqualified ones link to the roadmap.
@@ -34,7 +39,11 @@ export default function JobsPage() {
   const [drafting, setDrafting] = useState(null); // jobId being drafted
   const [filter, setFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [countryFilter, setCountryFilter] = useState("all");
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const [lastRole, setLastRole] = useState(""); // role behind the current pool
+  const [deepSearched, setDeepSearched] = useState(new Set()); // countries already drilled
+  const [drilling, setDrilling] = useState(false);
   const [sort, setSort] = useState("score"); // score | newest
   const [recs, setRecs] = useState(null); // { field, roles, companies }
   const [recommending, setRecommending] = useState(false);
@@ -149,9 +158,72 @@ export default function JobsPage() {
     }
   }
 
+  // Screen a specific set of jobs against the resume — each id is one Claude
+  // call, so callers pass a bounded batch.
+  async function screenJobs(ids) {
+    if (ids.length === 0) return;
+    setMatching(true);
+    try {
+      const res = await fetch("/api/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobIds: ids }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const byId = new Map(data.matched.map((j) => [j.id, j]));
+        setJobs((prev) => prev.map((j) => byId.get(j.id) ?? j));
+        if (data.failed > 0) {
+          toast.warning(`${data.failed} job(s) couldn't be screened — try again`);
+        }
+      } else {
+        toast.error(data.error || "Screening failed");
+      }
+    } catch (err) {
+      toast.error(err.message || "Screening failed");
+    } finally {
+      setMatching(false);
+    }
+  }
+
+  // Drilling into a country runs a thorough search just for it (all title
+  // variants, both phrasings) and merges the listings in — so any country
+  // gets the same depth as typing it in the search box.
+  async function selectCountry(c) {
+    setCountryFilter(c);
+    if (c === "all" || !lastRole || deepSearched.has(c)) return;
+    setDeepSearched((prev) => new Set(prev).add(c));
+    setDrilling(true);
+    try {
+      const params = new URLSearchParams({ role: lastRole, location: c, merge: "1" });
+      const res = await fetch(`/api/jobs/search?${params}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      const incoming = (data.jobs ?? []).map((j) => ({ ...j, match: j.match ?? null }));
+      setJobs((prev) => {
+        const byId = new Map(prev.map((j) => [j.id, j]));
+        for (const j of incoming) if (!byId.has(j.id)) byId.set(j.id, j);
+        return [...byId.values()];
+      });
+      await screenJobs(incoming.filter((j) => !j.match).slice(0, SCREEN_BATCH).map((j) => j.id));
+    } catch (err) {
+      toast.error(err.message || "Couldn't load that country");
+      setDeepSearched((prev) => {
+        const n = new Set(prev);
+        n.delete(c);
+        return n;
+      });
+    } finally {
+      setDrilling(false);
+    }
+  }
+
   async function runSearch(roleValue, { raw = false } = {}) {
     setSearching(true);
     setSearchedAs(null);
+    setCountryFilter("all");
+    setLastRole(roleValue);
+    setDeepSearched(new Set());
     try {
       const params = new URLSearchParams({ role: roleValue, location });
       if (raw) params.set("raw", "1");
@@ -170,23 +242,9 @@ export default function JobsPage() {
       setJobs(fresh);
       setSearching(false);
 
-      // Screen only this search's results — each job is one Claude call.
-      setMatching(true);
-      const matchRes = await fetch("/api/match", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobIds: fresh.map((j) => j.id) }),
-      });
-      const matchData = await matchRes.json();
-      if (matchRes.ok) {
-        const byId = new Map(matchData.matched.map((j) => [j.id, j]));
-        setJobs((prev) => prev.map((j) => byId.get(j.id) ?? j));
-        if (matchData.failed > 0) {
-          toast.warning(`${matchData.failed} job(s) couldn't be screened — search again to retry`);
-        }
-      } else {
-        toast.error(matchData.error || "Screening failed");
-      }
+      // Auto-screen only the first batch — the rest stay browsable listings
+      // the user can screen on demand, so a big pool doesn't cost a fortune.
+      await screenJobs(fresh.filter((j) => !j.match).slice(0, SCREEN_BATCH).map((j) => j.id));
     } catch (err) {
       toast.error(err.message || "Search failed");
     } finally {
@@ -220,11 +278,24 @@ export default function JobsPage() {
     [jobs]
   );
 
+  // Every major market is offered (so you can drill into one that came back
+  // empty), plus any other country that showed up, each with its live count.
+  const countryCounts = useMemo(() => {
+    const m = new Map();
+    for (const j of jobs) if (j.countryName) m.set(j.countryName, (m.get(j.countryName) ?? 0) + 1);
+    return m;
+  }, [jobs]);
+  const countries = useMemo(
+    () => [...new Set([...MAJOR_MARKET_NAMES, ...countryCounts.keys()])].sort(),
+    [countryCounts]
+  );
+
   const visible = useMemo(() => {
     const filtered = jobs.filter((job) => {
       if (filter === "qualified" && !job.match?.qualified) return false;
       if (filter === "notyet" && (!job.match || job.match.qualified)) return false;
       if (sourceFilter !== "all" && job.source !== sourceFilter) return false;
+      if (countryFilter !== "all" && job.countryName !== countryFilter) return false;
       if (remoteOnly && !`${job.location}`.toLowerCase().includes("remote")) return false;
       return true;
     });
@@ -237,7 +308,13 @@ export default function JobsPage() {
     return filtered.toSorted(
       (a, b) => (b.match?.score ?? -1) - (a.match?.score ?? -1)
     );
-  }, [jobs, filter, sourceFilter, remoteOnly, sort]);
+  }, [jobs, filter, sourceFilter, countryFilter, remoteOnly, sort]);
+
+  // Unscreened jobs in the current view — the "Screen more" batch.
+  const unscreenedVisible = useMemo(() => visible.filter((j) => !j.match), [visible]);
+  function screenMore() {
+    screenJobs(unscreenedVisible.slice(0, SCREEN_BATCH).map((j) => j.id));
+  }
 
   return (
     <PageShell>
@@ -284,7 +361,7 @@ export default function JobsPage() {
               <input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="Location (optional)"
+                placeholder="Location (optional) — leave blank to search worldwide, then filter by country below"
                 aria-label="Location"
                 className="w-full bg-transparent py-1 text-sm outline-none placeholder:text-neutral-400"
               />
@@ -472,6 +549,23 @@ export default function JobsPage() {
             ))}
           </AnimatedBackground>
 
+          {countries.length > 1 && (
+            <select
+              value={countryFilter}
+              onChange={(e) => selectCountry(e.target.value)}
+              disabled={drilling}
+              aria-label="Country — pick one to pull its full listings"
+              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 disabled:opacity-50 dark:border-neutral-800 dark:hover:border-neutral-600"
+            >
+              <option value="all">All countries ({jobs.length})</option>
+              {countries.map((c) => (
+                <option key={c} value={c}>
+                  {c} ({countryCounts.get(c) ?? 0})
+                </option>
+              ))}
+            </select>
+          )}
+
           {sources.length > 1 && (
             <select
               value={sourceFilter}
@@ -511,7 +605,21 @@ export default function JobsPage() {
             <option value="newest">Newest</option>
           </select>
 
-          {matching && <AiLabel className="ml-auto">Screening…</AiLabel>}
+          {drilling ? (
+            <AiLabel className="ml-auto">Pulling {countryFilter} listings…</AiLabel>
+          ) : matching ? (
+            <AiLabel className="ml-auto">Screening…</AiLabel>
+          ) : (
+            unscreenedVisible.length > 0 && (
+              <button
+                type="button"
+                onClick={screenMore}
+                className="ml-auto rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+              >
+                Screen {Math.min(unscreenedVisible.length, SCREEN_BATCH)} more
+              </button>
+            )
+          )}
         </div>
       )}
 

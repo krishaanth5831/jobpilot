@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { MATCH_SCHEMA, MATCH_SYSTEM_PROMPT, buildMatchPrompt } from "@/lib/matcher";
+import { AUTO_APPLY_SCORE, draftApplicationFor } from "@/lib/applications";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/match — body: { jobId } (or { all: true } to match every unmatched job).
@@ -54,6 +55,30 @@ export async function POST(request) {
   await Promise.all(
     Array.from({ length: Math.min(CONCURRENCY, targets.length) }, worker)
   );
+
+  // Auto-apply: any job scoring above the threshold gets a cover letter drafted
+  // and queued for review right away (still never auto-submitted). Bounded and
+  // best-effort — a draft failure must not throw away the match verdicts.
+  const toApply = matched.filter(
+    (j) => (j.match?.score ?? 0) > AUTO_APPLY_SCORE && !data.applications.some((a) => a.jobId === j.id)
+  );
+  let autoApplied = 0;
+  let ai = 0;
+  async function applyWorker() {
+    while (ai < toApply.length) {
+      const job = toApply[ai++];
+      try {
+        await draftApplicationFor(data, job);
+        autoApplied++;
+      } catch (err) {
+        console.error(`auto-apply failed for ${job.id}:`, err);
+      }
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(CONCURRENCY, toApply.length) }, applyWorker)
+  );
+
   await db.write();
 
   if (matched.length === 0 && firstError) {
@@ -62,5 +87,9 @@ export async function POST(request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  return NextResponse.json({ matched, failed: targets.length - matched.length });
+  return NextResponse.json({
+    matched,
+    failed: targets.length - matched.length,
+    autoApplied,
+  });
 }

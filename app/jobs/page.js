@@ -180,6 +180,12 @@ export default function JobsPage() {
       if (res.ok) {
         const byId = new Map(data.matched.map((j) => [j.id, j]));
         setJobs((prev) => prev.map((j) => byId.get(j.id) ?? j));
+        if (data.autoApplied > 0) {
+          toast.success(
+            `Drafted ${data.autoApplied} application${data.autoApplied === 1 ? "" : "s"} — review in the queue`,
+            { action: { label: "Review", onClick: () => (window.location.href = "/queue") } }
+          );
+        }
         if (data.failed > 0) {
           toast.warning(`${data.failed} job(s) couldn't be screened — try again`);
         }

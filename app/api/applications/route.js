@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { askClaudeText, ConfigError } from "@/lib/claude";
-import { formatInsights } from "@/lib/reviewer";
+import { ConfigError } from "@/lib/claude";
+import { draftApplicationFor } from "@/lib/applications";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/applications — body: { jobId }.
@@ -21,22 +21,8 @@ export async function POST(request) {
   }
 
   try {
-    const coverLetter = await askClaudeText({
-      system:
-        "You write specific, honest cover letters. Ground every claim in the candidate's actual profile — never exaggerate or invent experience. Keep it under 300 words, warm but direct.",
-      prompt: `Candidate profile:\n${JSON.stringify(data.profile, null, 2)}\n\nJob:\n${job.title} at ${job.company}\n${job.description}${formatInsights(data.insights)}\n\nWrite a tailored cover letter for this application.`,
-    });
-
-    const application = {
-      id: `app-${Date.now()}`,
-      jobId: job.id,
-      coverLetter,
-      status: "pending_review", // -> "submitted" once the user applies via job.url
-      createdAt: new Date().toISOString(),
-    };
-    data.applications.push(application);
+    const application = await draftApplicationFor(data, job);
     await db.write();
-
     return NextResponse.json({ application });
   } catch (err) {
     console.error("application draft failed:", err);

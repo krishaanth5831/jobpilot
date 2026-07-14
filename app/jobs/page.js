@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Search, MapPin, ExternalLink, Sparkles, ClipboardPaste, Download } from "lucide-react";
+import { Search, MapPin, ExternalLink, Sparkles, ClipboardPaste, Download, Building2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { AiLabel } from "@/components/ai-loading";
 import { EmptyState } from "@/components/empty-state";
@@ -15,12 +15,24 @@ import { AnimatedNumber } from "@/components/motion-primitives/animated-number";
 import { AnimatedBackground } from "@/components/motion-primitives/animated-background";
 import { Disclosure } from "@/components/motion-primitives/disclosure";
 import { InView } from "@/components/motion-primitives/in-view";
+import { EMPLOYMENT_LABELS, LEVEL_LABELS, classifyJob } from "@/lib/job-sources/classify";
 
 const FILTERS = [
   { id: "all", label: "All" },
   { id: "qualified", label: "Qualified" },
   { id: "notyet", label: "Not yet" },
 ];
+
+// Fixed display order for the type/level dropdowns.
+const EMPLOYMENT_ORDER = ["internship", "fulltime", "parttime", "contract"];
+const LEVEL_ORDER = ["intern", "entry", "mid", "senior"];
+
+// How many company chips to show before "Show all".
+const COMPANIES_PREVIEW = 24;
+
+// A search pulls a big worldwide pool, but each screening is a paid Claude
+// call — so we only auto-screen this many, and the user screens more on demand.
+const SCREEN_BATCH = 20;
 
 // Job search + match results. Qualified jobs go to the apply queue;
 // unqualified ones link to the roadmap.
@@ -34,10 +46,15 @@ export default function JobsPage() {
   const [drafting, setDrafting] = useState(null); // jobId being drafted
   const [filter, setFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [countryFilter, setCountryFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all"); // employment type
+  const [levelFilter, setLevelFilter] = useState("all"); // experience level
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [sort, setSort] = useState("score"); // score | newest
-  const [recs, setRecs] = useState(null);
+  const [recs, setRecs] = useState(null); // { field, companies }
   const [recommending, setRecommending] = useState(false);
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
+  const [searchedAs, setSearchedAs] = useState(null);
   const [showPaste, setShowPaste] = useState(false);
   const [pasting, setPasting] = useState(false);
   const [tailoredIds, setTailoredIds] = useState(new Set());
@@ -58,7 +75,7 @@ export default function JobsPage() {
       .catch(() => {});
     fetch("/api/recommend")
       .then((res) => res.json())
-      .then((data) => setRecs(data.recommendations))
+      .then((data) => setRecs(data.companies ? data : null))
       .catch(() => {});
   }, []);
 
@@ -68,7 +85,7 @@ export default function JobsPage() {
       const res = await fetch("/api/recommend", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setRecs(data.recommendations);
+      setRecs(data);
     } catch (err) {
       toast.error(err.message || "Recommendation failed");
     } finally {
@@ -148,37 +165,59 @@ export default function JobsPage() {
     }
   }
 
-  async function runSearch(roleValue) {
+  // Screen a specific set of jobs against the resume — each id is one Claude
+  // call, so callers pass a bounded batch.
+  async function screenJobs(ids) {
+    if (ids.length === 0) return;
+    setMatching(true);
+    try {
+      const res = await fetch("/api/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobIds: ids }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const byId = new Map(data.matched.map((j) => [j.id, j]));
+        setJobs((prev) => prev.map((j) => byId.get(j.id) ?? j));
+        if (data.failed > 0) {
+          toast.warning(`${data.failed} job(s) couldn't be screened — try again`);
+        }
+      } else {
+        toast.error(data.error || "Screening failed");
+      }
+    } catch (err) {
+      toast.error(err.message || "Screening failed");
+    } finally {
+      setMatching(false);
+    }
+  }
+
+  async function runSearch(roleValue, { raw = false } = {}) {
     setSearching(true);
+    setSearchedAs(null);
+    setCountryFilter("all");
     try {
       const params = new URLSearchParams({ role: roleValue, location });
+      if (raw) params.set("raw", "1");
       const res = await fetch(`/api/jobs/search?${params}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      // Show what jobpilot actually searched for (the rewritten title) when
+      // it differs from what was typed.
+      if (data.searchedAs && data.searchedAs.toLowerCase() !== roleValue.trim().toLowerCase()) {
+        setSearchedAs(data.searchedAs);
+      }
       // Show exactly what this search returned — the API keeps the match for
       // anything screened before, so replacing the list loses nothing.
       const fresh = (data.jobs ?? []).map((j) => ({ ...j, match: j.match ?? null }));
       setJobs(fresh);
       setSearching(false);
 
-      // Screen only this search's results — each job is one Claude call.
-      setMatching(true);
-      const matchRes = await fetch("/api/match", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobIds: fresh.map((j) => j.id) }),
-      });
-      const matchData = await matchRes.json();
-      if (matchRes.ok) {
-        const byId = new Map(matchData.matched.map((j) => [j.id, j]));
-        setJobs((prev) => prev.map((j) => byId.get(j.id) ?? j));
-        if (matchData.failed > 0) {
-          toast.warning(`${matchData.failed} job(s) couldn't be screened — search again to retry`);
-        }
-      } else {
-        toast.error(matchData.error || "Screening failed");
-      }
+      // Auto-screen only the first batch — the rest stay browsable listings
+      // the user can screen on demand, so a big pool doesn't cost a fortune.
+      await screenJobs(fresh.filter((j) => !j.match).slice(0, SCREEN_BATCH).map((j) => j.id));
     } catch (err) {
       toast.error(err.message || "Search failed");
     } finally {
@@ -212,11 +251,42 @@ export default function JobsPage() {
     [jobs]
   );
 
+  // Countries present in the worldwide pool, each with its live count — the
+  // filter narrows the already-pulled listings to one country.
+  const countryCounts = useMemo(() => {
+    const m = new Map();
+    for (const j of jobs) if (j.countryName) m.set(j.countryName, (m.get(j.countryName) ?? 0) + 1);
+    return m;
+  }, [jobs]);
+  const countries = useMemo(
+    () => [...countryCounts.keys()].sort(),
+    [countryCounts]
+  );
+
+  // Employment type (internship / full-time / part-time / contract) and
+  // experience level for each job. Searched jobs carry these tags; anything
+  // else (pasted, legacy) is classified from its title on the fly.
+  const typeOf = (j) => j.employmentType ?? classifyJob(j).employmentType;
+  const levelOf = (j) => j.level ?? classifyJob(j).level;
+  const typeCounts = useMemo(() => {
+    const m = new Map();
+    for (const j of jobs) m.set(typeOf(j), (m.get(typeOf(j)) ?? 0) + 1);
+    return m;
+  }, [jobs]);
+  const levelCounts = useMemo(() => {
+    const m = new Map();
+    for (const j of jobs) m.set(levelOf(j), (m.get(levelOf(j)) ?? 0) + 1);
+    return m;
+  }, [jobs]);
+
   const visible = useMemo(() => {
     const filtered = jobs.filter((job) => {
       if (filter === "qualified" && !job.match?.qualified) return false;
       if (filter === "notyet" && (!job.match || job.match.qualified)) return false;
       if (sourceFilter !== "all" && job.source !== sourceFilter) return false;
+      if (countryFilter !== "all" && job.countryName !== countryFilter) return false;
+      if (typeFilter !== "all" && typeOf(job) !== typeFilter) return false;
+      if (levelFilter !== "all" && levelOf(job) !== levelFilter) return false;
       if (remoteOnly && !`${job.location}`.toLowerCase().includes("remote")) return false;
       return true;
     });
@@ -229,13 +299,20 @@ export default function JobsPage() {
     return filtered.toSorted(
       (a, b) => (b.match?.score ?? -1) - (a.match?.score ?? -1)
     );
-  }, [jobs, filter, sourceFilter, remoteOnly, sort]);
+  }, [jobs, filter, sourceFilter, countryFilter, typeFilter, levelFilter, remoteOnly, sort]);
+
+  // Unscreened jobs in the current view — the "Screen more" batch.
+  const unscreenedVisible = useMemo(() => visible.filter((j) => !j.match), [visible]);
+  function screenMore() {
+    screenJobs(unscreenedVisible.slice(0, SCREEN_BATCH).map((j) => j.id));
+  }
 
   return (
     <PageShell>
       <h1 className="text-3xl font-bold tracking-tight">Find jobs</h1>
       <p className="mt-2 text-neutral-500">
-        Search live postings — every result is screened against your resume.
+        Live postings pulled from job boards worldwide — filter by country,
+        type, and level; every result is screened against your resume.
       </p>
 
       {/* Expandable search toolbar */}
@@ -276,7 +353,7 @@ export default function JobsPage() {
               <input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="Location (optional)"
+                placeholder="Location (optional) — leave blank to search worldwide, then filter by country below"
                 aria-label="Location"
                 className="w-full bg-transparent py-1 text-sm outline-none placeholder:text-neutral-400"
               />
@@ -284,6 +361,14 @@ export default function JobsPage() {
           </div>
         </div>
       </form>
+
+      {searchedAs && !searching && (
+        <p className="mt-2 text-sm text-neutral-500">
+          Searched job boards for{" "}
+          <span className="font-medium text-black dark:text-white">{searchedAs}</span> — the
+          common title recruiters post.
+        </p>
+      )}
 
       {/* Profile-based recommendations */}
       <div className="mt-4">
@@ -307,12 +392,12 @@ export default function JobsPage() {
             Paste a job
           </button>
           {recommending ? (
-            <AiLabel>Reading your resume for the right roles…</AiLabel>
+            <AiLabel>Reading your resume for companies that hire in your field…</AiLabel>
           ) : (
             !recs && (
               <p className="text-sm text-neutral-500">
-                Jobs, internships, and programs you actually qualify for — from
-                your resume, not guesswork.
+                Companies worldwide that hire in your field — straight from your
+                resume. Click any to see their openings.
               </p>
             )
           )}
@@ -373,30 +458,44 @@ export default function JobsPage() {
           </form>
         )}
 
-        {recs && !recommending && (
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-            {recs.map((rec) => (
-              <li key={rec.query}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRole(rec.query);
-                    runSearch(rec.query);
-                  }}
-                  disabled={searching || matching}
-                  className="h-full w-full rounded-2xl border border-neutral-200 p-4 text-left transition hover:border-neutral-400 disabled:opacity-50 dark:border-neutral-800 dark:hover:border-neutral-600"
-                >
-                  <span className="flex items-start justify-between gap-3">
-                    <span className="font-medium">{rec.query}</span>
-                    <span className="shrink-0 rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-400 dark:border-neutral-800 dark:text-neutral-600">
-                      {rec.kind}
-                    </span>
-                  </span>
-                  <span className="mt-1 block text-sm text-neutral-500">{rec.reason}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+        {recs?.companies?.length > 0 && !recommending && (
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
+              Companies to target{recs.field ? ` · ${recs.field}` : ""} ({recs.companies.length}) — click to see their openings
+            </p>
+            <ul className="flex flex-wrap gap-2">
+              {(showAllCompanies ? recs.companies : recs.companies.slice(0, COMPANIES_PREVIEW)).map((c) => (
+                <li key={c.name}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRole(c.name);
+                      runSearch(c.name, { raw: true });
+                    }}
+                    disabled={searching || matching}
+                    title={c.reason}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-3 py-1.5 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+                  >
+                    <Building2 size={13} strokeWidth={1.5} aria-hidden="true" />
+                    {c.name}
+                  </button>
+                </li>
+              ))}
+              {recs.companies.length > COMPANIES_PREVIEW && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setShowAllCompanies((v) => !v)}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-black px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+                  >
+                    {showAllCompanies
+                      ? "Show fewer"
+                      : `All companies (${recs.companies.length})`}
+                  </button>
+                </li>
+              )}
+            </ul>
+          </div>
         )}
       </div>
 
@@ -419,6 +518,54 @@ export default function JobsPage() {
               </button>
             ))}
           </AnimatedBackground>
+
+          {countries.length > 1 && (
+            <select
+              value={countryFilter}
+              onChange={(e) => setCountryFilter(e.target.value)}
+              aria-label="Filter by country"
+              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+            >
+              <option value="all">All countries ({jobs.length})</option>
+              {countries.map((c) => (
+                <option key={c} value={c}>
+                  {c} ({countryCounts.get(c) ?? 0})
+                </option>
+              ))}
+            </select>
+          )}
+
+          {typeCounts.size > 1 && (
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              aria-label="Filter by job type"
+              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+            >
+              <option value="all">Any type</option>
+              {EMPLOYMENT_ORDER.filter((t) => typeCounts.has(t)).map((t) => (
+                <option key={t} value={t}>
+                  {EMPLOYMENT_LABELS[t]} ({typeCounts.get(t)})
+                </option>
+              ))}
+            </select>
+          )}
+
+          {levelCounts.size > 1 && (
+            <select
+              value={levelFilter}
+              onChange={(e) => setLevelFilter(e.target.value)}
+              aria-label="Filter by experience level"
+              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+            >
+              <option value="all">Any level</option>
+              {LEVEL_ORDER.filter((l) => levelCounts.has(l)).map((l) => (
+                <option key={l} value={l}>
+                  {LEVEL_LABELS[l]} ({levelCounts.get(l)})
+                </option>
+              ))}
+            </select>
+          )}
 
           {sources.length > 1 && (
             <select
@@ -459,7 +606,19 @@ export default function JobsPage() {
             <option value="newest">Newest</option>
           </select>
 
-          {matching && <AiLabel className="ml-auto">Screening…</AiLabel>}
+          {matching ? (
+            <AiLabel className="ml-auto">Screening…</AiLabel>
+          ) : (
+            unscreenedVisible.length > 0 && (
+              <button
+                type="button"
+                onClick={screenMore}
+                className="ml-auto rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+              >
+                Screen {Math.min(unscreenedVisible.length, SCREEN_BATCH)} more
+              </button>
+            )
+          )}
         </div>
       )}
 

@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { askClaudeText, ConfigError } from "@/lib/claude";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/applications/followup — body: { id } — draft a short follow-up
 // note for an application that's gone quiet. Not stored; the user copies it
 // and sends it themselves.
 export async function POST(request) {
-  const db = await getDb();
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   const { id } = await request.json();
 
-  const application = db.data.applications.find((a) => a.id === id);
+  const application = data.applications.find((a) => a.id === id);
   if (!application) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  const job = db.data.jobs.find((j) => j.id === application.jobId);
+  const job = data.jobs.find((j) => j.id === application.jobId);
   if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
   try {

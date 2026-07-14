@@ -2,27 +2,26 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Copy, Download, Flame, RefreshCw, Sparkles, Trophy } from "lucide-react";
+import { Check, Copy, Download, RefreshCw, RotateCcw, Sparkles, Trophy } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { TemplatePreview } from "@/components/template-preview";
 import { TEMPLATES, DEFAULT_TEMPLATE } from "@/lib/resume-templates";
-import { AiCard, AiLabel } from "@/components/ai-loading";
+import { profileToMarkdown } from "@/lib/resume-doc";
+import { AiCard } from "@/components/ai-loading";
 import { EmptyState } from "@/components/empty-state";
 import { AnimatedNumber } from "@/components/motion-primitives/animated-number";
 import { TextScramble } from "@/components/motion-primitives/text-scramble";
-import { Disclosure } from "@/components/motion-primitives/disclosure";
 import { InView } from "@/components/motion-primitives/in-view";
 
-// Resume studio: review the uploaded resume, get grilled for the material it
-// leaves out, then rebuild it — the enriched profile also sharpens job
-// matching, since screening only sees what the profile contains.
+// Resume studio: review the uploaded resume, edit it directly on the page,
+// then typeset whatever you wrote into one of the templates and download it.
 export default function ResumePage() {
   const [loaded, setLoaded] = useState(false);
   const [profile, setProfile] = useState(null);
   const [hasResume, setHasResume] = useState(false);
   const [review, setReview] = useState(null);
-  const [interview, setInterview] = useState(null);
-  const [builtResume, setBuiltResume] = useState(null);
+  const [markdown, setMarkdown] = useState(""); // live editor content
+  const [savedMarkdown, setSavedMarkdown] = useState(""); // last persisted copy
   const [template, setTemplate] = useState(null);
   const [insights, setInsights] = useState([]);
 
@@ -35,8 +34,8 @@ export default function ResumePage() {
         setProfile(data.profile);
         setHasResume(Boolean(data.hasResumeText));
         setReview(data.review);
-        setInterview(data.interview);
-        setBuiltResume(data.builtResume);
+        setMarkdown(data.resumeMarkdown ?? "");
+        setSavedMarkdown(data.resumeMarkdown ?? "");
         setTemplate(data.template);
         setInsights(insightData.insights ?? []);
         setLoaded(true);
@@ -50,8 +49,8 @@ export default function ResumePage() {
     <PageShell>
       <h1 className="text-3xl font-bold tracking-tight">Resume studio</h1>
       <p className="mt-2 text-neutral-500">
-        Get your resume torn apart, answer the questions it should have
-        answered, and walk out with a stronger one — better matches included.
+        Get a blunt read of your resume, edit it right here, and download it in
+        whichever template fits — no rewrites you didn&apos;t make.
       </p>
 
       {loaded && !ready && (
@@ -60,8 +59,8 @@ export default function ResumePage() {
             title={profile ? "Re-upload your resume" : "No resume yet"}
             description={
               profile
-                ? "The studio works from the original resume text — drop your PDF again once to enable it."
-                : "Upload your resume first — the studio reviews and rebuilds it from the original text."
+                ? "The studio works from your original resume — drop your PDF again once to enable it."
+                : "Upload your resume first — the studio reviews it, then lets you edit and restyle it."
             }
             cta="Upload resume"
             href="/upload"
@@ -72,71 +71,18 @@ export default function ResumePage() {
       {ready && (
         <>
           <ReviewSection review={review} onReview={setReview} />
-          <InterviewSection
-            interview={interview}
-            hasReview={Boolean(review)}
-            onChange={setInterview}
+          <EditorSection
+            markdown={markdown}
+            savedMarkdown={savedMarkdown}
+            profile={profile}
+            onChange={setMarkdown}
+            onSaved={setSavedMarkdown}
           />
-          <BuildSection
-            interview={interview}
-            builtResume={builtResume}
-            template={template}
-            onTemplate={setTemplate}
-            onBuilt={(data) => {
-              setBuiltResume(data.builtResume);
-              setProfile(data.profile);
-              if (data.template) setTemplate(data.template);
-            }}
-          />
+          <TemplateSection markdown={markdown} template={template} onTemplate={setTemplate} />
           <InsightsSection insights={insights} />
         </>
       )}
     </PageShell>
-  );
-}
-
-/* ---------- 04 · What's worked ---------- */
-
-function InsightsSection({ insights }) {
-  const lessons = insights.flatMap((record) =>
-    record.lessons.map((l) => ({ ...l, from: `${record.jobTitle} · ${record.company}` }))
-  );
-
-  return (
-    <section className="mt-14">
-      <SectionHeader
-        step={4}
-        title="What's worked"
-        description="Every hire gets distilled into lessons that automatically sharpen future reviews, interviews, rebuilds, and cover letters."
-      />
-
-      {lessons.length === 0 ? (
-        <p className="mt-5 flex items-start gap-2.5 text-sm text-neutral-500">
-          <Trophy size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" aria-hidden="true" />
-          Nothing recorded yet — when you mark an application as Hired in the
-          queue, the winning traits of that resume and cover letter land here
-          and feed every step above.
-        </p>
-      ) : (
-        <ul className="mt-5 flex flex-col gap-3">
-          {lessons.map((lesson, i) => (
-            <InView key={i} as="li" transition={{ duration: 0.3, ease: "easeOut", delay: i * 0.04 }}>
-              <div className="rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-400 dark:border-neutral-800 dark:text-neutral-600">
-                    {lesson.category.replace("_", " ")}
-                  </span>
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-neutral-400 dark:text-neutral-600">
-                    from {lesson.from}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{lesson.insight}</p>
-              </div>
-            </InView>
-          ))}
-        </ul>
-      )}
-    </section>
   );
 }
 
@@ -184,7 +130,7 @@ function ReviewSection({ review, onReview }) {
       <SectionHeader
         step={1}
         title="Review"
-        description="A blunt read of your current resume — every issue comes with a concrete fix."
+        description="A blunt read of your current resume — every issue comes with a concrete fix you can make in the editor below."
       />
 
       {!review && (
@@ -197,7 +143,7 @@ function ReviewSection({ review, onReview }) {
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <p className="text-sm text-neutral-500">
-                  One pass over the original text — content, impact, clarity.
+                  One pass over your resume — content, impact, clarity.
                 </p>
                 <button type="button" onClick={runReview} className="rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
                   Review my resume
@@ -269,290 +215,121 @@ function ReviewSection({ review, onReview }) {
   );
 }
 
-/* ---------- 02 · Grill me ---------- */
+/* ---------- 02 · Edit ---------- */
 
-const MIN_ANSWERS_TO_FINISH = 4;
-const MAX_QUESTIONS = 10;
+function EditorSection({ markdown, savedMarkdown, profile, onChange, onSaved }) {
+  const [saving, setSaving] = useState(false);
+  const dirty = markdown !== savedMarkdown;
 
-function InterviewSection({ interview, hasReview, onChange }) {
-  const [busy, setBusy] = useState(false);
-  const [answer, setAnswer] = useState("");
-
-  const pending = interview?.questions.find((q) => q.answer === null) ?? null;
-  const answered = interview?.questions.filter((q) => q.answer !== null) ?? [];
-
-  async function step(body) {
-    setBusy(true);
+  async function save() {
+    setSaving(true);
     try {
-      const res = await fetch("/api/interview", {
-        method: "POST",
+      const res = await fetch("/api/resume/document", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ markdown }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      onChange(data.interview);
-      setAnswer("");
+      onSaved(markdown);
+      toast.success("Resume saved");
+      return true;
     } catch (err) {
-      toast.error(err.message || "Interview failed");
+      toast.error(err.message || "Couldn't save");
+      return false;
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
   }
 
-  function submitAnswer(event) {
-    event.preventDefault();
-    if (!answer.trim()) return;
-    step({ answer });
+  // Downloads always reflect what's on screen: save first if there are edits,
+  // then hand off to the PDF route (which styles it with the chosen template).
+  async function downloadPdf() {
+    if (dirty && !(await save())) return;
+    window.location.href = "/api/resume/pdf";
+  }
+
+  async function copyMarkdown() {
+    await navigator.clipboard.writeText(markdown);
+    toast.success("Resume copied as markdown");
+  }
+
+  function resetToUploaded() {
+    onChange(profileToMarkdown(profile));
+    toast.message("Reset to your uploaded resume — Save to keep it");
   }
 
   return (
     <section className="mt-14">
       <SectionHeader
         step={2}
-        title="Grill me"
-        description="Works through your resume's gaps one question at a time — each answer supplies the material the rebuild needs to fix that gap."
+        title="Edit"
+        description="Your resume, editable right here. Every change flows straight into the template previews and the PDF — nothing is rewritten but you."
       />
 
-      {!interview && (
-        <div className="mt-5">
-          <AiCard busy={busy} className="p-5">
-            {busy ? (
-              <TextScramble className="font-medium" duration={1.2}>
-                Reading your resume for weak spots…
-              </TextScramble>
-            ) : (
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <p className="text-sm text-neutral-500">
-                  Up to {MAX_QUESTIONS} questions, a couple of sentences each.{" "}
-                  {hasReview
-                    ? "Questions follow the gaps your review found, worst first."
-                    : "Run the review first for the sharpest questions — it gives the interview its gap list."}
-                </p>
-                <button type="button" onClick={() => step({})} className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
-                  <Flame size={14} strokeWidth={1.5} aria-hidden="true" /> Grill me
-                </button>
-              </div>
-            )}
-          </AiCard>
-        </div>
-      )}
-
-      {interview && (
-        <div className="mt-5">
-          {/* Progress */}
-          <div className="flex items-center justify-between font-mono text-xs text-neutral-500">
-            <span>
-              {answered.length} answered · max {MAX_QUESTIONS}
-            </span>
-            {interview.done && <span className="text-black dark:text-white">interview complete</span>}
-          </div>
-          <div className="mt-2 h-1 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-900">
-            <div
-              className="h-full rounded-full bg-black transition-[width] duration-500 dark:bg-white"
-              style={{ width: `${(answered.length / MAX_QUESTIONS) * 100}%` }}
-            />
-          </div>
-
-          {/* Active question */}
-          {!interview.done && (
-            <AiCard busy={busy} className="mt-4 p-5">
-              {busy ? (
-                <TextScramble className="font-medium" duration={1.2}>
-                  Thinking about what to ask…
-                </TextScramble>
-              ) : pending ? (
-                <form onSubmit={submitAnswer}>
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-neutral-500">
-                    question {answered.length + 1} · {pending.focus}
-                  </p>
-                  <p className="mt-2 font-medium">{pending.question}</p>
-                  <textarea
-                    value={answer}
-                    onChange={(e) => setAnswer(e.target.value)}
-                    rows={3}
-                    placeholder="A couple of sentences is plenty…"
-                    aria-label="Your answer"
-                    className="mt-4 w-full resize-y rounded-xl border border-neutral-200 bg-transparent p-3 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
-                  />
-                  <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <button type="submit" disabled={!answer.trim()} className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black">
-                      Answer
-                    </button>
-                    {answered.length >= MIN_ANSWERS_TO_FINISH && (
-                      <button type="button" onClick={() => step({ finish: true })} className="text-sm text-neutral-500 transition hover:text-black dark:hover:text-white">
-                        That&apos;s enough — finish
-                      </button>
-                    )}
-                  </div>
-                </form>
-              ) : (
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm text-neutral-500">Ready for the next question.</p>
-                  <button type="button" onClick={() => step({})} className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
-                    Next question
-                  </button>
-                </div>
-              )}
-            </AiCard>
-          )}
-
-          {/* Transcript */}
-          {answered.length > 0 && (
-            <div className="mt-4">
-              <Disclosure
-                title={<span className="text-sm text-neutral-500">Your answers ({answered.length})</span>}
-              >
-                <ol className="space-y-4">
-                  {answered.map((q, i) => (
-                    <li key={i}>
-                      <p className="text-sm font-medium">
-                        <span className="font-mono text-xs text-neutral-500">Q{i + 1}</span> {q.question}
-                      </p>
-                      <p className="mt-1 pl-6 text-sm text-neutral-500">{q.answer}</p>
-                    </li>
-                  ))}
-                </ol>
-              </Disclosure>
-            </div>
-          )}
-
-          {interview.done && (
+      <div className="mt-5 rounded-2xl border border-neutral-200 dark:border-neutral-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
+          <p className="font-mono text-xs text-neutral-500">
+            resume.md · {dirty ? "unsaved changes" : "saved"}
+          </p>
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => step({ restart: true })}
-              disabled={busy}
-              className="mt-3 inline-flex items-center gap-2 text-sm text-neutral-500 transition hover:text-black disabled:opacity-50 dark:hover:text-white"
+              onClick={resetToUploaded}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
             >
-              <RefreshCw size={13} strokeWidth={1.5} aria-hidden="true" /> Start over
+              <RotateCcw size={12} strokeWidth={1.5} aria-hidden="true" /> Reset
             </button>
-          )}
-        </div>
-      )}
-    </section>
-  );
-}
-
-/* ---------- 03 · Rebuild ---------- */
-
-function BuildSection({ interview, builtResume, template, onTemplate, onBuilt }) {
-  const [busy, setBusy] = useState(false);
-  const answered = interview?.questions.filter((q) => q.answer !== null).length ?? 0;
-
-  async function build() {
-    setBusy(true);
-    try {
-      const res = await fetch("/api/resume/build", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      onBuilt(data);
-      toast.success("Resume rebuilt — your profile now includes everything, so matches improve too");
-    } catch (err) {
-      toast.error(err.message || "Resume build failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function copyResume() {
-    await navigator.clipboard.writeText(builtResume.markdown);
-    toast.success("Resume copied as markdown");
-  }
-
-  async function copyClaudePrompt() {
-    try {
-      const res = await fetch("/api/resume/prompt");
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      await navigator.clipboard.writeText(data.prompt);
-      toast.success("Prompt copied — paste it into claude.ai for the highest-quality rebuild");
-    } catch (err) {
-      toast.error(err.message || "Couldn't build the prompt");
-    }
-  }
-
-  return (
-    <section className="mt-14">
-      <SectionHeader
-        step={3}
-        title="Rebuild"
-        description="Your resume rewritten with everything the interview surfaced — and the richer profile makes every job screen sharper."
-      />
-
-      <div className="mt-5">
-        <AiCard busy={busy} className="p-5">
-          {busy ? (
-            <div className="flex flex-col gap-1">
-              <TextScramble className="font-medium" duration={1.2}>
-                Rebuilding your resume…
-              </TextScramble>
-              <AiLabel>Folding {answered} interview answer{answered === 1 ? "" : "s"} into the rewrite</AiLabel>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <p className="text-sm text-neutral-500">
-                {answered > 0
-                  ? `Uses your original resume plus ${answered} interview answer${answered === 1 ? "" : "s"}.`
-                  : "Works from the original resume alone — the interview above makes it much better."}
-              </p>
-              <span className="flex flex-wrap items-center gap-2">
-                <button type="button" onClick={copyClaudePrompt} className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2.5 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500">
-                  <Copy size={14} strokeWidth={1.5} aria-hidden="true" /> Copy Claude prompt
-                </button>
-                <button type="button" onClick={build} className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
-                  <Sparkles size={14} strokeWidth={1.5} aria-hidden="true" />
-                  {builtResume ? "Rebuild again" : "Build my resume"}
-                </button>
-              </span>
-            </div>
-          )}
-        </AiCard>
-
-        {!busy && (
-          <p className="mt-3 text-xs text-neutral-500">
-            Want the best possible result? &ldquo;Copy Claude prompt&rdquo; packages your
-            resume, its gaps, and your answers into one prompt — paste it into
-            claude.ai and let a stronger model do the rebuild there.
-          </p>
-        )}
-
-        {builtResume && !busy && (
-          <div className="mt-4 rounded-2xl border border-neutral-200 dark:border-neutral-800">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-              <p className="font-mono text-xs text-neutral-500">
-                resume.md · {new Date(builtResume.createdAt).toLocaleDateString()}
-              </p>
-              <div className="flex gap-2">
-                <button type="button" onClick={copyResume} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600">
-                  <Copy size={12} strokeWidth={1.5} aria-hidden="true" /> Copy
-                </button>
-                <a href="/api/resume/pdf" download="resume.pdf" className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
-                  <Download size={12} strokeWidth={1.5} aria-hidden="true" /> Download PDF
-                </a>
-              </div>
-            </div>
-            <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap p-5 font-mono text-xs leading-relaxed text-neutral-600 dark:text-neutral-300">
-              {builtResume.markdown}
-            </pre>
+            <button
+              type="button"
+              onClick={copyMarkdown}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+            >
+              <Copy size={12} strokeWidth={1.5} aria-hidden="true" /> Copy
+            </button>
+            <button
+              type="button"
+              onClick={save}
+              disabled={!dirty || saving}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+            >
+              <Check size={12} strokeWidth={1.5} aria-hidden="true" /> {saving ? "Saving…" : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={downloadPdf}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+            >
+              <Download size={12} strokeWidth={1.5} aria-hidden="true" /> Download PDF
+            </button>
           </div>
-        )}
-
-        {builtResume && !busy && (
-          <TemplatePicker
-            markdown={builtResume.markdown}
-            template={template}
-            onTemplate={onTemplate}
-          />
-        )}
+        </div>
+        <textarea
+          value={markdown}
+          onChange={(e) => onChange(e.target.value)}
+          rows={24}
+          spellCheck={false}
+          aria-label="Resume markdown"
+          className="w-full resize-y bg-transparent p-5 font-mono text-xs leading-relaxed text-neutral-700 outline-none dark:text-neutral-300"
+        />
       </div>
+
+      <p className="mt-2 text-xs text-neutral-500">
+        Formatting: start your name with &ldquo;# &rdquo;, a section with &ldquo;## &rdquo; (e.g.
+        Experience), a role or entry with &ldquo;### &rdquo;, and each bullet with &ldquo;- &rdquo;. The
+        line right under your name is your contact info.
+      </p>
     </section>
   );
 }
 
-// Ten templates, previewed with the user's actual resume. The 3 Claude
-// recommends for this profile come first; the chosen one styles every PDF
-// download, including tailored resumes.
-function TemplatePicker({ markdown, template, onTemplate }) {
+/* ---------- 03 · Template ---------- */
+
+// Ten templates, previewed with the resume text in the editor above. The 3
+// Claude recommends for this profile come first; the chosen one styles every
+// PDF download, including tailored resumes.
+function TemplateSection({ markdown, template, onTemplate }) {
   const [busy, setBusy] = useState(false);
   const picks = template?.picks ?? null;
   const selected = template?.selected ?? DEFAULT_TEMPLATE;
@@ -585,17 +362,15 @@ function TemplatePicker({ markdown, template, onTemplate }) {
   }
 
   return (
-    <div className="mt-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-xs font-medium uppercase tracking-widest text-neutral-500">
-            Template
-          </h3>
-          <p className="mt-1 text-sm text-neutral-500">
-            Previewed with your actual resume — the one you pick styles every
-            PDF download, tailored versions included.
-          </p>
-        </div>
+    <section className="mt-14">
+      <SectionHeader
+        step={3}
+        title="Template"
+        description="Whatever's in your editor, typeset into a design. The one you pick styles every PDF download, tailored versions included."
+      />
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-neutral-500">Previewed with your live resume text above.</p>
         <button
           type="button"
           onClick={() => post({ recommend: true }, "Top 3 templates picked for your profile")}
@@ -650,6 +425,51 @@ function TemplatePicker({ markdown, template, onTemplate }) {
           );
         })}
       </ul>
-    </div>
+    </section>
+  );
+}
+
+/* ---------- 04 · What's worked ---------- */
+
+function InsightsSection({ insights }) {
+  const lessons = insights.flatMap((record) =>
+    record.lessons.map((l) => ({ ...l, from: `${record.jobTitle} · ${record.company}` }))
+  );
+
+  return (
+    <section className="mt-14">
+      <SectionHeader
+        step={4}
+        title="What's worked"
+        description="Every hire gets distilled into lessons that automatically sharpen future reviews and cover letters."
+      />
+
+      {lessons.length === 0 ? (
+        <p className="mt-5 flex items-start gap-2.5 text-sm text-neutral-500">
+          <Trophy size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" aria-hidden="true" />
+          Nothing recorded yet — when you mark an application as Hired in the
+          queue, the winning traits of that resume and cover letter land here
+          and feed every step above.
+        </p>
+      ) : (
+        <ul className="mt-5 flex flex-col gap-3">
+          {lessons.map((lesson, i) => (
+            <InView key={i} as="li" transition={{ duration: 0.3, ease: "easeOut", delay: i * 0.04 }}>
+              <div className="rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-400 dark:border-neutral-800 dark:text-neutral-600">
+                    {lesson.category.replace("_", " ")}
+                  </span>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-neutral-400 dark:text-neutral-600">
+                    from {lesson.from}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{lesson.insight}</p>
+              </div>
+            </InView>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

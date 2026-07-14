@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // GET /api/stats — the funnel and outcome numbers, computed from the store.
 // Everything here is derived; nothing extra is written.
 export async function GET() {
-  const db = await getDb();
-  const jobs = db.data.jobs ?? [];
-  const apps = db.data.applications ?? [];
+  const { db, data } = await getUserData();
+  if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  const jobs = data.jobs ?? [];
+  const apps = data.applications ?? [];
 
   const screened = jobs.filter((j) => j.match);
   const qualified = screened.filter((j) => j.match.qualified);
@@ -45,6 +46,6 @@ export async function GET() {
       ? Math.round(screened.reduce((sum, j) => sum + j.match.score, 0) / screened.length)
       : null,
     scores,
-    lessons: (db.data.insights ?? []).reduce((n, i) => n + i.lessons.length, 0),
+    lessons: (data.insights ?? []).reduce((n, i) => n + i.lessons.length, 0),
   });
 }

@@ -2,26 +2,30 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Copy, Download, RefreshCw, RotateCcw, Sparkles, Trophy } from "lucide-react";
+import { Check, X, Minus, Copy, Download, Plus, Trash2, RefreshCw, RotateCcw, Sparkles, Trophy } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { TemplatePreview } from "@/components/template-preview";
-import { TEMPLATES, DEFAULT_TEMPLATE } from "@/lib/resume-templates";
-import { profileToMarkdown } from "@/lib/resume-doc";
+import { TEMPLATES, DEFAULT_TEMPLATE, getTemplate } from "@/lib/resume-templates";
+import { profileToDoc, profileToMarkdown } from "@/lib/resume-doc";
 import { AiCard } from "@/components/ai-loading";
 import { EmptyState } from "@/components/empty-state";
 import { AnimatedNumber } from "@/components/motion-primitives/animated-number";
 import { TextScramble } from "@/components/motion-primitives/text-scramble";
 import { InView } from "@/components/motion-primitives/in-view";
 
-// Resume studio: review the uploaded resume, edit it directly on the page,
-// then typeset whatever you wrote into one of the templates and download it.
+const BLANK_EXP = { title: "", company: "", duration: "", highlights: [] };
+const BLANK_EDU = { degree: "", field: "", institution: "", graduation_year: "" };
+const BLANK_PROJ = { name: "", description: "", technologies: [] };
+
+// Resume studio: audit the resume for ATS-friendliness, edit it directly on
+// the page (structured, with a live preview), then download it in any template.
 export default function ResumePage() {
   const [loaded, setLoaded] = useState(false);
   const [profile, setProfile] = useState(null);
   const [hasResume, setHasResume] = useState(false);
   const [review, setReview] = useState(null);
-  const [markdown, setMarkdown] = useState(""); // live editor content
-  const [savedMarkdown, setSavedMarkdown] = useState(""); // last persisted copy
+  const [doc, setDoc] = useState(null); // structured resume document being edited
+  const [savedDoc, setSavedDoc] = useState(null); // last persisted copy
   const [template, setTemplate] = useState(null);
   const [insights, setInsights] = useState([]);
 
@@ -34,8 +38,8 @@ export default function ResumePage() {
         setProfile(data.profile);
         setHasResume(Boolean(data.hasResumeText));
         setReview(data.review);
-        setMarkdown(data.resumeMarkdown ?? "");
-        setSavedMarkdown(data.resumeMarkdown ?? "");
+        setDoc(data.resumeDoc ?? null);
+        setSavedDoc(data.resumeDoc ?? null);
         setTemplate(data.template);
         setInsights(insightData.insights ?? []);
         setLoaded(true);
@@ -43,14 +47,16 @@ export default function ResumePage() {
       .catch(() => setLoaded(true));
   }, []);
 
-  const ready = profile && hasResume;
+  const ready = profile && hasResume && doc;
+  const markdown = useMemo(() => (doc ? profileToMarkdown(doc) : ""), [doc]);
+  const selectedTemplate = getTemplate(template?.selected ?? DEFAULT_TEMPLATE);
 
   return (
     <PageShell>
       <h1 className="text-3xl font-bold tracking-tight">Resume studio</h1>
       <p className="mt-2 text-neutral-500">
-        Get a blunt read of your resume, edit it right here, and download it in
-        whichever template fits — no rewrites you didn&apos;t make.
+        See how ATS-friendly your resume is, edit it right here, and download it
+        in whichever template fits — no rewrites you didn&apos;t make.
       </p>
 
       {loaded && !ready && (
@@ -60,7 +66,7 @@ export default function ResumePage() {
             description={
               profile
                 ? "The studio works from your original resume — drop your PDF again once to enable it."
-                : "Upload your resume first — the studio reviews it, then lets you edit and restyle it."
+                : "Upload your resume first — the studio audits it, then lets you edit and restyle it."
             }
             cta="Upload resume"
             href="/upload"
@@ -72,11 +78,13 @@ export default function ResumePage() {
         <>
           <ReviewSection review={review} onReview={setReview} />
           <EditorSection
-            markdown={markdown}
-            savedMarkdown={savedMarkdown}
+            doc={doc}
+            savedDoc={savedDoc}
             profile={profile}
-            onChange={setMarkdown}
-            onSaved={setSavedMarkdown}
+            template={selectedTemplate}
+            markdown={markdown}
+            onChange={setDoc}
+            onSaved={setSavedDoc}
           />
           <TemplateSection markdown={markdown} template={template} onTemplate={setTemplate} />
           <InsightsSection insights={insights} />
@@ -96,9 +104,10 @@ function SectionHeader({ step, title, description }) {
   );
 }
 
-/* ---------- 01 · Review ---------- */
+/* ---------- 01 · ATS review ---------- */
 
 const SEVERITY_ORDER = { critical: 0, important: 1, polish: 2 };
+const CHECK_ICON = { pass: Check, warn: Minus, fail: X };
 
 function ReviewSection({ review, onReview }) {
   const [busy, setBusy] = useState(false);
@@ -129,8 +138,8 @@ function ReviewSection({ review, onReview }) {
     <section className="mt-12">
       <SectionHeader
         step={1}
-        title="Review"
-        description="A blunt read of your current resume — every issue comes with a concrete fix you can make in the editor below."
+        title="ATS score"
+        description="How cleanly an Applicant Tracking System can read your resume — and how well it would rank. Every issue comes with a fix you can make in the editor below."
       />
 
       {!review && (
@@ -138,15 +147,15 @@ function ReviewSection({ review, onReview }) {
           <AiCard busy={busy} className="p-5">
             {busy ? (
               <TextScramble className="font-medium" duration={1.2}>
-                Reading like a recruiter…
+                Auditing for ATS parsers…
               </TextScramble>
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <p className="text-sm text-neutral-500">
-                  One pass over your resume — content, impact, clarity.
+                  Checks parseability, standard sections, dates, and keyword match.
                 </p>
                 <button type="button" onClick={runReview} className="rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
-                  Review my resume
+                  Check ATS score
                 </button>
               </div>
             )}
@@ -160,9 +169,34 @@ function ReviewSection({ review, onReview }) {
             <p className="max-w-lg text-neutral-600 dark:text-neutral-300">{review.summary}</p>
             <p className="font-mono text-4xl font-semibold tabular-nums">
               <AnimatedNumber value={review.score} />
-              <span className="text-sm text-neutral-500">/100</span>
+              <span className="text-sm text-neutral-500">/100 ATS</span>
             </p>
           </div>
+
+          {review.checks?.length > 0 && (
+            <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+              {review.checks.map((check, i) => {
+                const Icon = CHECK_ICON[check.status] ?? Minus;
+                return (
+                  <li
+                    key={i}
+                    className="flex items-start gap-2.5 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800"
+                  >
+                    <Icon
+                      size={14}
+                      strokeWidth={check.status === "pass" ? 2.5 : 2}
+                      className={`mt-0.5 shrink-0 ${check.status === "fail" ? "text-black dark:text-white" : "text-neutral-400"}`}
+                      aria-hidden="true"
+                    />
+                    <span>
+                      <span className="text-sm font-medium">{check.label}</span>
+                      <span className="mt-0.5 block text-xs text-neutral-500">{check.detail}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
           {review.strengths?.length > 0 && (
             <ul className="mt-5 space-y-1.5">
@@ -207,7 +241,7 @@ function ReviewSection({ review, onReview }) {
             className="mt-4 inline-flex items-center gap-2 text-sm text-neutral-500 transition hover:text-black disabled:opacity-50 dark:hover:text-white"
           >
             <RefreshCw size={13} strokeWidth={1.5} className={busy ? "animate-spin" : ""} aria-hidden="true" />
-            {busy ? "Re-reviewing…" : "Re-review"}
+            {busy ? "Re-checking…" : "Re-check"}
           </button>
         </div>
       )}
@@ -217,9 +251,19 @@ function ReviewSection({ review, onReview }) {
 
 /* ---------- 02 · Edit ---------- */
 
-function EditorSection({ markdown, savedMarkdown, profile, onChange, onSaved }) {
+const inputCls =
+  "w-full rounded-lg border border-neutral-200 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800";
+
+function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, onSaved }) {
   const [saving, setSaving] = useState(false);
-  const dirty = markdown !== savedMarkdown;
+  const dirty = JSON.stringify(doc) !== JSON.stringify(savedDoc);
+
+  // Immutable helpers over the structured doc.
+  const setField = (key, value) => onChange({ ...doc, [key]: value });
+  const setItem = (key, idx, patch) =>
+    onChange({ ...doc, [key]: doc[key].map((it, i) => (i === idx ? { ...it, ...patch } : it)) });
+  const addItem = (key, blank) => onChange({ ...doc, [key]: [...doc[key], structuredClone(blank)] });
+  const removeItem = (key, idx) => onChange({ ...doc, [key]: doc[key].filter((_, i) => i !== idx) });
 
   async function save() {
     setSaving(true);
@@ -227,11 +271,11 @@ function EditorSection({ markdown, savedMarkdown, profile, onChange, onSaved }) 
       const res = await fetch("/api/resume/document", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ markdown }),
+        body: JSON.stringify({ doc }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      onSaved(markdown);
+      onSaved(doc);
       toast.success("Resume saved");
       return true;
     } catch (err) {
@@ -242,8 +286,6 @@ function EditorSection({ markdown, savedMarkdown, profile, onChange, onSaved }) 
     }
   }
 
-  // Downloads always reflect what's on screen: save first if there are edits,
-  // then hand off to the PDF route (which styles it with the chosen template).
   async function downloadPdf() {
     if (dirty && !(await save())) return;
     window.location.href = "/api/resume/pdf";
@@ -251,11 +293,11 @@ function EditorSection({ markdown, savedMarkdown, profile, onChange, onSaved }) 
 
   async function copyMarkdown() {
     await navigator.clipboard.writeText(markdown);
-    toast.success("Resume copied as markdown");
+    toast.success("Resume copied as text");
   }
 
   function resetToUploaded() {
-    onChange(profileToMarkdown(profile));
+    onChange(profileToDoc(profile));
     toast.message("Reset to your uploaded resume — Save to keep it");
   }
 
@@ -264,71 +306,159 @@ function EditorSection({ markdown, savedMarkdown, profile, onChange, onSaved }) 
       <SectionHeader
         step={2}
         title="Edit"
-        description="Your resume, editable right here. Every change flows straight into the template previews and the PDF — nothing is rewritten but you."
+        description="Your resume, editable field by field. Changes flow straight into the live preview and the PDF — nothing is rewritten but you."
       />
 
-      <div className="mt-5 rounded-2xl border border-neutral-200 dark:border-neutral-800">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-          <p className="font-mono text-xs text-neutral-500">
-            resume.md · {dirty ? "unsaved changes" : "saved"}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={resetToUploaded}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
-            >
-              <RotateCcw size={12} strokeWidth={1.5} aria-hidden="true" /> Reset
-            </button>
-            <button
-              type="button"
-              onClick={copyMarkdown}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
-            >
-              <Copy size={12} strokeWidth={1.5} aria-hidden="true" /> Copy
-            </button>
-            <button
-              type="button"
-              onClick={save}
-              disabled={!dirty || saving}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
-            >
-              <Check size={12} strokeWidth={1.5} aria-hidden="true" /> {saving ? "Saving…" : "Save"}
-            </button>
-            <button
-              type="button"
-              onClick={downloadPdf}
-              disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
-            >
-              <Download size={12} strokeWidth={1.5} aria-hidden="true" /> Download PDF
-            </button>
-          </div>
-        </div>
-        <textarea
-          value={markdown}
-          onChange={(e) => onChange(e.target.value)}
-          rows={24}
-          spellCheck={false}
-          aria-label="Resume markdown"
-          className="w-full resize-y bg-transparent p-5 font-mono text-xs leading-relaxed text-neutral-700 outline-none dark:text-neutral-300"
-        />
+      {/* Toolbar */}
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        <span className="font-mono text-xs text-neutral-500">
+          {dirty ? "unsaved changes" : "saved"}
+        </span>
+        <span className="ml-auto flex flex-wrap gap-2">
+          <button type="button" onClick={resetToUploaded} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600">
+            <RotateCcw size={12} strokeWidth={1.5} aria-hidden="true" /> Reset
+          </button>
+          <button type="button" onClick={copyMarkdown} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600">
+            <Copy size={12} strokeWidth={1.5} aria-hidden="true" /> Copy
+          </button>
+          <button type="button" onClick={save} disabled={!dirty || saving} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500">
+            <Check size={12} strokeWidth={1.5} aria-hidden="true" /> {saving ? "Saving…" : "Save"}
+          </button>
+          <button type="button" onClick={downloadPdf} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black">
+            <Download size={12} strokeWidth={1.5} aria-hidden="true" /> Download PDF
+          </button>
+        </span>
       </div>
 
-      <p className="mt-2 text-xs text-neutral-500">
-        Formatting: start your name with &ldquo;# &rdquo;, a section with &ldquo;## &rdquo; (e.g.
-        Experience), a role or entry with &ldquo;### &rdquo;, and each bullet with &ldquo;- &rdquo;. The
-        line right under your name is your contact info.
-      </p>
+      <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_300px]">
+        {/* Form */}
+        <div className="order-2 space-y-8 lg:order-1">
+          {/* Contact */}
+          <FieldGroup label="Contact">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input className={inputCls} placeholder="Full name" aria-label="Full name" value={doc.name} onChange={(e) => setField("name", e.target.value)} />
+              <input className={inputCls} placeholder="Email" aria-label="Email" value={doc.email} onChange={(e) => setField("email", e.target.value)} />
+              <input className={`${inputCls} sm:col-span-2`} placeholder="Location" aria-label="Location" value={doc.location} onChange={(e) => setField("location", e.target.value)} />
+            </div>
+          </FieldGroup>
+
+          {/* Experience */}
+          <FieldGroup label="Experience" onAdd={() => addItem("experience", BLANK_EXP)} addLabel="Add role">
+            {doc.experience.length === 0 && <Empty>No experience yet — add your first role.</Empty>}
+            {doc.experience.map((exp, i) => (
+              <EntryCard key={i} onRemove={() => removeItem("experience", i)}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input className={inputCls} placeholder="Job title" aria-label="Job title" value={exp.title} onChange={(e) => setItem("experience", i, { title: e.target.value })} />
+                  <input className={inputCls} placeholder="Company" aria-label="Company" value={exp.company} onChange={(e) => setItem("experience", i, { company: e.target.value })} />
+                  <input className={`${inputCls} sm:col-span-2`} placeholder="Dates (e.g. Jan 2023 – Present)" aria-label="Dates" value={exp.duration} onChange={(e) => setItem("experience", i, { duration: e.target.value })} />
+                </div>
+                <textarea
+                  className={`${inputCls} mt-3`}
+                  rows={4}
+                  placeholder="Bullet points — one per line"
+                  aria-label="Highlights"
+                  value={exp.highlights.join("\n")}
+                  onChange={(e) => setItem("experience", i, { highlights: e.target.value.split("\n") })}
+                />
+              </EntryCard>
+            ))}
+          </FieldGroup>
+
+          {/* Education */}
+          <FieldGroup label="Education" onAdd={() => addItem("education", BLANK_EDU)} addLabel="Add education">
+            {doc.education.length === 0 && <Empty>No education yet.</Empty>}
+            {doc.education.map((ed, i) => (
+              <EntryCard key={i} onRemove={() => removeItem("education", i)}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input className={inputCls} placeholder="Degree (e.g. BSc)" aria-label="Degree" value={ed.degree} onChange={(e) => setItem("education", i, { degree: e.target.value })} />
+                  <input className={inputCls} placeholder="Field of study" aria-label="Field" value={ed.field} onChange={(e) => setItem("education", i, { field: e.target.value })} />
+                  <input className={inputCls} placeholder="Institution" aria-label="Institution" value={ed.institution} onChange={(e) => setItem("education", i, { institution: e.target.value })} />
+                  <input className={inputCls} placeholder="Graduation year" aria-label="Graduation year" value={ed.graduation_year} onChange={(e) => setItem("education", i, { graduation_year: e.target.value })} />
+                </div>
+              </EntryCard>
+            ))}
+          </FieldGroup>
+
+          {/* Skills */}
+          <FieldGroup label="Skills">
+            <textarea
+              className={inputCls}
+              rows={3}
+              placeholder="One skill per line"
+              aria-label="Skills"
+              value={doc.skills.join("\n")}
+              onChange={(e) => setField("skills", e.target.value.split("\n"))}
+            />
+          </FieldGroup>
+
+          {/* Projects */}
+          <FieldGroup label="Projects" onAdd={() => addItem("projects", BLANK_PROJ)} addLabel="Add project">
+            {doc.projects.length === 0 && <Empty>No projects — optional.</Empty>}
+            {doc.projects.map((pr, i) => (
+              <EntryCard key={i} onRemove={() => removeItem("projects", i)}>
+                <input className={inputCls} placeholder="Project name" aria-label="Project name" value={pr.name} onChange={(e) => setItem("projects", i, { name: e.target.value })} />
+                <textarea className={`${inputCls} mt-3`} rows={2} placeholder="What it is / what you did" aria-label="Project description" value={pr.description} onChange={(e) => setItem("projects", i, { description: e.target.value })} />
+                <input className={`${inputCls} mt-3`} placeholder="Technologies (comma-separated)" aria-label="Technologies" value={pr.technologies.join(",")} onChange={(e) => setItem("projects", i, { technologies: e.target.value.split(",") })} />
+              </EntryCard>
+            ))}
+          </FieldGroup>
+        </div>
+
+        {/* Live preview */}
+        <div className="order-1 lg:order-2">
+          <div className="lg:sticky lg:top-6">
+            <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
+              Live preview · {template.name}
+            </p>
+            <div className="overflow-hidden rounded-xl border border-neutral-200 shadow-sm dark:border-neutral-800">
+              <TemplatePreview template={template} markdown={markdown} />
+            </div>
+            <p className="mt-2 text-xs text-neutral-500">
+              Updates as you type. Pick a different template below.
+            </p>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
 
+function FieldGroup({ label, onAdd, addLabel, children }) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-xs font-medium uppercase tracking-widest text-neutral-500">{label}</h3>
+        {onAdd && (
+          <button type="button" onClick={onAdd} className="inline-flex items-center gap-1 text-xs font-medium text-neutral-500 transition hover:text-black dark:hover:text-white">
+            <Plus size={12} strokeWidth={2} aria-hidden="true" /> {addLabel}
+          </button>
+        )}
+      </div>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
+
+function EntryCard({ onRemove, children }) {
+  return (
+    <div className="relative rounded-2xl border border-neutral-200 p-4 pr-10 dark:border-neutral-800">
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Remove"
+        className="absolute right-3 top-3 rounded-md p-1 text-neutral-400 transition hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-900 dark:hover:text-white"
+      >
+        <Trash2 size={14} strokeWidth={1.5} aria-hidden="true" />
+      </button>
+      {children}
+    </div>
+  );
+}
+
+const Empty = ({ children }) => <p className="text-sm text-neutral-500">{children}</p>;
+
 /* ---------- 03 · Template ---------- */
 
-// Ten templates, previewed with the resume text in the editor above. The 3
-// Claude recommends for this profile come first; the chosen one styles every
-// PDF download, including tailored resumes.
 function TemplateSection({ markdown, template, onTemplate }) {
   const [busy, setBusy] = useState(false);
   const picks = template?.picks ?? null;
@@ -370,7 +500,7 @@ function TemplateSection({ markdown, template, onTemplate }) {
       />
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-neutral-500">Previewed with your live resume text above.</p>
+        <p className="text-sm text-neutral-500">Previewed with your live resume above.</p>
         <button
           type="button"
           onClick={() => post({ recommend: true }, "Top 3 templates picked for your profile")}
@@ -406,9 +536,7 @@ function TemplateSection({ markdown, template, onTemplate }) {
                 </span>
                 <span className="mt-1.5 flex items-center gap-1.5 px-0.5">
                   <span className="text-xs font-medium">{t.name}</span>
-                  {isSelected && (
-                    <Check size={11} strokeWidth={2.5} aria-hidden="true" />
-                  )}
+                  {isSelected && <Check size={11} strokeWidth={2.5} aria-hidden="true" />}
                   {reason && (
                     <span className="ml-auto rounded-full bg-black px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white dark:bg-white dark:text-black">
                       pick

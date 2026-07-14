@@ -7,9 +7,9 @@ import {
 } from "@/lib/matcher";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
-// POST /api/recommend — Claude reads the stored profile and suggests
-// job-board searches the candidate actually qualifies for (jobs,
-// internships, exploratory programs). Persisted so revisits are free.
+// POST /api/recommend — Claude reads the stored profile and suggests a long
+// list (30+) of real companies that hire in the candidate's field, region-
+// biased but worldwide. Persisted so revisits are free.
 export async function POST() {
   const { db, data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
@@ -21,7 +21,7 @@ export async function POST() {
   }
 
   try {
-    const { field, roles, companies } = await askClaudeJSON({
+    const { field, companies } = await askClaudeJSON({
       system: RECOMMEND_SYSTEM_PROMPT,
       prompt: buildRecommendPrompt(data.profile),
       schema: RECOMMEND_SCHEMA,
@@ -29,12 +29,11 @@ export async function POST() {
 
     data.recommendations = {
       field,
-      roles,
       companies,
       createdAt: new Date().toISOString(),
     };
     await db.write();
-    return NextResponse.json({ field, roles, companies });
+    return NextResponse.json({ field, companies });
   } catch (err) {
     console.error("recommendation failed:", err);
     const message = err instanceof ConfigError ? err.message : "Recommendation failed";
@@ -49,7 +48,6 @@ export async function GET() {
   const rec = data.recommendations;
   return NextResponse.json({
     field: rec?.field ?? null,
-    roles: rec?.roles ?? null,
     companies: rec?.companies ?? null,
   });
 }

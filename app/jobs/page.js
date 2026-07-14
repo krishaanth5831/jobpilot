@@ -15,12 +15,20 @@ import { AnimatedNumber } from "@/components/motion-primitives/animated-number";
 import { AnimatedBackground } from "@/components/motion-primitives/animated-background";
 import { Disclosure } from "@/components/motion-primitives/disclosure";
 import { InView } from "@/components/motion-primitives/in-view";
+import { EMPLOYMENT_LABELS, LEVEL_LABELS, classifyJob } from "@/lib/job-sources/classify";
 
 const FILTERS = [
   { id: "all", label: "All" },
   { id: "qualified", label: "Qualified" },
   { id: "notyet", label: "Not yet" },
 ];
+
+// Fixed display order for the type/level dropdowns.
+const EMPLOYMENT_ORDER = ["internship", "fulltime", "parttime", "contract"];
+const LEVEL_ORDER = ["intern", "entry", "mid", "senior"];
+
+// How many company chips to show before "Show all".
+const COMPANIES_PREVIEW = 24;
 
 // A search pulls a big worldwide pool, but each screening is a paid Claude
 // call — so we only auto-screen this many, and the user screens more on demand.
@@ -39,10 +47,13 @@ export default function JobsPage() {
   const [filter, setFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all"); // employment type
+  const [levelFilter, setLevelFilter] = useState("all"); // experience level
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [sort, setSort] = useState("score"); // score | newest
-  const [recs, setRecs] = useState(null); // { field, roles, companies }
+  const [recs, setRecs] = useState(null); // { field, companies }
   const [recommending, setRecommending] = useState(false);
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
   const [searchedAs, setSearchedAs] = useState(null);
   const [showPaste, setShowPaste] = useState(false);
   const [pasting, setPasting] = useState(false);
@@ -64,7 +75,7 @@ export default function JobsPage() {
       .catch(() => {});
     fetch("/api/recommend")
       .then((res) => res.json())
-      .then((data) => setRecs(data.roles || data.companies ? data : null))
+      .then((data) => setRecs(data.companies ? data : null))
       .catch(() => {});
   }, []);
 
@@ -252,12 +263,30 @@ export default function JobsPage() {
     [countryCounts]
   );
 
+  // Employment type (internship / full-time / part-time / contract) and
+  // experience level for each job. Searched jobs carry these tags; anything
+  // else (pasted, legacy) is classified from its title on the fly.
+  const typeOf = (j) => j.employmentType ?? classifyJob(j).employmentType;
+  const levelOf = (j) => j.level ?? classifyJob(j).level;
+  const typeCounts = useMemo(() => {
+    const m = new Map();
+    for (const j of jobs) m.set(typeOf(j), (m.get(typeOf(j)) ?? 0) + 1);
+    return m;
+  }, [jobs]);
+  const levelCounts = useMemo(() => {
+    const m = new Map();
+    for (const j of jobs) m.set(levelOf(j), (m.get(levelOf(j)) ?? 0) + 1);
+    return m;
+  }, [jobs]);
+
   const visible = useMemo(() => {
     const filtered = jobs.filter((job) => {
       if (filter === "qualified" && !job.match?.qualified) return false;
       if (filter === "notyet" && (!job.match || job.match.qualified)) return false;
       if (sourceFilter !== "all" && job.source !== sourceFilter) return false;
       if (countryFilter !== "all" && job.countryName !== countryFilter) return false;
+      if (typeFilter !== "all" && typeOf(job) !== typeFilter) return false;
+      if (levelFilter !== "all" && levelOf(job) !== levelFilter) return false;
       if (remoteOnly && !`${job.location}`.toLowerCase().includes("remote")) return false;
       return true;
     });
@@ -270,7 +299,7 @@ export default function JobsPage() {
     return filtered.toSorted(
       (a, b) => (b.match?.score ?? -1) - (a.match?.score ?? -1)
     );
-  }, [jobs, filter, sourceFilter, countryFilter, remoteOnly, sort]);
+  }, [jobs, filter, sourceFilter, countryFilter, typeFilter, levelFilter, remoteOnly, sort]);
 
   // Unscreened jobs in the current view — the "Screen more" batch.
   const unscreenedVisible = useMemo(() => visible.filter((j) => !j.match), [visible]);
@@ -282,7 +311,8 @@ export default function JobsPage() {
     <PageShell>
       <h1 className="text-3xl font-bold tracking-tight">Find jobs</h1>
       <p className="mt-2 text-neutral-500">
-        Search live postings — every result is screened against your resume.
+        Live postings pulled from job boards worldwide — filter by country,
+        type, and level; every result is screened against your resume.
       </p>
 
       {/* Expandable search toolbar */}
@@ -362,12 +392,12 @@ export default function JobsPage() {
             Paste a job
           </button>
           {recommending ? (
-            <AiLabel>Reading your resume for the right roles…</AiLabel>
+            <AiLabel>Reading your resume for companies that hire in your field…</AiLabel>
           ) : (
             !recs && (
               <p className="text-sm text-neutral-500">
-                Jobs, internships, and programs you actually qualify for — from
-                your resume, not guesswork.
+                Companies worldwide that hire in your field — straight from your
+                resume. Click any to see their openings.
               </p>
             )
           )}
@@ -428,65 +458,43 @@ export default function JobsPage() {
           </form>
         )}
 
-        {recs && !recommending && (
-          <div className="mt-4 space-y-5">
-            {recs.roles?.length > 0 && (
-              <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
-                  Roles to search{recs.field ? ` · ${recs.field}` : ""}
-                </p>
-                <ul className="grid gap-3 sm:grid-cols-2">
-                  {recs.roles.map((rec) => (
-                    <li key={rec.title}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setRole(rec.title);
-                          runSearch(rec.title);
-                        }}
-                        disabled={searching || matching}
-                        className="h-full w-full rounded-2xl border border-neutral-200 p-4 text-left transition hover:border-neutral-400 disabled:opacity-50 dark:border-neutral-800 dark:hover:border-neutral-600"
-                      >
-                        <span className="flex items-start justify-between gap-3">
-                          <span className="font-medium">{rec.title}</span>
-                          <span className="shrink-0 rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-400 dark:border-neutral-800 dark:text-neutral-600">
-                            {rec.kind}
-                          </span>
-                        </span>
-                        <span className="mt-1 block text-sm text-neutral-500">{rec.reason}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {recs.companies?.length > 0 && (
-              <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
-                  Companies to target — click to see their openings
-                </p>
-                <ul className="flex flex-wrap gap-2">
-                  {recs.companies.map((c) => (
-                    <li key={c.name}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setRole(c.name);
-                          runSearch(c.name, { raw: true });
-                        }}
-                        disabled={searching || matching}
-                        title={c.reason}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-3 py-1.5 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
-                      >
-                        <Building2 size={13} strokeWidth={1.5} aria-hidden="true" />
-                        {c.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+        {recs?.companies?.length > 0 && !recommending && (
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
+              Companies to target{recs.field ? ` · ${recs.field}` : ""} ({recs.companies.length}) — click to see their openings
+            </p>
+            <ul className="flex flex-wrap gap-2">
+              {(showAllCompanies ? recs.companies : recs.companies.slice(0, COMPANIES_PREVIEW)).map((c) => (
+                <li key={c.name}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRole(c.name);
+                      runSearch(c.name, { raw: true });
+                    }}
+                    disabled={searching || matching}
+                    title={c.reason}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-3 py-1.5 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+                  >
+                    <Building2 size={13} strokeWidth={1.5} aria-hidden="true" />
+                    {c.name}
+                  </button>
+                </li>
+              ))}
+              {recs.companies.length > COMPANIES_PREVIEW && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setShowAllCompanies((v) => !v)}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-black px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+                  >
+                    {showAllCompanies
+                      ? "Show fewer"
+                      : `All companies (${recs.companies.length})`}
+                  </button>
+                </li>
+              )}
+            </ul>
           </div>
         )}
       </div>
@@ -522,6 +530,38 @@ export default function JobsPage() {
               {countries.map((c) => (
                 <option key={c} value={c}>
                   {c} ({countryCounts.get(c) ?? 0})
+                </option>
+              ))}
+            </select>
+          )}
+
+          {typeCounts.size > 1 && (
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              aria-label="Filter by job type"
+              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+            >
+              <option value="all">Any type</option>
+              {EMPLOYMENT_ORDER.filter((t) => typeCounts.has(t)).map((t) => (
+                <option key={t} value={t}>
+                  {EMPLOYMENT_LABELS[t]} ({typeCounts.get(t)})
+                </option>
+              ))}
+            </select>
+          )}
+
+          {levelCounts.size > 1 && (
+            <select
+              value={levelFilter}
+              onChange={(e) => setLevelFilter(e.target.value)}
+              aria-label="Filter by experience level"
+              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+            >
+              <option value="all">Any level</option>
+              {LEVEL_ORDER.filter((l) => levelCounts.has(l)).map((l) => (
+                <option key={l} value={l}>
+                  {LEVEL_LABELS[l]} ({levelCounts.get(l)})
                 </option>
               ))}
             </select>

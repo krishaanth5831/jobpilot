@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { extractResumeText } from "@/lib/resume-parser";
 import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { PROFILE_SCHEMA } from "@/lib/matcher";
+import { profileToMarkdown } from "@/lib/resume-doc";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/resume — multipart form with a "resume" PDF file.
@@ -29,11 +30,11 @@ export async function POST(request) {
     });
 
     data.profile = profile;
-    // Keep the raw text — the resume studio (review / grill-me / rebuild)
-    // works from it. A new resume invalidates the old studio artifacts.
+    // Keep the raw text — the resume review works from it. A new resume
+    // invalidates the old review and the edited document, so the studio
+    // re-seeds its editor from this fresh profile.
     data.resumeText = text;
     data.resumeReview = null;
-    data.interview = null;
     data.builtResume = null;
     await db.write();
 
@@ -54,8 +55,11 @@ export async function GET() {
     profile: data.profile,
     hasResumeText: Boolean(data.resumeText),
     review: data.resumeReview ?? null,
-    interview: data.interview ?? null,
-    builtResume: data.builtResume ?? null,
+    // The document the editor loads: the last saved edit, or a fresh markdown
+    // rendering of the profile if nothing's been saved yet.
+    resumeMarkdown:
+      data.builtResume?.markdown ??
+      (data.profile ? profileToMarkdown(data.profile) : null),
     template: data.resumeTemplate ?? null,
   });
 }

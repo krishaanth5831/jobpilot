@@ -80,7 +80,7 @@ const toolkit = [
     Icon: FileText,
     title: "Resume studio",
     description:
-      "A blunt review with concrete fixes, a grill-me interview that digs out what you left unsaid, and a rebuild that never invents — downloadable as a typeset PDF.",
+      "A blunt review with concrete fixes, a live editor to change your resume on the spot, and ten templates that typeset whatever you write — downloadable as a PDF.",
   },
   {
     Icon: Download,

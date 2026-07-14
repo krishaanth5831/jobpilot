@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { extractResumeText } from "@/lib/resume-parser";
 import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { PROFILE_SCHEMA } from "@/lib/matcher";
-import { profileToMarkdown } from "@/lib/resume-doc";
+import { profileToDoc } from "@/lib/resume-doc";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/resume — multipart form with a "resume" PDF file.
@@ -55,11 +55,11 @@ export async function GET() {
     profile: data.profile,
     hasResumeText: Boolean(data.resumeText),
     review: data.resumeReview ?? null,
-    // The document the editor loads: the last saved edit, or a fresh markdown
-    // rendering of the profile if nothing's been saved yet.
-    resumeMarkdown:
-      data.builtResume?.markdown ??
-      (data.profile ? profileToMarkdown(data.profile) : null),
+    // The structured document the editor loads: the last saved edit, or a
+    // fresh doc derived from the profile if nothing's been saved yet.
+    resumeDoc:
+      data.builtResume?.structured ??
+      (data.profile ? profileToDoc(data.profile) : null),
     template: data.resumeTemplate ?? null,
   });
 }

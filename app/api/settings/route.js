@@ -14,6 +14,10 @@ import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 const AUTH_KEY_NAMES = MANAGED_KEYS.filter((k) => k.startsWith("AUTH_"));
 
+// On serverless hosts there is no writable .env.local — sign-in config comes
+// from real environment variables managed in the host's dashboard instead.
+const ENV_WRITABLE = !process.env.VERCEL;
+
 function mask(value) {
   if (!value) return null;
   return value.length > 8 ? `···· ${value.slice(-4)}` : "····";
@@ -41,7 +45,13 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ keys, authKeys, isOwner, autoApply: data.autoApply !== false });
+  return NextResponse.json({
+    keys,
+    authKeys,
+    isOwner,
+    envWritable: ENV_WRITABLE,
+    autoApply: data.autoApply !== false,
+  });
 }
 
 // POST /api/settings — body: { values: { KEY: "secret" | "" } }.
@@ -82,6 +92,15 @@ export async function POST(request) {
     return NextResponse.json(
       { error: "Only the owner can change sign-in provider settings." },
       { status: 403 }
+    );
+  }
+  if (Object.keys(authUpdates).length && !ENV_WRITABLE) {
+    return NextResponse.json(
+      {
+        error:
+          "Sign-in settings are environment variables on this host — set them in the Vercel dashboard (Project → Settings → Environment Variables), then redeploy.",
+      },
+      { status: 400 }
     );
   }
 

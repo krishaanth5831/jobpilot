@@ -147,10 +147,19 @@ export default function SettingsPage() {
             </a>
           </div>
 
+          {group.scope === "auth" && info?.envWritable === false && (
+            <p className="mt-4 rounded-xl border border-neutral-200 px-4 py-3 text-sm text-neutral-500 dark:border-neutral-800">
+              On this host, sign-in settings are environment variables: set
+              them in the Vercel dashboard (Project → Settings → Environment
+              Variables), then redeploy. The status badges below still show
+              what&apos;s configured.
+            </p>
+          )}
           <div className="mt-4 flex flex-col gap-4">
             {fields.map(({ key, label, secret, required }) => {
               const fieldInfo = statusMap?.[key];
               const cleared = drafts[key] === "";
+              const readOnly = group.scope === "auth" && info?.envWritable === false;
               return (
                 <label key={key} className="block">
                   <span className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
@@ -167,7 +176,7 @@ export default function SettingsPage() {
                       </span>
                     )}
                   </span>
-                  <span className="mt-1.5 flex gap-2">
+                  <span className={`mt-1.5 flex gap-2 ${readOnly ? "hidden" : ""}`}>
                     <input
                       type={secret ? "password" : "text"}
                       autoComplete="off"

@@ -51,6 +51,18 @@ Then open the app, **create an account**, and paste your keys on the **Settings*
 
 Only the Anthropic key is strictly required (the keyless boards still work without Adzuna/JSearch). Keys live in the per-account store, never in the browser. `data/db.json` and `.env.local` are gitignored — no secrets are committed.
 
+### Deploying to Vercel (free)
+
+On your own machine jobpilot stores everything in a local file — but Vercel's servers can't keep files, so the hosted app needs a free database and two quick dashboard steps:
+
+1. **Connect a Redis database** — in your Vercel project, open the **Storage** tab → **Create Database** → pick **Upstash for Redis** (choose the free plan) → connect it to the project. That's it: jobpilot detects it automatically.
+2. **Add environment variables** — in **Settings → Environment Variables**, add:
+   - `AUTH_SECRET` — any long random string; copy the `AUTH_SECRET=` line out of your local `.env.local`, or run `npx auth secret` to make one. (If you skip this, jobpilot stores a generated one in Redis — but setting it explicitly is more reliable.)
+   - *(optional)* `ANTHROPIC_API_KEY`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, `RAPIDAPI_KEY` — these seed the **owner's** account once, so you don't have to re-paste them on Settings. Everyone else still pastes their own keys on the Settings page.
+3. **Redeploy** so the new settings take effect.
+
+Notes for hosted mode: sign-in provider settings (the `AUTH_*` keys) can't be edited from the Settings page there — they're environment variables in the dashboard. Everything else works the same.
+
 ### Cost
 
 Claude calls run on **Claude Haiku 4.5** — the cheapest Claude model — using structured outputs (JSON schema) so verdicts and roadmaps are machine-readable, not prose. Screening and cover-letter drafting are short, schema-constrained calls; Haiku keeps spend low. To trade cost for quality, switch `MODEL` in `lib/claude.js` to `claude-sonnet-5` or `claude-opus-4-8`.
@@ -77,7 +89,7 @@ lib/
 ├── matcher.js reviewer.js     # prompts + JSON schemas (profile, match, ATS, recommend…)
 ├── resume-*.js                # parser · structured doc · markdown · pdfkit renderer · templates
 ├── applications.js            # shared cover-letter drafting + auto-apply
-├── db.js user-data.js         # lowdb JSON storage, partitioned per user
+├── db.js user-data.js redis.js  # lowdb storage (local JSON file, or Redis on Vercel), per user
 ├── accounts.js auth.js api-keys.js password.js   # email/password auth + per-user keys
 └── job-sources/               # one adapter per board, normalized to one job shape
     ├── index.js location.js classify.js relevance.js

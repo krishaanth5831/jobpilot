@@ -101,6 +101,24 @@ export default function SettingsPage() {
     setDrafts((prev) => ({ ...prev, [key]: "" }));
   }
 
+  async function toggleAutoApply(next) {
+    setInfo((prev) => ({ ...prev, autoApply: next })); // optimistic
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autoApply: next }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setInfo(data);
+      toast.success(next ? "Auto-apply on" : "Auto-apply off");
+    } catch (err) {
+      setInfo((prev) => ({ ...prev, autoApply: !next })); // revert
+      toast.error(err.message || "Couldn't update auto-apply");
+    }
+  }
+
   return (
     <PageShell>
       <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
@@ -187,6 +205,40 @@ export default function SettingsPage() {
         </section>
         );
       })}
+
+      <section className="mt-10">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-3 dark:border-neutral-800">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">Auto-apply</h2>
+            <p className="mt-0.5 text-sm text-neutral-500">
+              When on, any job scoring above the match threshold gets a cover
+              letter drafted straight into your review queue. jobpilot never
+              submits for you — you still send every application yourself.
+            </p>
+          </div>
+        </div>
+        <label className="mt-4 flex cursor-pointer items-center gap-3">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={info?.autoApply ?? false}
+            onClick={() => toggleAutoApply(!info?.autoApply)}
+            disabled={!info}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition disabled:opacity-50 ${
+              info?.autoApply ? "bg-black dark:bg-white" : "bg-neutral-300 dark:bg-neutral-700"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition dark:bg-black ${
+                info?.autoApply ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+          <span className="text-sm text-neutral-600 dark:text-neutral-300">
+            {info?.autoApply ? "On — drafting applications automatically" : "Off — draft applications yourself"}
+          </span>
+        </label>
+      </section>
 
       <div className="mt-10 flex flex-wrap items-center gap-4">
         <button

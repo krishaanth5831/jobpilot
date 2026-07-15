@@ -59,9 +59,11 @@ export async function POST(request) {
   // Auto-apply: any job scoring above the threshold gets a cover letter drafted
   // and queued for review right away (still never auto-submitted). Bounded and
   // best-effort — a draft failure must not throw away the match verdicts.
-  const toApply = matched.filter(
-    (j) => (j.match?.score ?? 0) > AUTO_APPLY_SCORE && !data.applications.some((a) => a.jobId === j.id)
-  );
+  const toApply = data.autoApply === false
+    ? []
+    : matched.filter(
+        (j) => (j.match?.score ?? 0) > AUTO_APPLY_SCORE && !data.applications.some((a) => a.jobId === j.id)
+      );
   let autoApplied = 0;
   let ai = 0;
   async function applyWorker() {

@@ -41,7 +41,7 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ keys, authKeys, isOwner });
+  return NextResponse.json({ keys, authKeys, isOwner, autoApply: data.autoApply !== false });
 }
 
 // POST /api/settings — body: { values: { KEY: "secret" | "" } }.
@@ -52,6 +52,14 @@ export async function POST(request) {
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
 
   const body = await request.json();
+
+  // Auto-apply preference — a per-account boolean, saved on its own.
+  if (typeof body.autoApply === "boolean") {
+    data.autoApply = body.autoApply;
+    await db.write();
+    return GET();
+  }
+
   const entries = Object.entries(body.values ?? {});
   if (entries.length === 0) {
     return NextResponse.json({ error: "Nothing to save" }, { status: 400 });

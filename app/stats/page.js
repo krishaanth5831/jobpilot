@@ -153,35 +153,71 @@ function Stat({ label, value, format, suffix }) {
   );
 }
 
-// Minimal grayscale sparkline — SVG polyline over the score sequence.
+// Minimal grayscale sparkline — SVG polyline over the score sequence,
+// with labeled axes: match score (y) vs. screening order (x).
 function ScoreSparkline({ scores }) {
   const w = 600;
-  const h = 120;
-  const pad = 8;
-  const step = (w - pad * 2) / (scores.length - 1);
-  const y = (score) => pad + (1 - score / 100) * (h - pad * 2);
-  const points = scores.map((s, i) => `${pad + i * step},${y(s.score)}`).join(" ");
+  const h = 152;
+  const top = 8;
+  const right = 8;
+  const left = 44;
+  const bottom = 28;
+  const step = (w - left - right) / (scores.length - 1);
+  const y = (score) => top + (1 - score / 100) * (h - top - bottom);
+  const points = scores.map((s, i) => `${left + i * step},${y(s.score)}`).join(" ");
 
   return (
     <div className="mt-5 overflow-x-auto">
       <svg
         viewBox={`0 0 ${w} ${h}`}
-        className="h-32 w-full min-w-[320px]"
+        className="h-36 w-full min-w-[320px]"
         role="img"
-        aria-label="Match scores over time"
+        aria-label="Line chart of match scores, one per screening in order"
       >
         {[0, 50, 100].map((line) => (
-          <line
-            key={line}
-            x1={pad}
-            x2={w - pad}
-            y1={y(line)}
-            y2={y(line)}
-            className="stroke-neutral-200 dark:stroke-neutral-800"
-            strokeWidth="1"
-            strokeDasharray={line === 50 ? "4 4" : undefined}
-          />
+          <g key={line}>
+            <line
+              x1={left}
+              x2={w - right}
+              y1={y(line)}
+              y2={y(line)}
+              className="stroke-neutral-200 dark:stroke-neutral-800"
+              strokeWidth="1"
+              strokeDasharray={line === 50 ? "4 4" : undefined}
+            />
+            <text
+              x={left - 8}
+              y={y(line)}
+              textAnchor="end"
+              dominantBaseline="middle"
+              fontSize="9"
+              className="fill-neutral-400 font-mono tabular-nums dark:fill-neutral-600"
+            >
+              {line}
+            </text>
+          </g>
         ))}
+        <text
+          x={10}
+          y={(top + h - bottom) / 2}
+          transform={`rotate(-90 10 ${(top + h - bottom) / 2})`}
+          textAnchor="middle"
+          fontSize="9"
+          letterSpacing="0.1em"
+          className="fill-neutral-500 uppercase"
+        >
+          Match score
+        </text>
+        <text
+          x={left + (w - left - right) / 2}
+          y={h - 8}
+          textAnchor="middle"
+          fontSize="9"
+          letterSpacing="0.1em"
+          className="fill-neutral-500 uppercase"
+        >
+          Screenings, oldest → newest
+        </text>
         <polyline
           points={points}
           fill="none"
@@ -193,7 +229,7 @@ function ScoreSparkline({ scores }) {
         {scores.map((s, i) => (
           <circle
             key={i}
-            cx={pad + i * step}
+            cx={left + i * step}
             cy={y(s.score)}
             r="2.5"
             className="fill-black dark:fill-white"

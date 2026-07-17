@@ -4,10 +4,23 @@ export const alt = "jobpilot — apply where you qualify";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// The shield mark (same paths as components/logo.js).
-const SHIELD = "M 22,5 L 78,5 L 95,20 L 95,58 L 50,101 L 5,58 L 5,20 Z";
-const HOOK_TOP = "M 30,24 L 70,24 L 58,39 L 45,39 L 45,54 L 30,70 Z";
-const HOOK_BOTTOM = "M 70,78 L 30,78 L 42,63 L 55,63 L 55,48 L 70,32 Z";
+// The pixel-rocket mark (same grid as components/logo.js).
+const GRID = [
+  "........###",
+  ".......####",
+  "......####.",
+  ".....#.##..",
+  "..#.####...",
+  "...####....",
+  "..####.....",
+  ".#####.....",
+  "..###......",
+  ".#.........",
+  "#.#........",
+];
+const PIXELS = GRID.flatMap((row, y) =>
+  [...row].flatMap((ch, x) => (ch === "." ? [] : [{ x, y }]))
+);
 
 export default function Image() {
   return new ImageResponse(
@@ -37,10 +50,10 @@ export default function Image() {
             AI job copilot — honest matches, drafted applications, gap roadmaps.
           </div>
         </div>
-        <svg viewBox="0 0 100 106" width={320} height={339}>
-          <path d={SHIELD} fill="#fff" />
-          <path d={HOOK_TOP} fill="#000" />
-          <path d={HOOK_BOTTOM} fill="#000" />
+        <svg viewBox="0 0 11 11" width={330} height={330}>
+          {PIXELS.map(({ x, y }, i) => (
+            <rect key={i} x={x + 0.075} y={y + 0.075} width={0.85} height={0.85} fill="#fff" />
+          ))}
         </svg>
       </div>
     ),

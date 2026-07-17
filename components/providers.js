@@ -13,7 +13,7 @@ import { AuthGate } from "@/components/auth-gate";
 // providers) that endpoint has nothing to serve, so we only mount it — and
 // the sign-in gate — when auth is actually enabled. ThemeProvider/Toaster
 // always wrap so the sign-in screen is themed and toasts work everywhere.
-export function Providers({ children, authEnabled = false, providers = [] }) {
+export function Providers({ children, authEnabled = false, providers = [], freeModel = false }) {
   const themed = (content) => (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       {content}
@@ -34,7 +34,11 @@ export function Providers({ children, authEnabled = false, providers = [] }) {
 
   return (
     <SessionProvider>
-      {themed(<AuthGate providers={providers}>{children}</AuthGate>)}
+      {themed(
+        <AuthGate providers={providers} freeModel={freeModel}>
+          {children}
+        </AuthGate>
+      )}
     </SessionProvider>
   );
 }

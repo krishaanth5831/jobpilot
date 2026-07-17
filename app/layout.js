@@ -36,7 +36,11 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Providers authEnabled={authEnabled} providers={enabledProviders}>
+        <Providers
+          authEnabled={authEnabled}
+          providers={enabledProviders}
+          freeModel={Boolean(process.env.GROQ_API_KEY)}
+        >
           {children}
           <SiteNav authEnabled={authEnabled} />
         </Providers>

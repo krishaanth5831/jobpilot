@@ -9,7 +9,10 @@ export const metadata = { title: "Sign in" };
 export default function SignInPage() {
   return (
     <Suspense fallback={null}>
-      <SignInCard providers={enabledProviders} />
+      <SignInCard
+        providers={enabledProviders}
+        freeModel={Boolean(process.env.GROQ_API_KEY)}
+      />
     </Suspense>
   );
 }

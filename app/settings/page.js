@@ -12,10 +12,12 @@ const GROUPS = [
   {
     scope: "user",
     title: "Claude",
-    description: "Powers everything AI: screening, letters, the resume studio.",
+    description:
+      "Powers everything AI: screening, letters, the resume studio. Without a key, your account uses the free built-in model instead.",
     href: "https://platform.claude.com",
     linkLabel: "platform.claude.com",
-    fields: [{ key: "ANTHROPIC_API_KEY", label: "API key", secret: true, required: true }],
+    fields: [{ key: "ANTHROPIC_API_KEY", label: "API key", secret: true }],
+    freeModelBanner: true,
   },
   {
     scope: "user",
@@ -36,6 +38,15 @@ const GROUPS = [
     href: "https://rapidapi.com",
     linkLabel: "rapidapi.com → JSearch",
     fields: [{ key: "RAPIDAPI_KEY", label: "RapidAPI key", secret: true }],
+  },
+  {
+    scope: "auth",
+    title: "Free built-in model (owner)",
+    description:
+      "One free Groq API key gives every new account working AI out of the box — Llama 3.3 70B serves anyone who hasn't added their own Claude key. Takes effect immediately, no restart.",
+    href: "https://console.groq.com",
+    linkLabel: "console.groq.com",
+    fields: [{ key: "GROQ_API_KEY", label: "Groq API key", secret: true }],
   },
   {
     scope: "auth",
@@ -147,6 +158,15 @@ export default function SettingsPage() {
             </a>
           </div>
 
+          {group.freeModelBanner && info?.freeModel?.active && (
+            <p className="mt-4 rounded-xl border border-neutral-200 px-4 py-3 text-sm text-neutral-500 dark:border-neutral-800">
+              You&apos;re currently on the <strong>free built-in model</strong>{" "}
+              (Llama 3.3 70B) — it works out of the box, but it&apos;s shared by
+              every account on this server and Claude is noticeably better at
+              matching and writing. Paste your own Claude API key below to
+              switch; it takes effect immediately.
+            </p>
+          )}
           {group.scope === "auth" && info?.envWritable === false && (
             <p className="mt-4 rounded-xl border border-neutral-200 px-4 py-3 text-sm text-neutral-500 dark:border-neutral-800">
               On this host, sign-in settings are environment variables: set

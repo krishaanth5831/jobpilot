@@ -14,6 +14,10 @@ import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 const AUTH_KEY_NAMES = MANAGED_KEYS.filter((k) => k.startsWith("AUTH_"));
 
+// On serverless hosts there is no writable .env.local — sign-in config comes
+// from real environment variables managed in the host's dashboard instead.
+const ENV_WRITABLE = !process.env.VERCEL;
+
 function mask(value) {
   if (!value) return null;
   return value.length > 8 ? `···· ${value.slice(-4)}` : "····";
@@ -41,7 +45,13 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ keys, authKeys, isOwner });
+  return NextResponse.json({
+    keys,
+    authKeys,
+    isOwner,
+    envWritable: ENV_WRITABLE,
+    autoApply: data.autoApply !== false,
+  });
 }
 
 // POST /api/settings — body: { values: { KEY: "secret" | "" } }.
@@ -52,6 +62,14 @@ export async function POST(request) {
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
 
   const body = await request.json();
+
+  // Auto-apply preference — a per-account boolean, saved on its own.
+  if (typeof body.autoApply === "boolean") {
+    data.autoApply = body.autoApply;
+    await db.write();
+    return GET();
+  }
+
   const entries = Object.entries(body.values ?? {});
   if (entries.length === 0) {
     return NextResponse.json({ error: "Nothing to save" }, { status: 400 });
@@ -74,6 +92,15 @@ export async function POST(request) {
     return NextResponse.json(
       { error: "Only the owner can change sign-in provider settings." },
       { status: 403 }
+    );
+  }
+  if (Object.keys(authUpdates).length && !ENV_WRITABLE) {
+    return NextResponse.json(
+      {
+        error:
+          "Sign-in settings are environment variables on this host — set them in the Vercel dashboard (Project → Settings → Environment Variables), then redeploy.",
+      },
+      { status: 400 }
     );
   }
 

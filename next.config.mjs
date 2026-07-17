@@ -4,6 +4,19 @@ const nextConfig = {
   // breaks the worker path, so resolve it from node_modules instead.
   // pdfkit reads its font data files from disk at runtime — same problem.
   serverExternalPackages: ["pdf-parse", "pdfkit"],
+  // Files Vercel's dependency tracing misses because they're loaded through
+  // dynamic requires. Without the @napi-rs/canvas native binary, pdfjs can't
+  // polyfill DOMMatrix and the resume upload route dies on import; without
+  // the .afm font metrics, pdfkit can't typeset the resume PDF.
+  outputFileTracingIncludes: {
+    "/api/resume": [
+      "node_modules/@napi-rs/canvas/**",
+      "node_modules/@napi-rs/canvas-linux-x64-gnu/**",
+      // pdfjs pulls its worker in via a dynamic import ("fake worker" on Node).
+      "node_modules/pdfjs-dist/legacy/build/**",
+    ],
+    "/api/resume/pdf": ["node_modules/pdfkit/js/data/**"],
+  },
   // No floating dev-tools badge (it also photobombs screenshots);
   // runtime error overlays still appear.
   devIndicators: false,

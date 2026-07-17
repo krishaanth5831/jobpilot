@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, X, Minus, Copy, Download, Plus, Trash2, RefreshCw, RotateCcw, Sparkles, Trophy } from "lucide-react";
+import { Check, X, Minus, Copy, Download, Plus, Trash2, RefreshCw, RotateCcw, Sparkles, Trophy, Maximize2, ChevronDown, ChevronUp } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { TemplatePreview } from "@/components/template-preview";
 import { TEMPLATES, DEFAULT_TEMPLATE, getTemplate } from "@/lib/resume-templates";
@@ -52,9 +52,9 @@ export default function ResumePage() {
   const selectedTemplate = getTemplate(template?.selected ?? DEFAULT_TEMPLATE);
 
   return (
-    <PageShell>
+    <PageShell width="max-w-5xl">
       <h1 className="text-3xl font-bold tracking-tight">Resume studio</h1>
-      <p className="mt-2 text-neutral-500">
+      <p className="mt-2 max-w-2xl text-neutral-500">
         See how ATS-friendly your resume is, edit it right here, and download it
         in whichever template fits — no rewrites you didn&apos;t make.
       </p>
@@ -99,7 +99,7 @@ function SectionHeader({ step, title, description }) {
     <div className="border-b border-neutral-200 pb-4 dark:border-neutral-800">
       <p className="font-mono text-xs text-neutral-500">0{step}</p>
       <h2 className="mt-1 text-xl font-semibold tracking-tight">{title}</h2>
-      <p className="mt-1 text-sm text-neutral-500">{description}</p>
+      <p className="mt-1 max-w-2xl text-sm text-neutral-500">{description}</p>
     </div>
   );
 }
@@ -256,7 +256,21 @@ const inputCls =
 
 function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, onSaved }) {
   const [saving, setSaving] = useState(false);
+  const [minimized, setMinimized] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const dirty = JSON.stringify(doc) !== JSON.stringify(savedDoc);
+
+  // Fullscreen preview: close on Escape, freeze the page behind it.
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e) => e.key === "Escape" && setExpanded(false);
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [expanded]);
 
   // Immutable helpers over the structured doc.
   const setField = (key, value) => onChange({ ...doc, [key]: value });
@@ -330,7 +344,7 @@ function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, o
         </span>
       </div>
 
-      <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_440px]">
         {/* Form */}
         <div className="order-2 space-y-8 lg:order-1">
           {/* Contact */}
@@ -407,18 +421,75 @@ function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, o
         {/* Live preview */}
         <div className="order-1 lg:order-2">
           <div className="lg:sticky lg:top-6">
-            <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
-              Live preview · {template.name}
-            </p>
-            <div className="overflow-hidden rounded-xl border border-neutral-200 shadow-sm dark:border-neutral-800">
-              <TemplatePreview template={template} markdown={markdown} />
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-widest text-neutral-500">
+                Live preview · {template.name}
+              </p>
+              <span className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setMinimized((v) => !v)}
+                  aria-label={minimized ? "Show preview" : "Minimize preview"}
+                  title={minimized ? "Show preview" : "Minimize preview"}
+                  className="rounded-md p-1 text-neutral-400 transition hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-900 dark:hover:text-white"
+                >
+                  {minimized ? (
+                    <ChevronDown size={14} strokeWidth={1.5} aria-hidden="true" />
+                  ) : (
+                    <ChevronUp size={14} strokeWidth={1.5} aria-hidden="true" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExpanded(true)}
+                  aria-label="Maximize preview"
+                  title="Maximize preview"
+                  className="rounded-md p-1 text-neutral-400 transition hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-900 dark:hover:text-white"
+                >
+                  <Maximize2 size={14} strokeWidth={1.5} aria-hidden="true" />
+                </button>
+              </span>
             </div>
-            <p className="mt-2 text-xs text-neutral-500">
-              Updates as you type. Pick a different template below.
-            </p>
+            {!minimized && (
+              <>
+                <div className="overflow-hidden rounded-xl border border-neutral-200 shadow-sm dark:border-neutral-800">
+                  <TemplatePreview template={template} markdown={markdown} scale={1.9} wrap />
+                </div>
+                <p className="mt-2 text-xs text-neutral-500">
+                  Updates as you type — maximize it for a full-size page. Pick a
+                  different template below.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Fullscreen preview */}
+      {expanded && (
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:p-8"
+          onClick={() => setExpanded(false)}
+        >
+          <div className="mx-auto w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-widest text-neutral-300">
+                Live preview · {template.name}
+              </p>
+              <button
+                type="button"
+                onClick={() => setExpanded(false)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-600 px-3 py-1.5 text-xs font-medium text-neutral-200 transition hover:border-neutral-400 hover:text-white"
+              >
+                <X size={12} strokeWidth={1.5} aria-hidden="true" /> Close
+              </button>
+            </div>
+            <div className="overflow-hidden rounded-xl shadow-2xl">
+              <TemplatePreview template={template} markdown={markdown} scale={3.2} wrap />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -11,7 +11,7 @@ import { Logo } from "@/components/logo";
 // public (otherwise it would gate itself). Local mode never mounts this.
 const PUBLIC = new Set(["/signin"]);
 
-export function AuthGate({ children, providers = [] }) {
+export function AuthGate({ children, providers = [], freeModel = false }) {
   const { status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
@@ -32,5 +32,5 @@ export function AuthGate({ children, providers = [] }) {
       </div>
     );
   }
-  return <SignInCard providers={providers} />;
+  return <SignInCard providers={providers} freeModel={freeModel} />;
 }

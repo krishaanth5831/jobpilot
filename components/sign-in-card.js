@@ -42,7 +42,7 @@ function ProviderIcon({ id }) {
 const inputClass =
   "w-full rounded-xl border border-neutral-300 bg-transparent px-3.5 py-2.5 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-700";
 
-export function SignInCard({ providers = [] }) {
+export function SignInCard({ providers = [], freeModel = false }) {
   const pathname = usePathname();
   const params = useSearchParams();
   const router = useRouter();
@@ -109,6 +109,13 @@ export function SignInCard({ providers = [] }) {
             Your resume, matches, and applications live in your account — sign
             in from any device and they&apos;re right there.
           </p>
+          {isSignup && freeModel && (
+            <p className="mt-3 rounded-xl border border-neutral-200 px-4 py-2.5 text-xs text-neutral-500 dark:border-neutral-800">
+              New accounts include free built-in AI (Llama 3.3) — no API key
+              needed. For noticeably better results, add your own Claude API
+              key later in Settings.
+            </p>
+          )}
         </div>
 
         <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-3">

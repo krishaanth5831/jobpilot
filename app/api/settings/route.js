@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MANAGED_KEYS, readManagedValues, updateManagedValues } from "@/lib/env-file";
 import { API_KEY_NAMES } from "@/lib/api-keys";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
+import { freeModelAvailable } from "@/lib/free-model";
 
 // Settings for API credentials.
 //
@@ -9,10 +10,12 @@ import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 // own in its data bucket, so one person's usage never spends another's
 // credits. Full values are never returned — only presence + last 4 chars.
 //
-// Sign-in provider settings (AUTH_*) are server-wide and owner-only; those
-// still live in .env.local.
+// Sign-in provider settings (AUTH_*) and the free built-in model's
+// GROQ_API_KEY are server-wide and owner-only; those live in .env.local.
 
-const AUTH_KEY_NAMES = MANAGED_KEYS.filter((k) => k.startsWith("AUTH_"));
+const SERVER_KEY_NAMES = MANAGED_KEYS.filter(
+  (k) => k.startsWith("AUTH_") || k === "GROQ_API_KEY"
+);
 
 // On serverless hosts there is no writable .env.local — sign-in config comes
 // from real environment variables managed in the host's dashboard instead.
@@ -39,7 +42,7 @@ export async function GET() {
   if (isOwner) {
     const values = await readManagedValues();
     authKeys = {};
-    for (const name of AUTH_KEY_NAMES) {
+    for (const name of SERVER_KEY_NAMES) {
       const current = process.env[name] ?? values[name] ?? "";
       authKeys[name] = { set: Boolean(current), hint: mask(current) };
     }
@@ -51,6 +54,12 @@ export async function GET() {
     isOwner,
     envWritable: ENV_WRITABLE,
     autoApply: data.autoApply !== false,
+    // Which AI serves this account: their own Claude key, or the shared
+    // free built-in model (Llama 3.3 on Groq) when the server has one.
+    freeModel: {
+      available: freeModelAvailable(),
+      active: freeModelAvailable() && !data.apiKeys?.ANTHROPIC_API_KEY,
+    },
   });
 }
 
@@ -83,14 +92,14 @@ export async function POST(request) {
     }
     const value = raw.trim();
     if (API_KEY_NAMES.includes(key)) apiUpdates[key] = value;
-    else if (AUTH_KEY_NAMES.includes(key)) authUpdates[key] = value;
+    else if (SERVER_KEY_NAMES.includes(key)) authUpdates[key] = value;
     else return NextResponse.json({ error: `Unknown setting: ${key}` }, { status: 400 });
   }
 
   // Authorize before mutating anything.
   if (Object.keys(authUpdates).length && !isOwner) {
     return NextResponse.json(
-      { error: "Only the owner can change sign-in provider settings." },
+      { error: "Only the owner can change server-wide settings (sign-in providers, the free model key)." },
       { status: 403 }
     );
   }
@@ -98,7 +107,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         error:
-          "Sign-in settings are environment variables on this host — set them in the Vercel dashboard (Project → Settings → Environment Variables), then redeploy.",
+          "Server-wide settings are environment variables on this host — set them in the Vercel dashboard (Project → Settings → Environment Variables), then redeploy.",
       },
       { status: 400 }
     );

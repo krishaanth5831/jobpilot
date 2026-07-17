@@ -12,6 +12,8 @@ const nextConfig = {
     "/api/resume": [
       "node_modules/@napi-rs/canvas/**",
       "node_modules/@napi-rs/canvas-linux-x64-gnu/**",
+      // pdfjs pulls its worker in via a dynamic import ("fake worker" on Node).
+      "node_modules/pdfjs-dist/legacy/build/**",
     ],
     "/api/resume/pdf": ["node_modules/pdfkit/js/data/**"],
   },

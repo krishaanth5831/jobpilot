@@ -1,8 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
   <rect width="320" height="320" rx="56" fill="#000"/>
-  <g transform="translate(160,160) scale(2.4) translate(-50,-53)">
-    <path d="M 22,5 L 78,5 L 95,20 L 95,58 L 50,101 L 5,58 L 5,20 Z" fill="#fff"/>
-    <path d="M 30,24 L 70,24 L 58,39 L 45,39 L 45,54 L 30,70 Z" fill="#000"/>
-    <path d="M 70,78 L 30,78 L 42,63 L 55,63 L 55,48 L 70,32 Z" fill="#000"/>
+  <g transform="translate(35 35) scale(22.7)" fill="#fff">
+    <rect x="8.075" y="0.075" width="0.85" height="0.85"/>
+    <rect x="9.075" y="0.075" width="0.85" height="0.85"/>
+    <rect x="10.075" y="0.075" width="0.85" height="0.85"/>
+    <rect x="7.075" y="1.075" width="0.85" height="0.85"/>
+    <rect x="8.075" y="1.075" width="0.85" height="0.85"/>
+    <rect x="9.075" y="1.075" width="0.85" height="0.85"/>
+    <rect x="10.075" y="1.075" width="0.85" height="0.85"/>
+    <rect x="6.075" y="2.075" width="0.85" height="0.85"/>
+    <rect x="7.075" y="2.075" width="0.85" height="0.85"/>
+    <rect x="8.075" y="2.075" width="0.85" height="0.85"/>
+    <rect x="9.075" y="2.075" width="0.85" height="0.85"/>
+    <rect x="5.075" y="3.075" width="0.85" height="0.85"/>
+    <rect x="7.075" y="3.075" width="0.85" height="0.85"/>
+    <rect x="8.075" y="3.075" width="0.85" height="0.85"/>
+    <rect x="2.075" y="4.075" width="0.85" height="0.85"/>
+    <rect x="4.075" y="4.075" width="0.85" height="0.85"/>
+    <rect x="5.075" y="4.075" width="0.85" height="0.85"/>
+    <rect x="6.075" y="4.075" width="0.85" height="0.85"/>
+    <rect x="7.075" y="4.075" width="0.85" height="0.85"/>
+    <rect x="3.075" y="5.075" width="0.85" height="0.85"/>
+    <rect x="4.075" y="5.075" width="0.85" height="0.85"/>
+    <rect x="5.075" y="5.075" width="0.85" height="0.85"/>
+    <rect x="6.075" y="5.075" width="0.85" height="0.85"/>
+    <rect x="2.075" y="6.075" width="0.85" height="0.85"/>
+    <rect x="3.075" y="6.075" width="0.85" height="0.85"/>
+    <rect x="4.075" y="6.075" width="0.85" height="0.85"/>
+    <rect x="5.075" y="6.075" width="0.85" height="0.85"/>
+    <rect x="1.075" y="7.075" width="0.85" height="0.85"/>
+    <rect x="2.075" y="7.075" width="0.85" height="0.85"/>
+    <rect x="3.075" y="7.075" width="0.85" height="0.85"/>
+    <rect x="4.075" y="7.075" width="0.85" height="0.85"/>
+    <rect x="5.075" y="7.075" width="0.85" height="0.85"/>
+    <rect x="2.075" y="8.075" width="0.85" height="0.85"/>
+    <rect x="3.075" y="8.075" width="0.85" height="0.85"/>
+    <rect x="4.075" y="8.075" width="0.85" height="0.85"/>
+    <rect x="1.075" y="9.075" width="0.85" height="0.85"/>
+    <rect x="0.075" y="10.075" width="0.85" height="0.85"/>
+    <rect x="2.075" y="10.075" width="0.85" height="0.85"/>
   </g>
 </svg>

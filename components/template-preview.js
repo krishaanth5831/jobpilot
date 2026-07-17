@@ -6,6 +6,9 @@ import { parseResumeMarkdown } from "@/lib/resume-markdown";
 // Miniature paper mockup of a resume template, rendered from the user's actual
 // resume. Approximates the pdfkit output (same parsed blocks, same style
 // parameters) at thumbnail scale. Paper stays white in dark mode.
+// `scale` multiplies every dimension (1 = template thumbnail); `wrap` lets
+// long lines wrap like the real PDF instead of truncating — used by the live
+// preview, where reading the content matters more than fitting the whole page.
 
 const FONT_STACKS = {
   sans: "ui-sans-serif, -apple-system, 'Helvetica Neue', Arial, sans-serif",
@@ -19,15 +22,18 @@ const MAX_PREVIEW_BLOCKS = 20;
 
 const runText = (runs) => (runs ? runs.map((r) => r.text).join("") : "");
 
-export function TemplatePreview({ template: t, markdown }) {
+export function TemplatePreview({ template: t, markdown, scale = 1, wrap = false }) {
   const allBlocks = useMemo(() => parseResumeMarkdown(markdown), [markdown]);
   const accent = t.accent ?? "#000000";
-  const gap = DENSITY_GAP[t.density];
+  const px = (n) => n * scale;
+  const gap = px(DENSITY_GAP[t.density]);
+  const pad = px(12);
+  const line = wrap ? "" : "truncate";
 
   const sectionStyle = (style) => {
-    if (style === "rule") return { borderBottom: `1px solid ${t.accent ?? "#c4c4c4"}` };
+    if (style === "rule") return { borderBottom: `${px(1)}px solid ${t.accent ?? "#c4c4c4"}` };
     if (style === "underline") return { textDecoration: "underline" };
-    if (style === "leftbar") return { borderLeft: `2.5px solid ${accent}`, paddingLeft: 3 };
+    if (style === "leftbar") return { borderLeft: `${px(2.5)}px solid ${accent}`, paddingLeft: px(3) };
     return {};
   };
 
@@ -35,11 +41,11 @@ export function TemplatePreview({ template: t, markdown }) {
     <div
       className="font-bold uppercase"
       style={{
-        fontSize: 5,
+        fontSize: px(5),
         letterSpacing: "0.06em",
         color: accent,
-        marginTop: gap + 2,
-        marginBottom: gap - 1,
+        marginTop: gap + px(2),
+        marginBottom: gap - px(1),
         ...sectionStyle(t.sectionStyle),
         ...extra,
       }}
@@ -51,19 +57,19 @@ export function TemplatePreview({ template: t, markdown }) {
   const bodyBlock = (block, i) => {
     if (block.type === "sub")
       return (
-        <div key={i} className="truncate font-semibold" style={{ fontSize: 4.5, marginTop: 1 }}>
+        <div key={i} className={`${line} font-semibold`} style={{ fontSize: px(4.5), marginTop: px(1) }}>
           {runText(block.runs)}
         </div>
       );
     if (block.type === "bullet")
       return (
-        <div key={i} className="truncate text-neutral-700" style={{ fontSize: 4.5 }}>
+        <div key={i} className={`${line} text-neutral-700`} style={{ fontSize: px(4.5) }}>
           {t.bullet} {runText(block.runs)}
         </div>
       );
     if (block.type === "para")
       return (
-        <div key={i} className="truncate text-neutral-700" style={{ fontSize: 4.5 }}>
+        <div key={i} className={`${line} text-neutral-700`} style={{ fontSize: px(4.5) }}>
           {runText(block.runs)}
         </div>
       );
@@ -93,31 +99,31 @@ export function TemplatePreview({ template: t, markdown }) {
       secs.map((s, si) => (
         <div key={si}>
           {heading(s.heading)}
-          {s.blocks.slice(0, 6).map((b, bi) => bodyBlock(b, bi))}
+          {(wrap ? s.blocks : s.blocks.slice(0, 6)).map((b, bi) => bodyBlock(b, bi))}
         </div>
       ));
 
     return (
       <div
         aria-hidden="true"
-        className="aspect-[17/22] w-full overflow-hidden rounded-lg bg-white px-3 py-3 text-neutral-900"
-        style={{ fontFamily: FONT_STACKS[t.font] }}
+        className="aspect-[17/22] w-full overflow-hidden rounded-lg bg-white text-neutral-900"
+        style={{ fontFamily: FONT_STACKS[t.font], padding: pad }}
       >
         {header.map((b, i) =>
           b.type === "name" ? (
-            <div key={i} className="font-bold" style={{ fontSize: 8, color: accent, textAlign: t.nameAlign }}>
+            <div key={i} className="font-bold" style={{ fontSize: px(8), color: accent, textAlign: t.nameAlign }}>
               {b.text}
             </div>
           ) : (
-            <div key={i} className="truncate text-neutral-500" style={{ fontSize: 4.5, marginBottom: gap }}>
+            <div key={i} className={`${line} text-neutral-500`} style={{ fontSize: px(4.5), marginBottom: gap }}>
               {runText(b.runs)}
             </div>
           )
         )}
-        <div className="flex gap-2" style={{ marginTop: gap }}>
+        <div className="flex" style={{ marginTop: gap, gap: px(8) }}>
           <div
-            className="w-[34%] shrink-0 rounded-sm px-1.5 py-1"
-            style={{ backgroundColor: t.sidebarTint ?? "#f3f4f6" }}
+            className="w-[34%] shrink-0 rounded-sm"
+            style={{ backgroundColor: t.sidebarTint ?? "#f3f4f6", padding: `${px(4)}px ${px(6)}px` }}
           >
             {column(sidebar)}
           </div>
@@ -128,12 +134,12 @@ export function TemplatePreview({ template: t, markdown }) {
   }
 
   // ---- Single column ----
-  const blocks = allBlocks.slice(0, MAX_PREVIEW_BLOCKS);
+  const blocks = wrap ? allBlocks : allBlocks.slice(0, MAX_PREVIEW_BLOCKS);
   return (
     <div
       aria-hidden="true"
-      className="aspect-[17/22] w-full overflow-hidden rounded-lg bg-white px-3 py-3 text-neutral-900"
-      style={{ fontFamily: FONT_STACKS[t.font] }}
+      className="aspect-[17/22] w-full overflow-hidden rounded-lg bg-white text-neutral-900"
+      style={{ fontFamily: FONT_STACKS[t.font], padding: pad }}
     >
       {blocks.map((block, i) => {
         switch (block.type) {
@@ -141,8 +147,14 @@ export function TemplatePreview({ template: t, markdown }) {
             return t.band ? (
               <div
                 key={i}
-                className="-mx-3 -mt-3 mb-1.5 px-3 pb-1.5 pt-3 font-bold text-white"
-                style={{ backgroundColor: accent, fontSize: 8, textAlign: t.nameAlign }}
+                className="font-bold text-white"
+                style={{
+                  margin: `${-pad}px ${-pad}px ${px(6)}px`,
+                  padding: `${pad}px ${pad}px ${px(6)}px`,
+                  backgroundColor: accent,
+                  fontSize: px(8),
+                  textAlign: t.nameAlign,
+                }}
               >
                 {block.text}
               </div>
@@ -150,7 +162,7 @@ export function TemplatePreview({ template: t, markdown }) {
               <div
                 key={i}
                 className="font-bold"
-                style={{ fontSize: 8, color: accent, textAlign: t.nameAlign }}
+                style={{ fontSize: px(8), color: accent, textAlign: t.nameAlign }}
               >
                 {block.text}
               </div>
@@ -159,8 +171,8 @@ export function TemplatePreview({ template: t, markdown }) {
             return (
               <div
                 key={i}
-                className="truncate text-neutral-500"
-                style={{ fontSize: 4.5, textAlign: t.nameAlign, marginBottom: gap }}
+                className={`${line} text-neutral-500`}
+                style={{ fontSize: px(4.5), textAlign: t.nameAlign, marginBottom: gap }}
               >
                 {runText(block.runs)}
               </div>

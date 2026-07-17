@@ -1,6 +1,8 @@
 # jobpilot ✈️
 
-**Your AI copilot for job applications.** Upload your resume, and jobpilot finds jobs worldwide that you actually qualify for, scores your resume for ATS-friendliness, drafts tailored applications for your review, and — for the jobs you *want* but don't qualify for yet — builds a concrete roadmap to get you there. Free to run on your own machine.
+**Your AI copilot for job applications.** Upload your resume, and jobpilot finds jobs worldwide that you actually qualify for, scores your resume for ATS-friendliness, drafts tailored applications for your review, and — for the jobs you *want* but don't qualify for yet — builds a concrete roadmap to get you there.
+
+**Use it now: [jobpilot-lemon.vercel.app](https://jobpilot-lemon.vercel.app)** — make an account like on any other website, no installation needed.
 
 > jobpilot **prepares** applications for human review. It never bot-submits to job boards — you always click the final "apply" yourself.
 
@@ -36,68 +38,47 @@ All fetched live and screened against your resume:
 
 The keyless sources run on every search and don't touch the rate-limited JSearch/Adzuna quotas, so a location-free search fans out across the globe for free.
 
-## Setup
+## Getting started
 
-```bash
-npm install
-npm run dev
-```
+There's nothing to install — jobpilot runs in your browser:
 
-Then open the app, **create an account**, and paste your keys on the **Settings** page (each account uses its own keys and credits):
+1. Go to **[jobpilot-lemon.vercel.app](https://jobpilot-lemon.vercel.app)**.
+2. **Create an account** — email and password, like any other website.
+3. Add your API keys on the **Settings** page (step-by-step guides below).
+4. **Upload your resume** and start searching.
 
-- an **Anthropic API key** — https://platform.claude.com
-- **Adzuna app id + key** (free) — https://developer.adzuna.com
-- a **RapidAPI key** subscribed to the free **JSearch** API — https://rapidapi.com
+### Getting your API keys
 
-Only the Anthropic key is strictly required (the keyless boards still work without Adzuna/JSearch). Keys live in the per-account store, never in the browser. `data/db.json` and `.env.local` are gitignored — no secrets are committed.
+jobpilot works on a bring-your-own-keys model: your account uses *your* keys and *your* credits, so nobody else can spend them and you're never billed for anyone else. You paste each key once on the Settings page; after that jobpilot only ever shows the last 4 characters.
 
-### Deploying to Vercel (free)
+**Only the Claude key is required.** The Adzuna and JSearch keys are optional extras — without them the keyless job boards (Greenhouse, Lever, Remotive, and the rest) still work.
 
-On your own machine jobpilot stores everything in a local file — but Vercel's servers can't keep files, so the hosted app needs a free database and two quick dashboard steps:
+#### Claude API key (required — powers all the AI)
 
-1. **Connect a Redis database** — in your Vercel project, open the **Storage** tab → **Create Database** → pick **Upstash for Redis** (choose the free plan) → connect it to the project. That's it: jobpilot detects it automatically.
-2. **Add environment variables** — in **Settings → Environment Variables**, add:
-   - `AUTH_SECRET` — any long random string; copy the `AUTH_SECRET=` line out of your local `.env.local`, or run `npx auth secret` to make one. (If you skip this, jobpilot stores a generated one in Redis — but setting it explicitly is more reliable.)
-   - *(optional)* `ANTHROPIC_API_KEY`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, `RAPIDAPI_KEY` — these seed the **owner's** account once, so you don't have to re-paste them on Settings. Everyone else still pastes their own keys on the Settings page.
-3. **Redeploy** so the new settings take effect.
+1. Go to [platform.claude.com](https://platform.claude.com) and sign up (or sign in).
+2. Add credits: open **Billing** and buy a small amount — **$5 is plenty to start**. jobpilot uses Claude Haiku, the cheapest model, so a typical screening or cover letter costs a fraction of a cent.
+3. Open **API keys** → **Create key**, name it anything (e.g. `jobpilot`), and click create.
+4. **Copy the key immediately** (it starts with `sk-ant-` and is only shown once).
+5. In jobpilot, go to **Settings → Claude → API key**, paste it, and hit **Save changes**.
 
-Notes for hosted mode: sign-in provider settings (the `AUTH_*` keys) can't be edited from the Settings page there — they're environment variables in the dashboard. Everything else works the same.
+#### Adzuna keys (optional, free — adds ~19 countries of job boards)
+
+1. Go to [developer.adzuna.com](https://developer.adzuna.com) and click **Register** — the free plan is fine.
+2. Confirm your email and log in to the developer dashboard.
+3. Your **Application ID** and **Application Key** are shown on the **API access details** page.
+4. In jobpilot, paste both under **Settings → Adzuna** and hit **Save changes**.
+
+#### JSearch key (optional, free — adds LinkedIn / Indeed / Glassdoor results)
+
+1. Go to [rapidapi.com](https://rapidapi.com) and create a free account.
+2. Search the site for **“JSearch”** and open the JSearch API page.
+3. On its **Pricing** tab, subscribe to the free **Basic** plan.
+4. Your key is shown on the API page as the **`X-RapidAPI-Key`** value (also under your app's **Authorization** settings).
+5. In jobpilot, paste it under **Settings → JSearch (RapidAPI)** and hit **Save changes**.
 
 ### Cost
 
 Claude calls run on **Claude Haiku 4.5** — the cheapest Claude model — using structured outputs (JSON schema) so verdicts and roadmaps are machine-readable, not prose. Screening and cover-letter drafting are short, schema-constrained calls; Haiku keeps spend low. To trade cost for quality, switch `MODEL` in `lib/claude.js` to `claude-sonnet-5` or `claude-opus-4-8`.
-
-## Architecture
-
-```
-app/
-├── page.js                    # Landing / dashboard
-├── signin/ upload/ jobs/      # Auth, resume upload, worldwide job search
-├── resume/ queue/ roadmap/    # Resume studio, review queue, skill-gap roadmap
-├── stats/ settings/           # Pipeline stats, per-account API keys
-└── api/
-    ├── auth/ register/        # Auth.js (JWT) + email/password sign-up
-    ├── resume/                # upload · ATS review · document (editor) · pdf · tailor · template
-    ├── jobs/ jobs/search/     # worldwide multi-source search
-    ├── match/                 # Claude scores profile vs job; auto-applies > 35
-    ├── applications/          # cover-letter drafts + review-queue CRUD + follow-up
-    ├── recommend/ roadmap/    # companies to target · get-qualified plan
-    └── insights/ stats/ settings/
-
-lib/
-├── claude.js                  # Anthropic client + JSON/text helpers (Haiku)
-├── matcher.js reviewer.js     # prompts + JSON schemas (profile, match, ATS, recommend…)
-├── resume-*.js                # parser · structured doc · markdown · pdfkit renderer · templates
-├── applications.js            # shared cover-letter drafting + auto-apply
-├── db.js user-data.js redis.js  # lowdb storage (local JSON file, or Redis on Vercel), per user
-├── accounts.js auth.js api-keys.js password.js   # email/password auth + per-user keys
-└── job-sources/               # one adapter per board, normalized to one job shape
-    ├── index.js location.js classify.js relevance.js
-    ├── jsearch.js adzuna.js greenhouse.js lever.js github-repos.js
-    └── remotive.js remoteok.js jobicy.js himalayas.js themuse.js arbeitnow.js
-```
-
-All Claude calls run server-side in API routes; the API key never reaches the browser.
 
 ## Tech
 
@@ -106,7 +87,3 @@ Next.js (App Router) · React · Tailwind CSS v4 · Auth.js · Claude API (`@ant
 ## Workflow
 
 Work happens on the `dev` branch; `main` is protected and only changes via pull requests with passing CI. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full flow.
-
-## Design
-
-Strictly **black & white — color only in animations and 3D renders**. Built with motion-primitives.

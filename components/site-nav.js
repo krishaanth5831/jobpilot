@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Upload, FileText, Search, Inbox, Map, ChartNoAxesColumn, KeyRound } from "lucide-react";
+import { Upload, FileText, Search, Inbox, Map, ChartNoAxesColumn, Settings } from "lucide-react";
 import { Dock, DockItem } from "@/components/motion-primitives/dock";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
@@ -20,7 +20,7 @@ const items = [
   { href: "/queue", label: "Queue", Icon: Inbox },
   { href: "/roadmap", label: "Roadmap", Icon: Map },
   { href: "/stats", label: "Stats", Icon: ChartNoAxesColumn },
-  { href: "/settings", label: "Settings", Icon: KeyRound },
+  { href: "/settings", label: "Settings", Icon: Settings },
 ];
 
 // Floating macOS-style dock, bottom-center on every page.

@@ -147,7 +147,7 @@ export default function Home() {
           <div className="relative z-10">
             <div className="mb-8 flex items-center gap-3">
               <Logo size={36} loop />
-              <span className="text-lg font-semibold tracking-tight">jobpilot</span>
+              <span className="text-lg font-semibold tracking-tight">jobblast</span>
             </div>
             <TextEffect
               as="h1"

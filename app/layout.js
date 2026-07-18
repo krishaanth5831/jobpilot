@@ -21,8 +21,8 @@ export const metadata = {
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
   ),
   title: {
-    default: "jobpilot — apply where you qualify",
-    template: "%s · jobpilot",
+    default: "jobblast — apply where you qualify",
+    template: "%s · jobblast",
   },
   description:
     "AI job application copilot — upload your resume, get matched to jobs you qualify for, and a roadmap for the ones you don't.",

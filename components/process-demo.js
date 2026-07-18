@@ -227,7 +227,7 @@ export function ProcessDemo() {
             ))}
           </span>
           <span className="ml-2 flex-1 rounded-md bg-neutral-100 px-3 py-1 text-center font-mono text-[10px] text-neutral-500 dark:bg-neutral-900">
-            jobpilot{step.path}
+            jobblast{step.path}
           </span>
         </div>
         <div className="min-h-[290px] p-5">

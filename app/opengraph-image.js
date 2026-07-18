@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "jobpilot — apply where you qualify";
+export const alt = "jobblast — apply where you qualify";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -39,7 +39,7 @@ export default function Image() {
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 40, color: "#a3a3a3" }}>jobpilot</div>
+          <div style={{ fontSize: 40, color: "#a3a3a3" }}>jobblast</div>
           <div style={{ fontSize: 84, fontWeight: 700, letterSpacing: -3, marginTop: 16 }}>
             Apply where
           </div>

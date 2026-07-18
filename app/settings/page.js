@@ -332,7 +332,7 @@ export default function SettingsPage() {
             <h2 className="text-xl font-semibold tracking-tight">Auto-apply</h2>
             <p className="mt-0.5 text-sm text-neutral-500">
               When on, any job scoring above the match threshold gets a cover
-              letter drafted straight into your review queue. jobpilot never
+              letter drafted straight into your review queue. jobblast never
               submits for you — you still send every application yourself.
             </p>
           </div>

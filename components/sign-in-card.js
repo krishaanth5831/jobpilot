@@ -103,7 +103,7 @@ export function SignInCard({ providers = [], freeModel = false }) {
         <div className="flex flex-col items-center text-center">
           <Logo size={44} />
           <h1 className="mt-6 text-2xl font-bold tracking-tight">
-            {isSignup ? "Create your account" : "Sign in to jobpilot"}
+            {isSignup ? "Create your account" : "Sign in to jobblast"}
           </h1>
           <p className="mt-2 text-sm text-neutral-500">
             Your resume, matches, and applications live in your account — sign
@@ -174,7 +174,7 @@ export function SignInCard({ providers = [], freeModel = false }) {
         </form>
 
         <p className="mt-4 text-center text-sm text-neutral-500">
-          {isSignup ? "Already have an account?" : "New to jobpilot?"}{" "}
+          {isSignup ? "Already have an account?" : "New to jobblast?"}{" "}
           <button
             type="button"
             onClick={() => {

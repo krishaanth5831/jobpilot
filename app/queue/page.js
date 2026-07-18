@@ -29,7 +29,7 @@ const STAGES = [
 
 // Review queue + application tracker: read each drafted cover letter in a
 // dialog that morphs out of its row, apply on the real job page, then track
-// the application through interviews to an outcome. jobpilot never
+// the application through interviews to an outcome. jobblast never
 // auto-submits.
 export default function QueuePage() {
   const [applications, setApplications] = useState([]);

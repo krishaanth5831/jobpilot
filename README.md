@@ -78,7 +78,7 @@ jobpilot works on a bring-your-own-keys model: your account uses *your* keys and
 
 ### Cost
 
-Claude calls run on **Claude Haiku 4.5** — the cheapest Claude model — using structured outputs (JSON schema) so verdicts and roadmaps are machine-readable, not prose. Screening and cover-letter drafting are short, schema-constrained calls; Haiku keeps spend low. To trade cost for quality, switch `MODEL` in `lib/claude.js` to `claude-sonnet-5` or `claude-opus-4-8`.
+By default Claude calls run on **Claude Haiku 4.5** — the cheapest Claude model — using structured outputs (JSON schema) so verdicts and roadmaps are machine-readable, not prose. Screening and cover-letter drafting are short, schema-constrained calls; Haiku keeps spend low. To trade cost for quality, pick **Sonnet 5** or **Opus 4.8** — and how much thinking effort to use — in the **AI model** section of the Settings page. The choice is saved to your account and only spends your own credits.
 
 ## Tech
 

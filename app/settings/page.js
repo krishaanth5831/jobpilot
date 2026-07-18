@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Check, ExternalLink, KeyRound, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { CLAUDE_MODELS, EFFORT_LEVELS } from "@/lib/claude-models";
 
 // Paste API keys here instead of editing .env.local by hand. Saved keys are
 // written to .env.local and applied to the running server immediately.
@@ -110,6 +111,26 @@ export default function SettingsPage() {
 
   function clearKey(key) {
     setDrafts((prev) => ({ ...prev, [key]: "" }));
+  }
+
+  // Model + effort save immediately on click, like the auto-apply toggle.
+  async function updateClaude(patch) {
+    const prev = info?.claude;
+    setInfo((p) => ({ ...p, claude: { ...p.claude, ...patch } })); // optimistic
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ claude: patch }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setInfo(data);
+      toast.success("AI model settings saved");
+    } catch (err) {
+      setInfo((p) => ({ ...p, claude: prev })); // revert
+      toast.error(err.message || "Couldn't update AI model settings");
+    }
   }
 
   async function toggleAutoApply(next) {
@@ -234,6 +255,76 @@ export default function SettingsPage() {
         </section>
         );
       })}
+
+      <section className="mt-10">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-3 dark:border-neutral-800">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">AI model</h2>
+            <p className="mt-0.5 text-sm text-neutral-500">
+              Which Claude model powers your account, and how hard it thinks
+              before answering. Uses your own key and credits, so the choice is
+              yours — prices are per million tokens (input / output). Doesn&apos;t
+              apply while you&apos;re on the free built-in model.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {CLAUDE_MODELS.map((m) => {
+            const isSelected = info?.claude?.model === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => updateClaude({ model: m.id })}
+                disabled={!info}
+                aria-pressed={isSelected}
+                className={`rounded-2xl border-2 p-4 text-left transition disabled:opacity-50 ${
+                  isSelected
+                    ? "border-black dark:border-white"
+                    : "border-neutral-200 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                }`}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">{m.name}</span>
+                  {isSelected && <Check size={13} strokeWidth={2.5} aria-hidden="true" />}
+                </span>
+                <span className="mt-1 block font-mono text-xs text-neutral-500">
+                  {m.price} per 1M tokens
+                </span>
+                <span className="mt-2 block text-sm text-neutral-500">{m.blurb}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-6 text-xs font-medium uppercase tracking-widest text-neutral-500">
+          Thinking effort
+        </p>
+        <div className="mt-2 grid gap-3 sm:grid-cols-3">
+          {EFFORT_LEVELS.map((e) => {
+            const isSelected = info?.claude?.effort === e.id;
+            return (
+              <button
+                key={e.id}
+                type="button"
+                onClick={() => updateClaude({ effort: e.id })}
+                disabled={!info}
+                aria-pressed={isSelected}
+                className={`rounded-xl border-2 px-4 py-3 text-left transition disabled:opacity-50 ${
+                  isSelected
+                    ? "border-black dark:border-white"
+                    : "border-neutral-200 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                }`}
+              >
+                <span className="flex items-center justify-between gap-2 text-sm font-medium">
+                  {e.name}
+                  {isSelected && <Check size={12} strokeWidth={2.5} aria-hidden="true" />}
+                </span>
+                <span className="mt-0.5 block text-xs text-neutral-500">{e.blurb}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="mt-10">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-3 dark:border-neutral-800">

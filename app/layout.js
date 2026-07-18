@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers";
 import { SiteNav } from "@/components/site-nav";
 import { authEnabled, enabledProviders } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +47,7 @@ export default function RootLayout({ children }) {
           <SiteNav authEnabled={authEnabled} />
         </Providers>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

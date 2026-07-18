@@ -2,7 +2,7 @@
 
 **Your AI copilot for job applications.** Upload your resume, and jobblast finds jobs worldwide that you actually qualify for, scores your resume for ATS-friendliness, drafts tailored applications for your review, and — for the jobs you *want* but don't qualify for yet — builds a concrete roadmap to get you there.
 
-**Use it now: [jobpilot-lemon.vercel.app](https://jobpilot-lemon.vercel.app)** — make an account like on any other website, no installation needed.
+**Use it now: [jobblast.nl](https://www.jobblast.nl)** — make an account like on any other website, no installation needed.
 
 > jobblast **prepares** applications for human review. It never bot-submits to job boards — you always click the final "apply" yourself.
 
@@ -42,7 +42,7 @@ The keyless sources run on every search and don't touch the rate-limited JSearch
 
 There's nothing to install — jobblast runs in your browser:
 
-1. Go to **[jobpilot-lemon.vercel.app](https://jobpilot-lemon.vercel.app)**.
+1. Go to **[jobblast.nl](https://www.jobblast.nl)**.
 2. **Create an account** — email and password, like any other website.
 3. Add your API keys on the **Settings** page (step-by-step guides below).
 4. **Upload your resume** and start searching.

@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 
-// The jobpilot mark: a blocky rocket at liftoff on a 9×12 pixel grid
+// The jobblast mark: a blocky rocket at liftoff on a 9×12 pixel grid
 // ('#' = hull pixel, '.' = empty — the two holes are the window, digits =
 // flame pixels keyed into FLAME). Entrance: the rocket assembles nose-to-tail,
 // flame last. With `loop` the whole mark rumbles and rises while the flame
@@ -42,7 +42,7 @@ export function Logo({ size = 24, loop = false, className, delay = 0 }) {
       height={size}
       className={className}
       role="img"
-      aria-label="jobpilot logo"
+      aria-label="jobblast logo"
       animate={
         loop && !reduced ? { y: [0, -2.5, 0], x: [0, 0.4, -0.4, 0] } : undefined
       }

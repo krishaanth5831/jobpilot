@@ -1,14 +1,14 @@
-# jobpilot ✈️
+# jobblast ✈️
 
-**Your AI copilot for job applications.** Upload your resume, and jobpilot finds jobs worldwide that you actually qualify for, scores your resume for ATS-friendliness, drafts tailored applications for your review, and — for the jobs you *want* but don't qualify for yet — builds a concrete roadmap to get you there.
+**Your AI copilot for job applications.** Upload your resume, and jobblast finds jobs worldwide that you actually qualify for, scores your resume for ATS-friendliness, drafts tailored applications for your review, and — for the jobs you *want* but don't qualify for yet — builds a concrete roadmap to get you there.
 
 **Use it now: [jobpilot-lemon.vercel.app](https://jobpilot-lemon.vercel.app)** — make an account like on any other website, no installation needed.
 
-> jobpilot **prepares** applications for human review. It never bot-submits to job boards — you always click the final "apply" yourself.
+> jobblast **prepares** applications for human review. It never bot-submits to job boards — you always click the final "apply" yourself.
 
 ## What it does
 
-- **Searches job boards worldwide — a dozen sources — and screens every result.** Type a role however you phrase it; jobpilot rewrites it into the title recruiters actually post, fans out across many boards, and gives each posting an honest **0–100 fit score** against your resume (what matched, what's missing, why).
+- **Searches job boards worldwide — a dozen sources — and screens every result.** Type a role however you phrase it; jobblast rewrites it into the title recruiters actually post, fans out across many boards, and gives each posting an honest **0–100 fit score** against your resume (what matched, what's missing, why).
 - **Filter the worldwide pool** by country, job type (internship / full-time / part-time / contract), and experience level — no re-searching.
 - **Companies to target** — one click gives you 30+ real companies that hire in your field (region-biased but worldwide); click any to see their openings.
 - **Auto-apply** — any job scoring above 35 automatically gets a cover letter drafted into your review queue (you still send it yourself).
@@ -22,7 +22,7 @@
 
 1. **Upload** (`/upload`) — drop in your resume PDF. Claude extracts a structured profile (skills, experience, education, projects). Nothing is invented — only what's on the resume.
 2. **Studio** (`/resume`) — get an ATS score + fixes, edit your resume right on the page, and pick a template.
-3. **Search** (`/jobs`) — pull live postings worldwide, filter them, and let jobpilot screen each against your resume. Qualifying jobs (score > 35) auto-draft into your queue.
+3. **Search** (`/jobs`) — pull live postings worldwide, filter them, and let jobblast screen each against your resume. Qualifying jobs (score > 35) auto-draft into your queue.
 4. **Review** (`/queue`) — read and tweak each drafted cover letter, apply on the company's page, mark it done.
 5. **Roadmap** (`/roadmap`) — for jobs you're not qualified for yet, get an ordered get-qualified plan.
 
@@ -40,7 +40,7 @@ The keyless sources run on every search and don't touch the rate-limited JSearch
 
 ## Getting started
 
-There's nothing to install — jobpilot runs in your browser:
+There's nothing to install — jobblast runs in your browser:
 
 1. Go to **[jobpilot-lemon.vercel.app](https://jobpilot-lemon.vercel.app)**.
 2. **Create an account** — email and password, like any other website.
@@ -49,24 +49,24 @@ There's nothing to install — jobpilot runs in your browser:
 
 ### Getting your API keys
 
-jobpilot works on a bring-your-own-keys model: your account uses *your* keys and *your* credits, so nobody else can spend them and you're never billed for anyone else. You paste each key once on the Settings page; after that jobpilot only ever shows the last 4 characters.
+jobblast works on a bring-your-own-keys model: your account uses *your* keys and *your* credits, so nobody else can spend them and you're never billed for anyone else. You paste each key once on the Settings page; after that jobblast only ever shows the last 4 characters.
 
 **Only the Claude key is required.** The Adzuna and JSearch keys are optional extras — without them the keyless job boards (Greenhouse, Lever, Remotive, and the rest) still work.
 
 #### Claude API key (required — powers all the AI)
 
 1. Go to [platform.claude.com](https://platform.claude.com) and sign up (or sign in).
-2. Add credits: open **Billing** and buy a small amount — **$5 is plenty to start**. jobpilot uses Claude Haiku, the cheapest model, so a typical screening or cover letter costs a fraction of a cent.
-3. Open **API keys** → **Create key**, name it anything (e.g. `jobpilot`), and click create.
+2. Add credits: open **Billing** and buy a small amount — **$5 is plenty to start**. jobblast uses Claude Haiku, the cheapest model, so a typical screening or cover letter costs a fraction of a cent.
+3. Open **API keys** → **Create key**, name it anything (e.g. `jobblast`), and click create.
 4. **Copy the key immediately** (it starts with `sk-ant-` and is only shown once).
-5. In jobpilot, go to **Settings → Claude → API key**, paste it, and hit **Save changes**.
+5. In jobblast, go to **Settings → Claude → API key**, paste it, and hit **Save changes**.
 
 #### Adzuna keys (optional, free — adds ~19 countries of job boards)
 
 1. Go to [developer.adzuna.com](https://developer.adzuna.com) and click **Register** — the free plan is fine.
 2. Confirm your email and log in to the developer dashboard.
 3. Your **Application ID** and **Application Key** are shown on the **API access details** page.
-4. In jobpilot, paste both under **Settings → Adzuna** and hit **Save changes**.
+4. In jobblast, paste both under **Settings → Adzuna** and hit **Save changes**.
 
 #### JSearch key (optional, free — adds LinkedIn / Indeed / Glassdoor results)
 
@@ -74,7 +74,7 @@ jobpilot works on a bring-your-own-keys model: your account uses *your* keys and
 2. Search the site for **“JSearch”** and open the JSearch API page.
 3. On its **Pricing** tab, subscribe to the free **Basic** plan.
 4. Your key is shown on the API page as the **`X-RapidAPI-Key`** value (also under your app's **Authorization** settings).
-5. In jobpilot, paste it under **Settings → JSearch (RapidAPI)** and hit **Save changes**.
+5. In jobblast, paste it under **Settings → JSearch (RapidAPI)** and hit **Save changes**.
 
 ### Cost
 

@@ -5,7 +5,7 @@ import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/applications — body: { jobId }.
 // Only works for jobs Claude marked as qualified. Drafts a tailored cover
-// letter and queues it for human review — jobpilot never auto-submits.
+// letter and queues it for human review — jobblast never auto-submits.
 export async function POST(request) {
   const { db, data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });

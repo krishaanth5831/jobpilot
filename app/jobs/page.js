@@ -210,7 +210,7 @@ export default function JobsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Show what jobpilot actually searched for (the rewritten title) when
+      // Show what jobblast actually searched for (the rewritten title) when
       // it differs from what was typed.
       if (data.searchedAs && data.searchedAs.toLowerCase() !== roleValue.trim().toLowerCase()) {
         setSearchedAs(data.searchedAs);

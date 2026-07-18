@@ -47,10 +47,14 @@ export function SignInCard({ providers = [], freeModel = false }) {
   const params = useSearchParams();
   const router = useRouter();
 
-  const [mode, setMode] = useState("signin"); // "signin" | "signup"
+  // An influencer share link (/signin?ref=CODE) lands new visitors straight
+  // on sign-up with their creator code already filled in.
+  const refCode = params.get("ref") ?? "";
+  const [mode, setMode] = useState(refCode ? "signup" : "signin"); // "signin" | "signup"
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [creatorCode, setCreatorCode] = useState(refCode);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(null); // "form" | provider id
 
@@ -69,7 +73,7 @@ export function SignInCard({ providers = [], freeModel = false }) {
         const res = await fetch("/api/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, name }),
+          body: JSON.stringify({ email, password, name, creatorCode }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -103,7 +107,7 @@ export function SignInCard({ providers = [], freeModel = false }) {
         <div className="flex flex-col items-center text-center">
           <Logo size={44} />
           <h1 className="mt-6 text-2xl font-bold tracking-tight">
-            {isSignup ? "Create your account" : "Sign in to jobpilot"}
+            {isSignup ? "Create your account" : "Sign in to jobblast"}
           </h1>
           <p className="mt-2 text-sm text-neutral-500">
             Your resume, matches, and applications live in your account — sign
@@ -151,6 +155,18 @@ export function SignInCard({ providers = [], freeModel = false }) {
             className={inputClass}
             aria-label="Password"
           />
+          {isSignup && (
+            <input
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="Creator code (optional)"
+              value={creatorCode}
+              onChange={(e) => setCreatorCode(e.target.value)}
+              className={inputClass}
+              aria-label="Creator code"
+            />
+          )}
 
           {error && (
             <p className="text-sm text-red-600 dark:text-red-400" role="alert">
@@ -174,7 +190,7 @@ export function SignInCard({ providers = [], freeModel = false }) {
         </form>
 
         <p className="mt-4 text-center text-sm text-neutral-500">
-          {isSignup ? "Already have an account?" : "New to jobpilot?"}{" "}
+          {isSignup ? "Already have an account?" : "New to jobblast?"}{" "}
           <button
             type="button"
             onClick={() => {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MANAGED_KEYS, readManagedValues, updateManagedValues } from "@/lib/env-file";
 import { API_KEY_NAMES } from "@/lib/api-keys";
 import { DEFAULT_CLAUDE, isValidEffort, isValidModel } from "@/lib/claude-models";
+import { addCreatorCode, listCreatorCodes, removeCreatorCode } from "@/lib/creator-codes";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 import { freeModelAvailable } from "@/lib/free-model";
 
@@ -39,6 +40,9 @@ export async function GET() {
     keys[name] = { set: Boolean(value), hint: mask(value) };
   }
 
+  let creatorCodes = null;
+  if (isOwner) creatorCodes = await listCreatorCodes();
+
   let authKeys = null;
   if (isOwner) {
     const values = await readManagedValues();
@@ -55,6 +59,7 @@ export async function GET() {
     isOwner,
     envWritable: ENV_WRITABLE,
     autoApply: data.autoApply !== false,
+    creatorCodes,
     claude: {
       model: isValidModel(data.claudeModel) ? data.claudeModel : DEFAULT_CLAUDE.model,
       effort: isValidEffort(data.claudeEffort) ? data.claudeEffort : DEFAULT_CLAUDE.effort,
@@ -81,6 +86,25 @@ export async function POST(request) {
   if (typeof body.autoApply === "boolean") {
     data.autoApply = body.autoApply;
     await db.write();
+    return GET();
+  }
+
+  // Creator (affiliate) codes — owner-only management, saved on their own.
+  if (body.creatorCode && typeof body.creatorCode === "object") {
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: "Only the owner can manage creator codes." },
+        { status: 403 }
+      );
+    }
+    if (body.creatorCode.add !== undefined) {
+      const error = await addCreatorCode(body.creatorCode.add);
+      if (error) return NextResponse.json({ error }, { status: 400 });
+    } else if (body.creatorCode.remove !== undefined) {
+      await removeCreatorCode(body.creatorCode.remove);
+    } else {
+      return NextResponse.json({ error: "Nothing to save" }, { status: 400 });
+    }
     return GET();
   }
 

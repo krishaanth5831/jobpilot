@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, ExternalLink, KeyRound, X } from "lucide-react";
+import { Check, Copy, ExternalLink, KeyRound, Plus, Trash2, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { CLAUDE_MODELS, EFFORT_LEVELS } from "@/lib/claude-models";
 
@@ -133,6 +133,30 @@ export default function SettingsPage() {
     }
   }
 
+  const [newCode, setNewCode] = useState("");
+
+  async function creatorCodeAction(action, okMessage) {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ creatorCode: action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setInfo(data);
+      setNewCode("");
+      toast.success(okMessage);
+    } catch (err) {
+      toast.error(err.message || "Couldn't update creator codes");
+    }
+  }
+
+  function copyShareLink(code) {
+    navigator.clipboard.writeText(`${window.location.origin}/signin?ref=${code}`);
+    toast.success("Share link copied — give it to the creator");
+  }
+
   async function toggleAutoApply(next) {
     setInfo((prev) => ({ ...prev, autoApply: next })); // optimistic
     try {
@@ -255,6 +279,84 @@ export default function SettingsPage() {
         </section>
         );
       })}
+
+      {info?.isOwner && (
+        <section className="mt-10">
+          <div className="border-b border-neutral-200 pb-3 dark:border-neutral-800">
+            <h2 className="text-xl font-semibold tracking-tight">Creator codes</h2>
+            <p className="mt-0.5 text-sm text-neutral-500">
+              Give each influencer their own code, then watch how many accounts
+              each one brings in. They can share their code directly (typed at
+              sign-up) or use their share link, which lands people on sign-up
+              with the code pre-filled. Only you can see this section.
+            </p>
+          </div>
+
+          <form
+            className="mt-4 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (newCode.trim()) creatorCodeAction({ add: newCode }, "Creator code added");
+            }}
+          >
+            <input
+              type="text"
+              value={newCode}
+              onChange={(e) => setNewCode(e.target.value.toUpperCase())}
+              placeholder="New code, e.g. ALEX20"
+              spellCheck={false}
+              aria-label="New creator code"
+              className="w-full max-w-xs rounded-xl border border-neutral-200 bg-transparent px-3 py-2.5 font-mono text-sm uppercase outline-none placeholder:font-sans placeholder:normal-case placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+            />
+            <button
+              type="submit"
+              disabled={!newCode.trim()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+            >
+              <Plus size={13} strokeWidth={2} aria-hidden="true" /> Add
+            </button>
+          </form>
+
+          {(info.creatorCodes ?? []).length === 0 ? (
+            <p className="mt-4 text-sm text-neutral-500">
+              No codes yet — add one above to start tracking signups.
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-col gap-2">
+              {info.creatorCodes.map(({ code, signups }) => (
+                <li
+                  key={code}
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-800"
+                >
+                  <span className="font-mono text-sm font-semibold">{code}</span>
+                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
+                    {signups} {signups === 1 ? "sign-up" : "sign-ups"}
+                  </span>
+                  <span className="ml-auto flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => copyShareLink(code)}
+                      title="Copy share link"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-500 transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                    >
+                      <Copy size={12} strokeWidth={1.5} aria-hidden="true" /> Share link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => creatorCodeAction({ remove: code }, "Creator code removed")}
+                      title="Remove this code"
+                      aria-label={`Remove ${code}`}
+                      className="inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+                    >
+                      <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <section className="mt-10">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-3 dark:border-neutral-800">

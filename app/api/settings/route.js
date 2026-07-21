@@ -3,6 +3,7 @@ import { MANAGED_KEYS, readManagedValues, updateManagedValues } from "@/lib/env-
 import { API_KEY_NAMES } from "@/lib/api-keys";
 import { DEFAULT_CLAUDE, isValidEffort, isValidModel } from "@/lib/claude-models";
 import { addCreatorCode, listCreatorCodes, removeCreatorCode } from "@/lib/creator-codes";
+import { listSignups } from "@/lib/accounts";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 import { freeModelAvailable } from "@/lib/free-model";
 
@@ -41,7 +42,11 @@ export async function GET() {
   }
 
   let creatorCodes = null;
-  if (isOwner) creatorCodes = await listCreatorCodes();
+  let signups = null;
+  if (isOwner) {
+    creatorCodes = await listCreatorCodes();
+    signups = await listSignups();
+  }
 
   let authKeys = null;
   if (isOwner) {
@@ -60,6 +65,7 @@ export async function GET() {
     envWritable: ENV_WRITABLE,
     autoApply: data.autoApply !== false,
     creatorCodes,
+    signups,
     claude: {
       model: isValidModel(data.claudeModel) ? data.claudeModel : DEFAULT_CLAUDE.model,
       effort: isValidEffort(data.claudeEffort) ? data.claudeEffort : DEFAULT_CLAUDE.effort,

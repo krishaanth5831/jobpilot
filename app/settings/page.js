@@ -157,6 +157,12 @@ export default function SettingsPage() {
     toast.success("Share link copied — give it to the creator");
   }
 
+  function copyAllEmails() {
+    const emails = (info?.signups ?? []).map((s) => s.email).join(", ");
+    navigator.clipboard.writeText(emails);
+    toast.success("All emails copied");
+  }
+
   async function toggleAutoApply(next) {
     setInfo((prev) => ({ ...prev, autoApply: next })); // optimistic
     try {
@@ -350,6 +356,64 @@ export default function SettingsPage() {
                     >
                       <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
                     </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {info?.isOwner && (
+        <section className="mt-10">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-3 dark:border-neutral-800">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">Signups</h2>
+              <p className="mt-0.5 text-sm text-neutral-500">
+                Everyone who has created an account, newest first. Only you can
+                see this section.
+              </p>
+            </div>
+            {(info.signups ?? []).length > 0 && (
+              <button
+                type="button"
+                onClick={copyAllEmails}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-500 transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+              >
+                <Copy size={12} strokeWidth={1.5} aria-hidden="true" /> Copy emails
+              </button>
+            )}
+          </div>
+
+          <p className="mt-4 text-3xl font-bold tabular-nums">
+            {(info.signups ?? []).length}
+          </p>
+          <p className="text-sm text-neutral-500">
+            total {(info.signups ?? []).length === 1 ? "account" : "accounts"}
+          </p>
+
+          {(info.signups ?? []).length > 0 && (
+            <ul className="mt-4 flex flex-col gap-2">
+              {info.signups.map(({ email, name, createdAt, creatorCode }) => (
+                <li
+                  key={email}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-800"
+                >
+                  <span className="font-mono text-sm font-medium">{email}</span>
+                  {name && <span className="text-sm text-neutral-500">{name}</span>}
+                  {creatorCode && (
+                    <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 font-mono text-xs font-medium text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
+                      {creatorCode}
+                    </span>
+                  )}
+                  <span className="ml-auto text-xs tabular-nums text-neutral-400">
+                    {createdAt
+                      ? new Date(createdAt).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "—"}
                   </span>
                 </li>
               ))}

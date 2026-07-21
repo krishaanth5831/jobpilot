@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { MANAGED_KEYS, readManagedValues, updateManagedValues } from "@/lib/env-file";
-import { API_KEY_NAMES } from "@/lib/api-keys";
+import { API_KEY_NAMES, isOwnerAccount } from "@/lib/api-keys";
 import { DEFAULT_CLAUDE, isValidEffort, isValidModel } from "@/lib/claude-models";
 import { addCreatorCode, listCreatorCodes, removeCreatorCode } from "@/lib/creator-codes";
-import { listSignups } from "@/lib/accounts";
+import { deleteAccount, listSignups, normalizeEmail } from "@/lib/accounts";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 import { freeModelAvailable } from "@/lib/free-model";
 
@@ -111,6 +111,27 @@ export async function POST(request) {
     } else {
       return NextResponse.json({ error: "Nothing to save" }, { status: 400 });
     }
+    return GET();
+  }
+
+  // Deleting a signup — owner-only, and never the owner's own account (that
+  // would lock this instance out of its own settings, including this panel).
+  if (body.deleteAccount && typeof body.deleteAccount === "object") {
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: "Only the owner can delete accounts." },
+        { status: 403 }
+      );
+    }
+    const target = normalizeEmail(body.deleteAccount.email);
+    if (isOwnerAccount(null, target)) {
+      return NextResponse.json(
+        { error: "You can't delete the owner account." },
+        { status: 400 }
+      );
+    }
+    const error = await deleteAccount(target);
+    if (error) return NextResponse.json({ error }, { status: 400 });
     return GET();
   }
 

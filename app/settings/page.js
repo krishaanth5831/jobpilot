@@ -157,6 +157,26 @@ export default function SettingsPage() {
     toast.success("Share link copied — give it to the creator");
   }
 
+  async function deleteSignup(email) {
+    const ok = window.confirm(
+      `Delete the account ${email}?\n\nThis also removes their resume, saved jobs, and applications. It can't be undone.`
+    );
+    if (!ok) return;
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleteAccount: { email } }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setInfo(data);
+      toast.success(`Deleted ${email}`);
+    } catch (err) {
+      toast.error(err.message || "Couldn't delete that account");
+    }
+  }
+
   function copyAllEmails() {
     const emails = (info?.signups ?? []).map((s) => s.email).join(", ");
     navigator.clipboard.writeText(emails);
@@ -406,14 +426,25 @@ export default function SettingsPage() {
                       {creatorCode}
                     </span>
                   )}
-                  <span className="ml-auto text-xs tabular-nums text-neutral-400">
-                    {createdAt
-                      ? new Date(createdAt).toLocaleDateString(undefined, {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })
-                      : "—"}
+                  <span className="ml-auto flex items-center gap-3">
+                    <span className="text-xs tabular-nums text-neutral-400">
+                      {createdAt
+                        ? new Date(createdAt).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "—"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => deleteSignup(email)}
+                      title="Delete this account"
+                      aria-label={`Delete ${email}`}
+                      className="inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+                    >
+                      <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
+                    </button>
                   </span>
                 </li>
               ))}

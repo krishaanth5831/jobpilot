@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { INSIGHTS_SCHEMA, INSIGHTS_SYSTEM_PROMPT, buildInsightsPrompt } from "@/lib/reviewer";
+import { recordOutcome, tagsFromProfile } from "@/lib/learnings";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // The success feedback loop. When an application is marked hired, the
@@ -35,7 +36,7 @@ export async function POST(request) {
   if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
   try {
-    const { lessons } = await askClaudeJSON({
+    const { lessons, globalLessons } = await askClaudeJSON({
       system: INSIGHTS_SYSTEM_PROMPT,
       prompt: buildInsightsPrompt({
         profile: data.profile,
@@ -46,6 +47,19 @@ export async function POST(request) {
       }),
       schema: INSIGHTS_SCHEMA,
     });
+
+    // Anonymized lessons feed the cross-account knowledge base, starting
+    // life with one success (they come from a hire). recordOutcome runs the
+    // PII sanitizer and silently drops anything that fails it; the write
+    // below persists both the user's insight and these in one shot.
+    for (const lesson of globalLessons ?? []) {
+      recordOutcome(db, {
+        category: lesson.category,
+        pattern: lesson.pattern,
+        contextTags: tagsFromProfile(data.profile),
+        success: true,
+      });
+    }
 
     const insight = {
       id: `insight-${Date.now()}`,

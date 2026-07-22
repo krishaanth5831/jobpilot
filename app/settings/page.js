@@ -68,6 +68,14 @@ const GROUPS = [
   },
 ];
 
+// Human names for the global learnings categories (lib/learnings.js).
+const LEARNING_LABELS = {
+  resume_edit: "Resume edits",
+  ats_pattern: "ATS",
+  auto_apply_msg: "Cover letters",
+  company_match: "Matching",
+};
+
 export default function SettingsPage() {
   const [info, setInfo] = useState(null); // { keys, authKeys, isOwner }
   const [drafts, setDrafts] = useState({});
@@ -155,6 +163,22 @@ export default function SettingsPage() {
   function copyShareLink(code) {
     navigator.clipboard.writeText(`${window.location.origin}/signin?ref=${code}`);
     toast.success("Share link copied — give it to the creator");
+  }
+
+  async function learningAction(action, okMessage) {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ learning: action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setInfo(data);
+      toast.success(okMessage);
+    } catch (err) {
+      toast.error(err.message || "Couldn't update learnings");
+    }
   }
 
   async function deleteSignup(email) {
@@ -446,6 +470,56 @@ export default function SettingsPage() {
                       <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
                     </button>
                   </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {info?.isOwner && (
+        <section className="mt-10">
+          <div className="border-b border-neutral-200 pb-3 dark:border-neutral-800">
+            <h2 className="text-xl font-semibold tracking-tight">Learnings</h2>
+            <p className="mt-0.5 text-sm text-neutral-500">
+              What the AI has learned from real outcomes across all accounts —
+              generalized patterns only, never anyone&apos;s actual resume. The
+              best-evidenced ones are injected into reviews, tailoring, and
+              cover letters. Delete anything that looks wrong or too specific.
+              Only you can see this section.
+            </p>
+          </div>
+
+          {(info.learnings ?? []).length === 0 ? (
+            <p className="mt-4 text-sm text-neutral-500">
+              Nothing learned yet — patterns appear as applications get
+              outcomes.
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-col gap-2">
+              {info.learnings.map(({ id, category, pattern, successCount, failureCount, sampleSize, confidence }) => (
+                <li
+                  key={id}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-800"
+                >
+                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 font-mono text-xs font-medium text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
+                    {LEARNING_LABELS[category] ?? category}
+                  </span>
+                  <span className="min-w-0 flex-1 basis-64 text-sm">{pattern}</span>
+                  <span className="text-xs tabular-nums text-neutral-400">
+                    {sampleSize === 0
+                      ? "no outcomes yet"
+                      : `${successCount}✓ ${failureCount}✗ · ${Math.round(confidence * 100)}% conf.`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => learningAction({ remove: id }, "Learning removed")}
+                    title="Delete this learning"
+                    aria-label={`Delete learning: ${pattern}`}
+                    className="inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+                  >
+                    <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
+                  </button>
                 </li>
               ))}
             </ul>

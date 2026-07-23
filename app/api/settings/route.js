@@ -4,6 +4,7 @@ import { API_KEY_NAMES, isOwnerAccount } from "@/lib/api-keys";
 import { DEFAULT_CLAUDE, isValidEffort, isValidModel } from "@/lib/claude-models";
 import { addCreatorCode, listCreatorCodes, removeCreatorCode } from "@/lib/creator-codes";
 import { deleteAccount, listSignups, normalizeEmail } from "@/lib/accounts";
+import { listLearnings, removeLearning } from "@/lib/learnings";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 import { freeModelAvailable } from "@/lib/free-model";
 
@@ -17,7 +18,7 @@ import { freeModelAvailable } from "@/lib/free-model";
 // GROQ_API_KEY are server-wide and owner-only; those live in .env.local.
 
 const SERVER_KEY_NAMES = MANAGED_KEYS.filter(
-  (k) => k.startsWith("AUTH_") || k === "GROQ_API_KEY"
+  (k) => k.startsWith("AUTH_") || k === "GROQ_API_KEY" || k.startsWith("RESEND_")
 );
 
 // On serverless hosts there is no writable .env.local — sign-in config comes
@@ -43,9 +44,11 @@ export async function GET() {
 
   let creatorCodes = null;
   let signups = null;
+  let learnings = null;
   if (isOwner) {
     creatorCodes = await listCreatorCodes();
     signups = await listSignups();
+    learnings = await listLearnings();
   }
 
   let authKeys = null;
@@ -66,6 +69,7 @@ export async function GET() {
     autoApply: data.autoApply !== false,
     creatorCodes,
     signups,
+    learnings,
     claude: {
       model: isValidModel(data.claudeModel) ? data.claudeModel : DEFAULT_CLAUDE.model,
       effort: isValidEffort(data.claudeEffort) ? data.claudeEffort : DEFAULT_CLAUDE.effort,
@@ -111,6 +115,21 @@ export async function POST(request) {
     } else {
       return NextResponse.json({ error: "Nothing to save" }, { status: 400 });
     }
+    return GET();
+  }
+
+  // Global learnings — owner can delete a wrong or leaky pattern.
+  if (body.learning && typeof body.learning === "object") {
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: "Only the owner can manage learnings." },
+        { status: 403 }
+      );
+    }
+    if (body.learning.remove === undefined) {
+      return NextResponse.json({ error: "Nothing to save" }, { status: 400 });
+    }
+    await removeLearning(body.learning.remove);
     return GET();
   }
 

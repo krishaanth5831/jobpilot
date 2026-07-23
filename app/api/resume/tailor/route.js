@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { TAILOR_SCHEMA, TAILOR_SYSTEM_PROMPT, buildTailorPrompt } from "@/lib/reviewer";
+import { getRelevantLearnings, tagsFromProfile } from "@/lib/learnings";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/resume/tailor — body: { jobId } — re-emphasize the resume's
@@ -21,9 +22,15 @@ export async function POST(request) {
   if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
   try {
+    const learnings = await getRelevantLearnings({
+      db,
+      category: "resume_edit",
+      contextTags: tagsFromProfile(data.profile),
+    });
+
     const { resume_markdown } = await askClaudeJSON({
       system: TAILOR_SYSTEM_PROMPT,
-      prompt: buildTailorPrompt(data.resumeText, data.interview, data.insights, job),
+      prompt: buildTailorPrompt(data.resumeText, data.interview, data.insights, job, learnings),
       schema: TAILOR_SCHEMA,
     });
 
@@ -31,6 +38,9 @@ export async function POST(request) {
     data.tailoredResumes[jobId] = {
       markdown: resume_markdown,
       createdAt: new Date().toISOString(),
+      // Which global patterns influenced this tailoring — future outcome
+      // signals for the job it targets can credit them.
+      learningIds: learnings.ids,
     };
     await db.write();
 

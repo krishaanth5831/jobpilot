@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ConfigError } from "@/lib/claude";
 import { draftApplicationFor } from "@/lib/applications";
+import { recordOutcomesById } from "@/lib/learnings";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/applications — body: { jobId }.
@@ -49,6 +50,20 @@ export async function PATCH(request) {
   if (!application) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   if (status !== undefined) {
+    // Global learnings outcome — recorded once per application, at the first
+    // meaningful signal. Reaching the interview stage means the materials
+    // did their job; a straight rejection means they didn't. A rejection
+    // AFTER interviewing records nothing extra: the interview itself isn't
+    // the cover letter's outcome, and the success was already counted.
+    const positive = status === "interviewing" || status === "hired";
+    if (
+      (positive || status === "rejected") &&
+      application.learningIds?.length &&
+      !application.learningOutcome
+    ) {
+      recordOutcomesById(db, application.learningIds, positive);
+      application.learningOutcome = positive ? "success" : "failure";
+    }
     application.status = status;
     // First transition to submitted starts the follow-up clock.
     if (status === "submitted" && !application.submittedAt) {

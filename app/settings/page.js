@@ -51,6 +51,18 @@ const GROUPS = [
   },
   {
     scope: "auth",
+    title: "Password reset emails (owner)",
+    description:
+      "Lets people who forget their password get a reset link by email. Free at resend.com (3k emails/month) — create a key, then verify your domain there so the emails can send from it. Takes effect immediately.",
+    href: "https://resend.com",
+    linkLabel: "resend.com",
+    fields: [
+      { key: "RESEND_API_KEY", label: "Resend API key", secret: true },
+      { key: "RESEND_FROM", label: "From address, e.g. jobblast <noreply@jobblast.nl>", secret: false },
+    ],
+  },
+  {
+    scope: "auth",
     title: "Social logins (optional)",
     description:
       "Email + password sign-in already works out of the box. Optionally also let people continue with Google, GitHub, or Microsoft — all free to set up. Restart the server after saving these.",
@@ -67,6 +79,89 @@ const GROUPS = [
     ],
   },
 ];
+
+// Local-time day key, so a signup at 23:59 counts on the right day.
+const dayKey = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+// Last-30-days bar chart for the owner's Signups panel. The day an
+// influencer posts, this answers "is it working?" at a glance: bars for
+// volume, plus today's total broken down by creator code.
+function SignupsChart({ signups }) {
+  const days = [];
+  const counts = new Map();
+  for (const s of signups) {
+    if (!s.createdAt) continue;
+    const key = dayKey(new Date(s.createdAt));
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const now = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const key = dayKey(d);
+    days.push({
+      key,
+      count: counts.get(key) ?? 0,
+      label: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    });
+  }
+  const max = Math.max(1, ...days.map((d) => d.count));
+  const last30 = days.reduce((sum, d) => sum + d.count, 0);
+
+  const todayKey = dayKey(now);
+  const todays = signups.filter(
+    (s) => s.createdAt && dayKey(new Date(s.createdAt)) === todayKey
+  );
+  const todayByCode = new Map();
+  for (const s of todays) {
+    if (s.creatorCode) todayByCode.set(s.creatorCode, (todayByCode.get(s.creatorCode) ?? 0) + 1);
+  }
+
+  return (
+    <div className="mt-4">
+      <div className="flex h-16 items-end gap-[3px]" role="img"
+        aria-label={`Signups per day over the last 30 days, ${last30} total`}>
+        {days.map((d) => (
+          <div
+            key={d.key}
+            title={`${d.label}: ${d.count} signup${d.count === 1 ? "" : "s"}`}
+            className={`flex-1 rounded-t-sm ${
+              d.key === todayKey
+                ? "bg-black dark:bg-white"
+                : d.count > 0
+                  ? "bg-neutral-400 dark:bg-neutral-500"
+                  : "bg-neutral-200 dark:bg-neutral-800"
+            }`}
+            style={{ height: `${Math.max(6, (d.count / max) * 100)}%` }}
+          />
+        ))}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
+        <span className="tabular-nums">{last30} in the last 30 days</span>
+        <span aria-hidden="true">·</span>
+        <span className="font-medium tabular-nums text-black dark:text-white">
+          {todays.length} today
+        </span>
+        {[...todayByCode.entries()].map(([code, n]) => (
+          <span
+            key={code}
+            className="rounded-full bg-neutral-100 px-2 py-0.5 font-mono text-[11px] font-medium text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300"
+          >
+            {n} via {code}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Human names for the global learnings categories (lib/learnings.js).
+const LEARNING_LABELS = {
+  resume_edit: "Resume edits",
+  ats_pattern: "ATS",
+  auto_apply_msg: "Cover letters",
+  company_match: "Matching",
+};
 
 export default function SettingsPage() {
   const [info, setInfo] = useState(null); // { keys, authKeys, isOwner }
@@ -155,6 +250,22 @@ export default function SettingsPage() {
   function copyShareLink(code) {
     navigator.clipboard.writeText(`${window.location.origin}/signin?ref=${code}`);
     toast.success("Share link copied — give it to the creator");
+  }
+
+  async function learningAction(action, okMessage) {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ learning: action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setInfo(data);
+      toast.success(okMessage);
+    } catch (err) {
+      toast.error(err.message || "Couldn't update learnings");
+    }
   }
 
   async function deleteSignup(email) {
@@ -412,6 +523,8 @@ export default function SettingsPage() {
             total {(info.signups ?? []).length === 1 ? "account" : "accounts"}
           </p>
 
+          {(info.signups ?? []).length > 0 && <SignupsChart signups={info.signups} />}
+
           {(info.signups ?? []).length > 0 && (
             <ul className="mt-4 flex flex-col gap-2">
               {info.signups.map(({ email, name, createdAt, creatorCode }) => (
@@ -446,6 +559,56 @@ export default function SettingsPage() {
                       <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
                     </button>
                   </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {info?.isOwner && (
+        <section className="mt-10">
+          <div className="border-b border-neutral-200 pb-3 dark:border-neutral-800">
+            <h2 className="text-xl font-semibold tracking-tight">Learnings</h2>
+            <p className="mt-0.5 text-sm text-neutral-500">
+              What the AI has learned from real outcomes across all accounts —
+              generalized patterns only, never anyone&apos;s actual resume. The
+              best-evidenced ones are injected into reviews, tailoring, and
+              cover letters. Delete anything that looks wrong or too specific.
+              Only you can see this section.
+            </p>
+          </div>
+
+          {(info.learnings ?? []).length === 0 ? (
+            <p className="mt-4 text-sm text-neutral-500">
+              Nothing learned yet — patterns appear as applications get
+              outcomes.
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-col gap-2">
+              {info.learnings.map(({ id, category, pattern, successCount, failureCount, sampleSize, confidence }) => (
+                <li
+                  key={id}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-800"
+                >
+                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 font-mono text-xs font-medium text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
+                    {LEARNING_LABELS[category] ?? category}
+                  </span>
+                  <span className="min-w-0 flex-1 basis-64 text-sm">{pattern}</span>
+                  <span className="text-xs tabular-nums text-neutral-400">
+                    {sampleSize === 0
+                      ? "no outcomes yet"
+                      : `${successCount}✓ ${failureCount}✗ · ${Math.round(confidence * 100)}% conf.`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => learningAction({ remove: id }, "Learning removed")}
+                    title="Delete this learning"
+                    aria-label={`Delete learning: ${pattern}`}
+                    className="inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+                  >
+                    <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
+                  </button>
                 </li>
               ))}
             </ul>

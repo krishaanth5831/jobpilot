@@ -23,7 +23,8 @@ const GROUPS = [
   {
     scope: "user",
     title: "Adzuna",
-    description: "Broad job-board aggregator (free tier).",
+    description:
+      "Broad job-board aggregator (free tier). Already works out of the box on the shared server key — add your own only to search on your own quota.",
     href: "https://developer.adzuna.com",
     linkLabel: "developer.adzuna.com",
     fields: [
@@ -35,7 +36,8 @@ const GROUPS = [
   {
     scope: "user",
     title: "JSearch (RapidAPI)",
-    description: "Surfaces LinkedIn, Indeed, and Glassdoor postings (free tier).",
+    description:
+      "Surfaces LinkedIn, Indeed, and Glassdoor postings (free tier). Already works out of the box on the shared server key — add your own only to search on your own quota.",
     href: "https://rapidapi.com",
     linkLabel: "rapidapi.com → JSearch",
     fields: [{ key: "RAPIDAPI_KEY", label: "RapidAPI key", secret: true }],

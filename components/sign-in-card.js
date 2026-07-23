@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Logo } from "@/components/logo";
@@ -166,6 +167,15 @@ export function SignInCard({ providers = [], freeModel = false }) {
               className={inputClass}
               aria-label="Creator code"
             />
+          )}
+
+          {!isSignup && (
+            <Link
+              href="/reset"
+              className="-mt-1 self-end text-xs text-neutral-500 underline underline-offset-2 hover:text-black dark:hover:text-white"
+            >
+              Forgot password?
+            </Link>
           )}
 
           {error && (

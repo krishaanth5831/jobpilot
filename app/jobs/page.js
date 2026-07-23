@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Search, MapPin, ExternalLink, Sparkles, ClipboardPaste, Download, Building2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { AiLabel } from "@/components/ai-loading";
 import { EmptyState } from "@/components/empty-state";
 import { BorderTrail } from "@/components/motion-primitives/border-trail";
@@ -320,6 +321,8 @@ export default function JobsPage() {
         Live postings pulled from job boards worldwide — filter by country,
         type, and level; every result is screened against your resume.
       </p>
+
+      <OnboardingChecklist />
 
       {/* Expandable search toolbar */}
       <form

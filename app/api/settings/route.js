@@ -18,7 +18,7 @@ import { freeModelAvailable } from "@/lib/free-model";
 // GROQ_API_KEY are server-wide and owner-only; those live in .env.local.
 
 const SERVER_KEY_NAMES = MANAGED_KEYS.filter(
-  (k) => k.startsWith("AUTH_") || k === "GROQ_API_KEY"
+  (k) => k.startsWith("AUTH_") || k === "GROQ_API_KEY" || k.startsWith("RESEND_")
 );
 
 // On serverless hosts there is no writable .env.local — sign-in config comes

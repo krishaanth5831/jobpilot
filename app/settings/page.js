@@ -63,23 +63,10 @@ const GROUPS = [
       { key: "RESEND_FROM", label: "From address, e.g. jobblast <noreply@jobblast.nl>", secret: false },
     ],
   },
-  {
-    scope: "auth",
-    title: "Social logins (optional)",
-    description:
-      "Email + password sign-in already works out of the box. Optionally also let people continue with Google, GitHub, or Microsoft — all free to set up. Restart the server after saving these.",
-    href: "https://authjs.dev/getting-started/authentication/oauth",
-    linkLabel: "authjs.dev setup guide",
-    fields: [
-      { key: "AUTH_SECRET", label: "Auth secret (run: npx auth secret)", secret: true },
-      { key: "AUTH_GOOGLE_ID", label: "Google client ID", secret: true },
-      { key: "AUTH_GOOGLE_SECRET", label: "Google client secret", secret: true },
-      { key: "AUTH_GITHUB_ID", label: "GitHub client ID", secret: true },
-      { key: "AUTH_GITHUB_SECRET", label: "GitHub client secret", secret: true },
-      { key: "AUTH_MICROSOFT_ENTRA_ID_ID", label: "Microsoft client ID", secret: true },
-      { key: "AUTH_MICROSOFT_ENTRA_ID_SECRET", label: "Microsoft client secret", secret: true },
-    ],
-  },
+  // Social logins (Google/GitHub/Microsoft) and AUTH_SECRET are deliberately
+  // not editable here — email + password is the sign-in path. lib/auth.js
+  // still picks up the AUTH_* env vars if they're set on the host, and
+  // AUTH_SECRET still self-generates on first run.
 ];
 
 // "3h ago" for an account's last request. The stamp behind it only refreshes

@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { SiteNav } from "@/components/site-nav";
@@ -13,6 +13,13 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Headlines only. Geist stays the text face; a separate display grotesk is
+// what stops the type reading as a stock framework starter.
+const display = Bricolage_Grotesque({
+  variable: "--font-display",
   subsets: ["latin"],
 });
 
@@ -35,7 +42,7 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <Providers

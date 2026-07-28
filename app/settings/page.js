@@ -6,9 +6,10 @@ import { Check, Copy, ExternalLink, KeyRound, Plus, Trash2, X } from "lucide-rea
 import { PageShell } from "@/components/page-shell";
 import { CLAUDE_MODELS, EFFORT_LEVELS } from "@/lib/claude-models";
 
-// Paste API keys here instead of editing .env.local by hand. Saved keys are
-// written to .env.local and applied to the running server immediately.
-// The server only ever reports presence + last 4 characters, never values.
+// The settings sections, in render order. Per-user keys ("user" scope) save
+// to the account's own bucket; server-wide ones ("auth") are owner-only and
+// write to .env.local. Either way the server only ever reports presence +
+// last 4 characters, never values.
 const GROUPS = [
   {
     scope: "user",
@@ -20,28 +21,10 @@ const GROUPS = [
     fields: [{ key: "ANTHROPIC_API_KEY", label: "API key", secret: true }],
     freeModelBanner: true,
   },
-  {
-    scope: "user",
-    title: "Adzuna",
-    description:
-      "Broad job-board aggregator (free tier). Already works out of the box on the shared server key — add your own only to search on your own quota.",
-    href: "https://developer.adzuna.com",
-    linkLabel: "developer.adzuna.com",
-    fields: [
-      { key: "ADZUNA_APP_ID", label: "App ID", secret: true },
-      { key: "ADZUNA_APP_KEY", label: "App key", secret: true },
-      { key: "ADZUNA_COUNTRY", label: "Default country code (us, gb, fr…)", secret: false },
-    ],
-  },
-  {
-    scope: "user",
-    title: "JSearch (RapidAPI)",
-    description:
-      "Surfaces LinkedIn, Indeed, and Glassdoor postings (free tier). Already works out of the box on the shared server key — add your own only to search on your own quota.",
-    href: "https://rapidapi.com",
-    linkLabel: "rapidapi.com → JSearch",
-    fields: [{ key: "RAPIDAPI_KEY", label: "RapidAPI key", secret: true }],
-  },
+  // Job search (Adzuna + JSearch/RapidAPI) has no section here on purpose:
+  // every account runs on the server's shared keys, which are free-tier, so
+  // nobody is asked to go sign up for one. lib/api-keys.js still prefers a
+  // per-user key if a bucket already has one.
   {
     scope: "auth",
     title: "Free built-in model (owner)",
@@ -325,8 +308,9 @@ export default function SettingsPage() {
     <PageShell>
       <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
       <p className="mt-2 text-neutral-500">
-        Paste your API keys once — they&apos;re saved to your account on this
-        server (never shared with other users) and take effect immediately.
+        Job search already works — there&apos;s nothing you need to sign up for.
+        The one optional extra is your own Claude key, saved to your account on
+        this server (never shared with other users) and applied immediately.
       </p>
 
       {visibleGroups.map((group) => {

@@ -15,6 +15,7 @@ import {
   Inbox,
   ChartNoAxesColumn,
 } from "lucide-react";
+import { ScoreDial } from "@/components/score-dial";
 
 // The landing page is the only page a logged-out visitor can reach
 // (components/auth-gate.js), so it has one job: explain what jobblast does
@@ -139,12 +140,8 @@ export default function Home() {
           </div>
         </Reveal>
 
-        <Reveal delay={0.12}>
-          <Shot
-            name="verdict-qualified"
-            alt="A job listing in jobblast for a Junior Data Engineer role at Kestrel Analytics, marked Qualified with a match score of 84 out of 100 and one missing requirement."
-            priority
-          />
+        <Reveal delay={0.12} className="flex justify-center lg:justify-end">
+          <ScoreDial />
         </Reveal>
       </section>
 
@@ -163,24 +160,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Scoring: the differentiator, shown with the honest "not yet" case */}
-      <section id="scoring" className="mx-auto max-w-6xl scroll-mt-24 px-6 py-28">
-        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
+      {/* Scoring: the differentiator, shown as two real verdicts side by side */}
+      <section id="scoring" className="mx-auto max-w-5xl scroll-mt-24 px-6 py-28">
+        <div className="mx-auto max-w-2xl text-center">
           <Reveal>
-            <Shot
-              name="verdict-notyet"
-              alt="The same screen showing a Machine Learning Engineer role at Northwind Robotics marked Not yet, scoring 38 out of 100, with three missing requirements and a Build roadmap button."
-            />
-          </Reveal>
-          <Reveal delay={0.12}>
             <h2 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">
               A number, and the reason behind it.
             </h2>
             <p className="mt-6 text-lg leading-relaxed text-muted">
               Claude reads the posting against your resume and scores the fit
-              out of 100.
+              out of 100. Here are two real verdicts from the same search.
             </p>
-            <dl className="mt-8 flex flex-col gap-6 border-t border-line pt-8">
+            <dl className="mx-auto mt-10 flex max-w-md flex-col gap-6 border-t border-line pt-8 text-left">
               <div className="flex items-baseline gap-5">
                 <dt className="w-[4.5rem] shrink-0 whitespace-nowrap font-mono text-xl font-semibold tabular-nums text-score-strong">
                   70+
@@ -200,6 +191,22 @@ export default function Home() {
                 </dd>
               </div>
             </dl>
+          </Reveal>
+        </div>
+
+        <div className="mt-14 flex flex-col gap-5">
+          <Reveal>
+            <Shot
+              name="verdict-qualified"
+              alt="A job listing in jobblast for a Junior Data Engineer role at Kestrel Analytics, marked Qualified with a match score of 84 out of 100 and one missing requirement."
+              priority
+            />
+          </Reveal>
+          <Reveal delay={0.1}>
+            <Shot
+              name="verdict-notyet"
+              alt="A Machine Learning Engineer role at Northwind Robotics on the same screen, marked Not yet at 38 out of 100, listing three missing requirements and offering to build a roadmap."
+            />
           </Reveal>
         </div>
       </section>
@@ -264,10 +271,6 @@ export default function Home() {
           <Reveal>
             <p className="font-display text-3xl font-semibold sm:text-4xl">
               Free right now.
-            </p>
-            <p className="mt-4 text-muted">
-              No API keys to go and find, no card, no trial timer. Job search
-              runs on keys the server already provides.
             </p>
           </Reveal>
         </div>

@@ -82,6 +82,26 @@ const GROUPS = [
   },
 ];
 
+// "3h ago" for an account's last request. The stamp behind it only refreshes
+// every five minutes (lib/user-data.js), so anything fresher reads "now".
+function timeAgo(iso) {
+  const then = Date.parse(iso ?? "");
+  if (!Number.isFinite(then)) return null;
+  const mins = Math.max(0, Math.floor((Date.now() - then) / 60000));
+  if (mins < 5) return "now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
+
+// Active in the last week — the number that says whether signups stuck.
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const activeThisWeek = (signups) =>
+  signups.filter((s) => Date.now() - Date.parse(s.lastActiveAt ?? "") < WEEK_MS).length;
+
 // Local-time day key, so a signup at 23:59 counts on the right day.
 const dayKey = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -503,8 +523,9 @@ export default function SettingsPage() {
             <div>
               <h2 className="text-xl font-semibold tracking-tight">Signups</h2>
               <p className="mt-0.5 text-sm text-neutral-500">
-                Everyone who has created an account, newest first. Only you can
-                see this section.
+                Everyone who has created an account, newest first — with when
+                each one last used the app (accurate to five minutes), then the
+                date they joined. Only you can see this section.
               </p>
             </div>
             {(info.signups ?? []).length > 0 && (
@@ -518,18 +539,28 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <p className="mt-4 text-3xl font-bold tabular-nums">
-            {(info.signups ?? []).length}
-          </p>
-          <p className="text-sm text-neutral-500">
-            total {(info.signups ?? []).length === 1 ? "account" : "accounts"}
-          </p>
+          <div className="mt-4 flex flex-wrap items-end gap-8">
+            <div>
+              <p className="text-3xl font-bold tabular-nums">
+                {(info.signups ?? []).length}
+              </p>
+              <p className="text-sm text-neutral-500">
+                total {(info.signups ?? []).length === 1 ? "account" : "accounts"}
+              </p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold tabular-nums">
+                {activeThisWeek(info.signups ?? [])}
+              </p>
+              <p className="text-sm text-neutral-500">active this week</p>
+            </div>
+          </div>
 
           {(info.signups ?? []).length > 0 && <SignupsChart signups={info.signups} />}
 
           {(info.signups ?? []).length > 0 && (
             <ul className="mt-4 flex flex-col gap-2">
-              {info.signups.map(({ email, name, createdAt, creatorCode }) => (
+              {info.signups.map(({ email, name, createdAt, creatorCode, lastActiveAt }) => (
                 <li
                   key={email}
                   className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-800"
@@ -542,7 +573,24 @@ export default function SettingsPage() {
                     </span>
                   )}
                   <span className="ml-auto flex items-center gap-3">
-                    <span className="text-xs tabular-nums text-neutral-400">
+                    <span
+                      title={
+                        lastActiveAt
+                          ? `Last active ${new Date(lastActiveAt).toLocaleString()}`
+                          : "Hasn't used the app since last-active tracking started"
+                      }
+                      className={`text-xs tabular-nums ${
+                        timeAgo(lastActiveAt)
+                          ? "text-black dark:text-white"
+                          : "text-neutral-400"
+                      }`}
+                    >
+                      {timeAgo(lastActiveAt) ?? "—"}
+                    </span>
+                    <span
+                      title={createdAt ? `Joined ${new Date(createdAt).toLocaleString()}` : undefined}
+                      className="text-xs tabular-nums text-neutral-400"
+                    >
                       {createdAt
                         ? new Date(createdAt).toLocaleDateString(undefined, {
                             year: "numeric",

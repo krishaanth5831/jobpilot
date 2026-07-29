@@ -6,11 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { SignInCard } from "@/components/sign-in-card";
 import { Logo } from "@/components/logo";
 
-// When auth is enabled, everything requires a signed-in user — a logged-out
-// visitor lands straight on the sign-in screen. Public exceptions: /signin
-// itself (it would gate itself), the no-account ATS teaser at /check, and
-// the password reset flow at /reset. Local mode never mounts this.
-const PUBLIC = new Set(["/signin", "/check", "/reset"]);
+// When auth is enabled, the app requires a signed-in user. Public exceptions:
+// the landing page (it is the marketing page, so gating it means nobody can
+// read what jobblast does before creating an account), /signin itself (it
+// would gate itself), the no-account ATS teaser at /check, and the password
+// reset flow at /reset. Local mode never mounts this.
+const PUBLIC = new Set(["/", "/signin", "/check", "/reset"]);
 
 export function AuthGate({ children, providers = [], freeModel = false }) {
   const { status } = useSession();

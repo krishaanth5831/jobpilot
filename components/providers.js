@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { AuthGate } from "@/components/auth-gate";
+import { FeedbackPrompt } from "@/components/feedback-prompt";
 
 // Theme (class-based b&w light/dark), auth session, and b&w toasts.
 // Scrolling is native — scroll-hijacking libraries (Lenis) broke trackpad
@@ -35,9 +36,15 @@ export function Providers({ children, authEnabled = false, providers = [], freeM
   return (
     <SessionProvider>
       {themed(
-        <AuthGate providers={providers} freeModel={freeModel}>
-          {children}
-        </AuthGate>
+        <>
+          <AuthGate providers={providers} freeModel={freeModel}>
+            {children}
+          </AuthGate>
+          {/* Sibling of the gate, not a child: it renders nothing until the
+              session is authenticated, and asks the server whether to prompt
+              at all. */}
+          <FeedbackPrompt />
+        </>
       )}
     </SessionProvider>
   );

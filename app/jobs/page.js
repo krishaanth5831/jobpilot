@@ -17,6 +17,7 @@ import { AnimatedBackground } from "@/components/motion-primitives/animated-back
 import { Disclosure } from "@/components/motion-primitives/disclosure";
 import { InView } from "@/components/motion-primitives/in-view";
 import { EMPLOYMENT_LABELS, LEVEL_LABELS, classifyJob } from "@/lib/job-sources/classify";
+import { scoreTextClass } from "@/lib/score";
 
 const FILTERS = [
   { id: "all", label: "All" },
@@ -682,7 +683,7 @@ export default function JobsPage() {
 function JobCard({ job, matching, drafting, onDraft, tailored, tailoring, onTailor }) {
   return (
     <Tilt rotationFactor={2}>
-      <article className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950">
+      <article className="relative overflow-hidden rounded-2xl border border-line bg-surface p-6">
         {(matching || drafting || tailoring) && <BorderTrail size={64} duration={2.4} />}
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -694,37 +695,42 @@ function JobCard({ job, matching, drafting, onDraft, tailored, tailoring, onTail
                 className="inline-flex items-center gap-1.5 hover:underline"
               >
                 {job.title}
-                <ExternalLink size={13} strokeWidth={1.5} className="shrink-0 text-neutral-400" aria-hidden="true" />
+                <ExternalLink size={13} strokeWidth={1.5} className="shrink-0 text-muted" aria-hidden="true" />
               </a>
             </h2>
-            <p className="mt-0.5 text-sm text-neutral-500">
+            <p className="mt-0.5 text-sm text-muted">
               {job.company} · {job.location}
               {job.source && (
-                <span className="ml-2 rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-400 dark:border-neutral-800 dark:text-neutral-600">
+                <span className="ml-2 rounded border border-line px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted">
                   {job.source}
                 </span>
               )}
             </p>
             {job.salary && (
-              <p className="mt-1 font-mono text-xs text-neutral-500">{job.salary}</p>
+              <p className="mt-1 font-mono text-xs text-muted">{job.salary}</p>
             )}
           </div>
 
           {job.match ? (
             <div className="flex shrink-0 flex-col items-end gap-1.5">
-              {/* Verdict is never color-coded: filled = qualified, outline = not yet */}
+              {/* The score carries the verdict colour (lib/score.js); the badge
+                  stays neutral so the two never disagree at a glance. */}
               <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                className={`rounded-xl px-3 py-1 text-xs font-medium ${
                   job.match.qualified
-                    ? "bg-black text-white dark:bg-white dark:text-black"
-                    : "border border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
+                    ? "bg-ink text-paper"
+                    : "border border-line text-muted"
                 }`}
               >
                 {job.match.qualified ? "Qualified" : "Not yet"}
               </span>
-              <span className="font-mono text-2xl font-semibold tabular-nums">
+              <span
+                className={`font-mono text-2xl font-semibold tabular-nums ${scoreTextClass(
+                  job.match.score
+                )}`}
+              >
                 <AnimatedNumber value={job.match.score} />
-                <span className="text-xs text-neutral-500">/100</span>
+                <span className="text-xs text-muted">/100</span>
               </span>
             </div>
           ) : matching ? (
@@ -733,17 +739,17 @@ function JobCard({ job, matching, drafting, onDraft, tailored, tailoring, onTail
         </div>
 
         {job.match && (
-          <div className="mt-4 border-t border-neutral-100 pt-1 dark:border-neutral-900">
+          <div className="mt-4 border-t border-line pt-1">
             {job.match.missing_requirements?.length > 0 && (
               <Disclosure
                 className="!border-b-0"
                 title={
-                  <span className="text-sm text-neutral-500">
+                  <span className="text-sm text-muted">
                     Missing requirements ({job.match.missing_requirements.length})
                   </span>
                 }
               >
-                <ul className="list-inside list-disc space-y-1 text-sm text-neutral-500">
+                <ul className="list-inside list-disc space-y-1 text-sm text-muted">
                   {job.match.missing_requirements.map((req) => (
                     <li key={req}>{req}</li>
                   ))}
@@ -752,7 +758,7 @@ function JobCard({ job, matching, drafting, onDraft, tailored, tailoring, onTail
             )}
 
             <div className="mt-3 flex items-center justify-between gap-4">
-              <p className="line-clamp-2 text-xs text-neutral-400 dark:text-neutral-600">
+              <p className="line-clamp-2 text-xs text-muted">
                 {job.match.reasoning}
               </p>
               {job.match.qualified ? (
@@ -761,7 +767,7 @@ function JobCard({ job, matching, drafting, onDraft, tailored, tailoring, onTail
                     <a
                       href={`/api/resume/pdf?jobId=${encodeURIComponent(job.id)}`}
                       download="resume.pdf"
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-300 px-3 py-2 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-2 text-sm font-medium transition hover:border-accent hover:text-accent"
                     >
                       <Download size={13} strokeWidth={1.5} aria-hidden="true" /> Tailored PDF
                     </a>
@@ -770,7 +776,7 @@ function JobCard({ job, matching, drafting, onDraft, tailored, tailoring, onTail
                       type="button"
                       onClick={onTailor}
                       disabled={tailoring || drafting}
-                      className="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+                      className="rounded-xl border border-line px-3 py-2 text-sm font-medium transition hover:border-accent hover:text-accent disabled:opacity-50"
                     >
                       {tailoring ? "Tailoring…" : "Tailor resume"}
                     </button>
@@ -780,7 +786,7 @@ function JobCard({ job, matching, drafting, onDraft, tailored, tailoring, onTail
                       type="button"
                       onClick={onDraft}
                       disabled={drafting}
-                      className="shrink-0 rounded-xl bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+                      className="shrink-0 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition hover:bg-accent-hover disabled:opacity-50"
                     >
                       {drafting ? "Drafting…" : "Draft application"}
                     </button>
@@ -789,7 +795,7 @@ function JobCard({ job, matching, drafting, onDraft, tailored, tailoring, onTail
               ) : (
                 <Link
                   href={`/roadmap?jobId=${encodeURIComponent(job.id)}`}
-                  className="shrink-0 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+                  className="shrink-0 rounded-xl border border-line px-4 py-2 text-sm font-medium transition hover:border-accent hover:text-accent"
                 >
                   Build roadmap
                 </Link>

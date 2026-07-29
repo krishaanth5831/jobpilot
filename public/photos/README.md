@@ -26,14 +26,28 @@ composition:
 
 ## Before committing a real photo
 
-Keep each file to roughly 200-300KB. `sharp` is already a dependency, so from
-the project root:
+These photographs are the page's main visual, so they are encoded for quality
+rather than for the smallest possible file. Resize to 2560 wide and encode at
+quality 92 with full chroma. `sharp` is already a dependency, so from the
+project root:
 
 ```bash
-node -e "require('sharp')('/path/to/original.jpg').resize(2400).jpeg({quality:78,mozjpeg:true}).toFile('public/photos/hero.jpg')"
+node -e "require('sharp')('/path/to/original.jpg') \
+  .resize(2560, null, {withoutEnlargement:true, kernel:'lanczos3'}) \
+  .jpeg({quality:92, mozjpeg:true, progressive:true, chromaSubsampling:'4:4:4'}) \
+  .toFile('public/photos/hero.jpg')"
 ```
 
+Sources land around 300KB to 1MB. What ships is much smaller: `next/image`
+re-encodes to WebP or AVIF per request, at `quality={90}` set in
+`components/photo-band.js`. That 90 has to stay in the `images.qualities`
+allowlist in `next.config.mjs`, because Next 16 forces every image to 75
+otherwise and it visibly softens them.
+
 Only `hero.jpg` is loaded eagerly; the rest lazy-load as the page scrolls.
+
+**If a swapped photo does not appear**, the optimizer has cached the old one.
+Delete `.next/cache/images` and restart, and hard-reload the browser.
 
 ## Licensing
 

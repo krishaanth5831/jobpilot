@@ -2,24 +2,34 @@
 
 import Image from "next/image";
 
-// A full-bleed photographic section with a dark scrim and light text.
+// A full-bleed photographic section with light text over it.
 //
-// Bands are dark in BOTH themes on purpose. The page alternates quiet themed
-// sections with these, and that alternation is what gives the page its
-// contrast: text on a scrimmed photo has nowhere to wash out. Making the
-// scrim theme-dependent would put the contrast back at the mercy of whichever
-// photo is dropped in.
+// The overlay is deliberately NOT a flat dim across the whole photo. Dimming
+// the entire frame is the easy way to guarantee contrast and it is also what
+// makes a good photograph look grey and lifeless. Instead the photo runs at
+// full brightness and the darkening is pooled where the words actually sit:
 //
-// Photos live in /public/photos and are swapped by overwriting the file. See
-// public/photos/README.md for the slot list and aspect ratios.
+//   "pool" - an elliptical shadow behind centred copy. The edges of the frame
+//            keep their colour, so the picture still reads as a picture.
+//   "veil" - a light, even wash for bands whose content brings its own
+//            backdrop (the floating screenshot, the step cards).
+//
+// Bands are dark in BOTH themes on purpose: the contrast guarantee should not
+// depend on which photo gets dropped in, or on the visitor's theme.
+//
+// Photos live in /public/photos and are swapped by overwriting the file.
+
+const OVERLAY = {
+  pool:
+    "radial-gradient(ellipse 78% 68% at 50% 50%, rgb(0 0 0 / 0.68) 0%, rgb(0 0 0 / 0.42) 48%, rgb(0 0 0 / 0.14) 78%, rgb(0 0 0 / 0.06) 100%)",
+  veil: "linear-gradient(rgb(0 0 0 / 0.22), rgb(0 0 0 / 0.22))",
+};
 
 export function PhotoBand({
   photo,
   alt = "",
   priority = false,
-  // "heavy" for bands carrying a lot of text, "light" where the photo should
-  // breathe and the content is a single line.
-  scrim = "heavy",
+  scrim = "pool",
   className = "",
   children,
 }) {
@@ -30,18 +40,17 @@ export function PhotoBand({
         alt={alt}
         fill
         priority={priority}
+        // 90 rather than the Next 16 default of 75: these photographs are the
+        // page's main visual and 75 softens them noticeably. Allowlisted in
+        // next.config.mjs.
+        quality={90}
         sizes="100vw"
         className="-z-20 object-cover"
       />
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10"
-        style={{
-          background:
-            scrim === "heavy"
-              ? "linear-gradient(180deg, rgb(14 12 10 / 0.72) 0%, rgb(14 12 10 / 0.58) 45%, rgb(14 12 10 / 0.78) 100%)"
-              : "var(--scrim)",
-        }}
+        style={{ background: OVERLAY[scrim] ?? OVERLAY.pool }}
       />
       {children}
     </section>

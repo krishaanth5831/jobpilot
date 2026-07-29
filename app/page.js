@@ -158,20 +158,20 @@ export default function Home() {
         photo="hero.jpg"
         alt=""
         priority
-        scrim="heavy"
+        scrim="pool"
         className="flex min-h-[100dvh] items-center"
       >
         <div className="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 text-center">
           <Reveal>
-            <span className="inline-flex items-center rounded-xl border border-on-photo/25 px-3 py-1 text-xs font-medium text-on-photo-dim">
+            <span className="inline-flex items-center rounded-xl border border-on-photo/25 bg-black/30 px-3 py-1 text-xs font-medium text-on-photo backdrop-blur-sm">
               Free while it is early
             </span>
-            <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.04] sm:text-6xl lg:text-7xl">
+            <h1 className="on-photo-text mt-6 font-display text-5xl font-semibold leading-[1.04] sm:text-6xl lg:text-7xl">
               <span className="text-on-photo-dim">Apply where</span>
               <br />
               <span className="text-on-photo">you qualify.</span>
             </h1>
-            <p className="mx-auto mt-6 max-w-[46ch] text-lg leading-relaxed text-on-photo-dim">
+            <p className="on-photo-text mx-auto mt-6 max-w-[46ch] text-lg leading-relaxed text-on-photo-dim">
               Every posting is screened against what your resume actually shows.
               You see the score, the gaps, and the reasoning.
             </p>
@@ -179,7 +179,7 @@ export default function Home() {
               <PrimaryCta />
               <Link
                 href="#scoring"
-                className="rounded-xl border border-on-photo/30 px-6 py-3.5 font-medium text-on-photo backdrop-blur-sm transition hover:border-on-photo/60"
+                className="rounded-xl border border-on-photo/30 bg-black/30 px-6 py-3.5 font-medium text-on-photo backdrop-blur-sm transition hover:border-on-photo/60"
               >
                 How scoring works
               </Link>
@@ -205,10 +205,10 @@ export default function Home() {
       </section>
 
       {/* 3. A real verdict, floating on a photograph */}
-      <PhotoBand photo="verdict.jpg" alt="" scrim="light">
+      <PhotoBand photo="verdict.jpg" alt="" scrim="veil">
         <div className="mx-auto max-w-5xl px-6 py-24">
           <Reveal className="text-center">
-            <span className="inline-flex items-center rounded-xl border border-on-photo/25 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-on-photo-dim">
+            <span className="inline-flex items-center rounded-xl border border-on-photo/25 bg-black/35 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-on-photo backdrop-blur-sm">
               A real verdict
             </span>
           </Reveal>
@@ -293,16 +293,16 @@ export default function Home() {
       </section>
 
       {/* 6. How it runs, over a photograph */}
-      <PhotoBand photo="steps.jpg" alt="" scrim="heavy">
+      <PhotoBand photo="steps.jpg" alt="" scrim="veil">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
-            <h2 className="font-display text-3xl font-semibold text-on-photo sm:text-4xl">
+            <h2 className="on-photo-text font-display text-3xl font-semibold text-on-photo sm:text-4xl">
               How it runs
             </h2>
           </Reveal>
           <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-on-photo/15 bg-on-photo/15 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map(({ Icon, title, body }, i) => (
-              <Reveal key={title} delay={i * 0.07} className="bg-black/45 backdrop-blur-sm">
+              <Reveal key={title} delay={i * 0.07} className="bg-black/55 backdrop-blur-md">
                 <div className="h-full p-7">
                   <Icon size={20} strokeWidth={1.5} className="text-accent" aria-hidden="true" />
                   <h3 className="mt-5 font-display text-lg font-semibold text-on-photo">{title}</h3>
@@ -343,10 +343,10 @@ export default function Home() {
       </section>
 
       {/* 8. Cost, stated once, over a photograph */}
-      <PhotoBand photo="free.jpg" alt="" scrim="heavy">
+      <PhotoBand photo="free.jpg" alt="" scrim="pool">
         <div className="mx-auto max-w-3xl px-6 py-24 text-center">
           <Reveal>
-            <p className="font-display text-4xl font-semibold text-on-photo sm:text-5xl">
+            <p className="on-photo-text font-display text-4xl font-semibold text-on-photo sm:text-5xl">
               Free right now.
             </p>
             <div className="mt-10 flex justify-center">

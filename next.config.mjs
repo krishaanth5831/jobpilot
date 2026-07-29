@@ -17,6 +17,12 @@ const nextConfig = {
     ],
     "/api/resume/pdf": ["node_modules/pdfkit/js/data/**"],
   },
+  images: {
+    // Next 16 re-encodes every image at quality 75 unless other values are
+    // allowlisted here. The landing page's full-bleed photographs are the
+    // whole visual, and 75 visibly softens them, so 90 is allowed for those.
+    qualities: [75, 90],
+  },
   // No floating dev-tools badge (it also photobombs screenshots);
   // runtime error overlays still appear.
   devIndicators: false,

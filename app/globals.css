@@ -127,6 +127,15 @@ body {
   outline-offset: 2px;
 }
 
+/* Text sitting directly on a photograph. The shadow buys contrast locally,
+   which means the overlay behind it can stay light and let the picture keep
+   its colour instead of being dimmed flat. */
+.on-photo-text {
+  text-shadow:
+    0 1px 3px rgb(0 0 0 / 0.45),
+    0 2px 24px rgb(0 0 0 / 0.55);
+}
+
 /* Dot-grid texture: depth without shadows */
 .dot-grid {
   background-image: radial-gradient(var(--line) 1px, transparent 1px);

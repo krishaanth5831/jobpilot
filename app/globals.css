@@ -38,6 +38,14 @@
   --score-partial: #9a7b2f;
   --score-strong: #3e6b4f;
 
+  /* Photographic bands (components/photo-band.js) are dark in BOTH themes, so
+     the scrim and the text on top of it are theme-independent. Defined once
+     here because the whole point of the band is a contrast guarantee that
+     does not depend on which photo gets dropped in. */
+  --scrim: rgb(14 12 10 / 0.62);
+  --on-photo: #f7f4ef;
+  --on-photo-dim: rgb(247 244 239 / 0.72);
+
   /* Legacy aliases: existing app pages and animation primitives read these. */
   --background: var(--paper);
   --foreground: var(--ink);
@@ -87,6 +95,8 @@
   --color-score-weak: var(--score-weak);
   --color-score-partial: var(--score-partial);
   --color-score-strong: var(--score-strong);
+  --color-on-photo: var(--on-photo);
+  --color-on-photo-dim: var(--on-photo-dim);
 }
 
 html {

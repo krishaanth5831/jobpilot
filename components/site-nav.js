@@ -41,9 +41,15 @@ function MarketingHeader() {
           <ThemeToggle className="flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-muted transition hover:border-line hover:text-ink" />
           <Link
             href="/signin"
-            className="rounded-xl px-4 py-2 text-sm font-medium text-ink transition hover:bg-accent-wash"
+            className="rounded-xl px-3 py-2 text-sm font-medium text-ink transition hover:bg-accent-wash sm:px-4"
           >
             Sign in
+          </Link>
+          <Link
+            href="/upload"
+            className="rounded-xl bg-accent px-3 py-2 text-sm font-medium text-accent-ink transition hover:bg-accent-hover sm:px-4"
+          >
+            Get started
           </Link>
         </div>
       </div>

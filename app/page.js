@@ -208,7 +208,7 @@ export default function Home() {
       <PhotoBand photo="verdict.jpg" alt="" scrim="veil">
         <div className="mx-auto max-w-5xl px-6 py-24">
           <Reveal className="text-center">
-            <span className="inline-flex items-center rounded-xl border border-on-photo/25 bg-black/35 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-on-photo backdrop-blur-sm">
+            <span className="inline-flex items-center rounded-xl border border-on-photo/25 bg-black/60 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-on-photo backdrop-blur-sm">
               A real verdict
             </span>
           </Reveal>
@@ -314,39 +314,51 @@ export default function Home() {
         </div>
       </PhotoBand>
 
-      {/* 7. Everything else, as a bento with one lead tile */}
-      <section className="mx-auto max-w-6xl px-6 py-28">
-        <Reveal>
-          <h2 className="font-display text-3xl font-semibold sm:text-4xl">
-            The rest of the application
-          </h2>
-          <p className="mt-4 max-w-[54ch] text-muted">
-            Search is the start. Everything from the first resume review to the
-            offer lives in the same loop.
-          </p>
-        </Reveal>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {toolkit.map(({ Icon, title, body, wide }, i) => (
-            <Reveal key={title} delay={(i % 3) * 0.07} className={wide ? "sm:col-span-2" : undefined}>
-              <div
-                className={`h-full rounded-2xl border border-line p-7 ${
-                  wide ? "bg-accent-wash" : i === 2 ? "dot-grid bg-surface" : "bg-surface"
-                }`}
-              >
-                <Icon size={20} strokeWidth={1.5} className="text-accent" aria-hidden="true" />
-                <h3 className="mt-5 font-display text-lg font-semibold">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* 8. Cost, stated once, over a photograph */}
-      <PhotoBand photo="free.jpg" alt="" scrim="pool">
-        <div className="mx-auto max-w-3xl px-6 py-24 text-center">
+      {/* 7. Everything else, as a bento with one lead tile, over a photograph */}
+      <PhotoBand photo="toolkit.jpg" alt="" scrim="veil">
+        <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
-            <p className="on-photo-text font-display text-4xl font-semibold text-on-photo sm:text-5xl">
+            {/* The dunes are the brightest photo on the page, so this copy
+                gets the same plate as the tiles rather than leaning on a
+                text-shadow. The plate hugs the words; the rest of the frame
+                stays at full brightness. */}
+            <div className="inline-block max-w-[58ch] rounded-2xl border border-on-photo/15 bg-black/55 p-7 backdrop-blur-md">
+              <h2 className="font-display text-3xl font-semibold text-on-photo sm:text-4xl">
+                The rest of the application
+              </h2>
+              <p className="mt-4 text-on-photo-dim">
+                Search is the start. Everything from the first resume review to
+                the offer lives in the same loop.
+              </p>
+            </div>
+          </Reveal>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {toolkit.map(({ Icon, title, body, wide }, i) => (
+              <Reveal key={title} delay={(i % 3) * 0.07} className={wide ? "sm:col-span-2" : undefined}>
+                {/* Same smoked-glass plate as the steps band: the contrast
+                    guarantee has to hold whatever photo gets dropped in. The
+                    lead tile is marked by a brighter edge rather than a fill,
+                    so the treatment stays identical in both themes. */}
+                <div
+                  className={`h-full rounded-2xl border bg-black/55 p-7 backdrop-blur-md ${
+                    wide ? "border-on-photo/35" : "border-on-photo/15"
+                  }`}
+                >
+                  <Icon size={20} strokeWidth={1.5} className="text-accent" aria-hidden="true" />
+                  <h3 className="mt-5 font-display text-lg font-semibold text-on-photo">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-on-photo-dim">{body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </PhotoBand>
+
+      {/* 8. Cost, stated once */}
+      <section className="border-y border-line bg-surface">
+        <div className="mx-auto max-w-3xl px-6 py-28 text-center">
+          <Reveal>
+            <p className="font-display text-4xl font-semibold sm:text-5xl">
               Free right now.
             </p>
             <div className="mt-10 flex justify-center">
@@ -354,7 +366,7 @@ export default function Home() {
             </div>
           </Reveal>
         </div>
-      </PhotoBand>
+      </section>
 
       {/* 9. FAQ */}
       <section className="mx-auto max-w-3xl px-6 py-28">

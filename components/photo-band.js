@@ -9,10 +9,12 @@ import Image from "next/image";
 // makes a good photograph look grey and lifeless. Instead the photo runs at
 // full brightness and the darkening is pooled where the words actually sit:
 //
-//   "pool" - an elliptical shadow behind centred copy. The edges of the frame
-//            keep their colour, so the picture still reads as a picture.
-//   "veil" - a light, even wash for bands whose content brings its own
-//            backdrop (the floating screenshot, the step cards).
+//   "pool" - a soft elliptical shadow behind centred copy, fading to nothing
+//            well before the edges, so the picture still reads as a picture.
+//   "veil" - barely there. It only takes the edge off bands whose content
+//            already brings its own backdrop (the floating screenshot, the
+//            smoked-glass cards), which is where the contrast actually comes
+//            from. Raise a card's plate before you ever raise this.
 //
 // Bands are dark in BOTH themes on purpose: the contrast guarantee should not
 // depend on which photo gets dropped in, or on the visitor's theme.
@@ -21,8 +23,8 @@ import Image from "next/image";
 
 const OVERLAY = {
   pool:
-    "radial-gradient(ellipse 78% 68% at 50% 50%, rgb(0 0 0 / 0.68) 0%, rgb(0 0 0 / 0.42) 48%, rgb(0 0 0 / 0.14) 78%, rgb(0 0 0 / 0.06) 100%)",
-  veil: "linear-gradient(rgb(0 0 0 / 0.22), rgb(0 0 0 / 0.22))",
+    "radial-gradient(ellipse 72% 62% at 50% 50%, rgb(0 0 0 / 0.42) 0%, rgb(0 0 0 / 0.22) 50%, rgb(0 0 0 / 0.04) 80%, rgb(0 0 0 / 0) 100%)",
+  veil: "linear-gradient(rgb(0 0 0 / 0.06), rgb(0 0 0 / 0.06))",
 };
 
 export function PhotoBand({

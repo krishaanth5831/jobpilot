@@ -5,6 +5,7 @@ import { DEFAULT_CLAUDE, isValidEffort, isValidModel } from "@/lib/claude-models
 import { addCreatorCode, listCreatorCodes, removeCreatorCode } from "@/lib/creator-codes";
 import { deleteAccount, listSignups, normalizeEmail } from "@/lib/accounts";
 import { listLearnings, removeLearning } from "@/lib/learnings";
+import { listFeedback, removeFeedback } from "@/lib/feedback";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 import { freeModelAvailable } from "@/lib/free-model";
 
@@ -45,10 +46,12 @@ export async function GET() {
   let creatorCodes = null;
   let signups = null;
   let learnings = null;
+  let feedback = null;
   if (isOwner) {
     creatorCodes = await listCreatorCodes();
     signups = await listSignups();
     learnings = await listLearnings();
+    feedback = await listFeedback();
   }
 
   let authKeys = null;
@@ -70,6 +73,7 @@ export async function GET() {
     creatorCodes,
     signups,
     learnings,
+    feedback,
     claude: {
       model: isValidModel(data.claudeModel) ? data.claudeModel : DEFAULT_CLAUDE.model,
       effort: isValidEffort(data.claudeEffort) ? data.claudeEffort : DEFAULT_CLAUDE.effort,
@@ -130,6 +134,22 @@ export async function POST(request) {
       return NextResponse.json({ error: "Nothing to save" }, { status: 400 });
     }
     await removeLearning(body.learning.remove);
+    return GET();
+  }
+
+  // Feedback submitted from the in-app prompt — owner clears an entry once
+  // it has been acted on.
+  if (body.feedback && typeof body.feedback === "object") {
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: "Only the owner can manage feedback." },
+        { status: 403 }
+      );
+    }
+    if (body.feedback.remove === undefined) {
+      return NextResponse.json({ error: "Nothing to save" }, { status: 400 });
+    }
+    await removeFeedback(body.feedback.remove);
     return GET();
   }
 

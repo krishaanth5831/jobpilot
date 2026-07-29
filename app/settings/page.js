@@ -277,6 +277,22 @@ export default function SettingsPage() {
     }
   }
 
+  async function dismissFeedback(id) {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback: { remove: id } }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setInfo(data);
+      toast.success("Cleared");
+    } catch (err) {
+      toast.error(err.message || "Couldn't clear that");
+    }
+  }
+
   async function deleteSignup(email) {
     const ok = window.confirm(
       `Delete the account ${email}?\n\nThis also removes their resume, saved jobs, and applications. It can't be undone.`
@@ -596,6 +612,69 @@ export default function SettingsPage() {
                       <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
                     </button>
                   </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {info?.isOwner && (
+        <section className="mt-10">
+          <div className="border-b border-neutral-200 pb-3 dark:border-neutral-800">
+            <h2 className="text-xl font-semibold tracking-tight">Feedback</h2>
+            <p className="mt-0.5 text-sm text-neutral-500">
+              What people said when the in-app prompt asked them. Every account
+              except yours gets asked once per visit. Only you can see this.
+            </p>
+          </div>
+
+          {(info.feedback ?? []).length === 0 ? (
+            <p className="mt-4 text-sm text-neutral-500">
+              Nothing yet. Replies show up here as people send them.
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-col gap-3">
+              {info.feedback.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+                >
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="font-mono text-sm font-medium">
+                      {entry.email ?? "unknown"}
+                    </span>
+                    <span className="text-xs tabular-nums text-neutral-400">
+                      {entry.createdAt
+                        ? new Date(entry.createdAt).toLocaleString()
+                        : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => dismissFeedback(entry.id)}
+                      title="Clear this entry"
+                      aria-label="Clear this entry"
+                      className="ml-auto inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+                    >
+                      <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <dl className="mt-3 flex flex-col gap-2 text-sm">
+                    {[
+                      ["Wants", entry.feature],
+                      ["Broken", entry.bug],
+                      ["Else", entry.general],
+                    ]
+                      .filter(([, value]) => value)
+                      .map(([label, value]) => (
+                        <div key={label} className="flex gap-3">
+                          <dt className="w-16 shrink-0 text-xs uppercase tracking-wide text-neutral-400">
+                            {label}
+                          </dt>
+                          <dd className="whitespace-pre-wrap">{value}</dd>
+                        </div>
+                      ))}
+                  </dl>
                 </li>
               ))}
             </ul>

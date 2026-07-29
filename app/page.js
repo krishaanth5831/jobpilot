@@ -16,6 +16,7 @@ import {
   ChartNoAxesColumn,
 } from "lucide-react";
 import { ScoreDial } from "@/components/score-dial";
+import { HeroField } from "@/components/hero-field";
 
 // The landing page is the only page a logged-out visitor can reach
 // (components/auth-gate.js), so it has one job: explain what jobblast does
@@ -117,32 +118,31 @@ const toolkit = [
 export default function Home() {
   return (
     <div className="flex-1">
-      {/* Hero: copy left, real verdict right */}
-      <section className="mx-auto grid min-h-[calc(100dvh-4rem)] max-w-6xl items-center gap-12 px-6 pb-20 pt-24 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
-        <Reveal>
-          <h1 className="font-display text-5xl font-semibold leading-[1.05] sm:text-6xl lg:text-7xl">
-            Apply where
-            <br />
-            you qualify.
-          </h1>
-          <p className="mt-6 max-w-[46ch] text-lg leading-relaxed text-muted">
-            Every posting gets screened against what your resume actually shows.
-            You see the score, the gaps, and the reasoning.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center gap-3">
-            <PrimaryCta />
-            <Link
-              href="#scoring"
-              className="rounded-xl border border-line px-6 py-3.5 font-medium transition hover:border-accent hover:text-accent"
-            >
-              How scoring works
-            </Link>
-          </div>
-        </Reveal>
-
-        <Reveal delay={0.12} className="flex justify-center lg:justify-end">
-          <ScoreDial />
-        </Reveal>
+      {/* Hero: copy over a full-bleed animated field */}
+      <section className="relative isolate flex min-h-[calc(100dvh-4rem)] items-center overflow-hidden">
+        <HeroField />
+        <div className="relative mx-auto w-full max-w-6xl px-6 pb-20 pt-24">
+          <Reveal>
+            <h1 className="font-display text-5xl font-semibold leading-[1.03] sm:text-6xl lg:text-7xl">
+              Apply where
+              <br />
+              you qualify.
+            </h1>
+            <p className="mt-6 max-w-[44ch] text-lg leading-relaxed text-muted">
+              Every posting gets screened against what your resume actually
+              shows. You see the score, the gaps, and the reasoning.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <PrimaryCta />
+              <Link
+                href="#scoring"
+                className="rounded-xl border border-line bg-paper/60 px-6 py-3.5 font-medium backdrop-blur-sm transition hover:border-accent hover:text-accent"
+              >
+                How scoring works
+              </Link>
+            </div>
+          </Reveal>
+        </div>
       </section>
 
       {/* The problem, stated plainly. No cards, no columns. */}
@@ -171,7 +171,17 @@ export default function Home() {
               Claude reads the posting against your resume and scores the fit
               out of 100. Here are two real verdicts from the same search.
             </p>
-            <dl className="mx-auto mt-10 flex max-w-md flex-col gap-6 border-t border-line pt-8 text-left">
+          </Reveal>
+        </div>
+
+        {/* The dial belongs here rather than in the hero: it is a teaching
+            aid for the 70 line, not decoration. */}
+        <div className="mt-12 grid items-center gap-10 lg:grid-cols-[auto_1fr] lg:gap-16">
+          <Reveal className="flex justify-center">
+            <ScoreDial />
+          </Reveal>
+          <Reveal delay={0.1}>
+            <dl className="flex flex-col gap-6 border-t border-line pt-8 text-left">
               <div className="flex items-baseline gap-5">
                 <dt className="w-[4.5rem] shrink-0 whitespace-nowrap font-mono text-xl font-semibold tabular-nums text-score-strong">
                   70+

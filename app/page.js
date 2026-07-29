@@ -296,7 +296,10 @@ export default function Home() {
       <PhotoBand photo="steps.jpg" alt="" scrim="veil">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
-            <h2 className="on-photo-text font-display text-3xl font-semibold text-on-photo sm:text-4xl">
+            {/* Plate, not a text-shadow. A heading sitting straight on a photo
+                only survives while that photo happens to be dark where the
+                heading lands, and photos get swapped. */}
+            <h2 className="inline-block rounded-2xl border border-on-photo/15 bg-black/55 px-6 py-4 font-display text-3xl font-semibold text-on-photo backdrop-blur-md sm:text-4xl">
               How it runs
             </h2>
           </Reveal>

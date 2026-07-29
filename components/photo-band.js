@@ -22,8 +22,11 @@ import Image from "next/image";
 // Photos live in /public/photos and are swapped by overwriting the file.
 
 const OVERLAY = {
+  // Sits slightly above centre because that is where a headline's first line
+  // lands, and the first line is the one that fails: the top of a landscape
+  // is usually sky, which is the palest thing in the frame.
   pool:
-    "radial-gradient(ellipse 72% 62% at 50% 50%, rgb(0 0 0 / 0.42) 0%, rgb(0 0 0 / 0.22) 50%, rgb(0 0 0 / 0.04) 80%, rgb(0 0 0 / 0) 100%)",
+    "radial-gradient(ellipse 74% 64% at 50% 44%, rgb(0 0 0 / 0.55) 0%, rgb(0 0 0 / 0.30) 50%, rgb(0 0 0 / 0.05) 82%, rgb(0 0 0 / 0) 100%)",
   veil: "linear-gradient(rgb(0 0 0 / 0.06), rgb(0 0 0 / 0.06))",
 };
 

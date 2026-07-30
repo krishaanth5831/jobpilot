@@ -47,11 +47,9 @@ const STEPS = [
     title: "Stats",
     body: "Your funnel: how many you qualify for, how many replied, and whether your scores move as you close gaps.",
   },
-  {
-    label: "Pricing",
-    title: "Plans",
-    body: "What each plan includes. Everything is free while jobblast is in early access, and joining now keeps Pro free permanently.",
-  },
+  // No step for the Pricing tab, deliberately. The first thing someone sees
+  // after signing up should not be a pointer at the plans, and the tab says
+  // what it is. The tour skips it and lands on Settings instead.
   {
     label: "Settings",
     title: "Settings",

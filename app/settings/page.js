@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Check, Copy, ExternalLink, KeyRound, Plus, Trash2, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { UsageMeters } from "@/components/usage-meters";
 import { CLAUDE_MODELS, EFFORT_LEVELS } from "@/lib/claude-models";
 
 // The settings sections, in render order. Per-user keys ("user" scope) save
@@ -328,6 +329,8 @@ export default function SettingsPage() {
         The one optional extra is your own Claude key, saved to your account on
         this server (never shared with other users) and applied immediately.
       </p>
+
+      <UsageMeters />
 
       {visibleGroups.map((group) => {
         const { title, description, href, linkLabel, fields } = group;

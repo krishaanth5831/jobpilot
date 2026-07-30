@@ -16,6 +16,8 @@ import {
   ChartNoAxesColumn,
 } from "lucide-react";
 import { PhotoBand } from "@/components/photo-band";
+import { PlanSummary } from "@/components/plan-cards";
+import { TIERS, TIER_ORDER } from "@/lib/tiers";
 import { ScoreDial } from "@/components/score-dial";
 import { SiteFooter } from "@/components/site-footer";
 import { Disclosure } from "@/components/motion-primitives/disclosure";
@@ -126,7 +128,7 @@ const toolkit = [
 const faqs = [
   {
     q: "Is it actually free?",
-    a: "Yes, right now. There is no card, no trial timer, and no paid tier to upgrade to yet. Job search runs on keys the server already provides, so there is nothing for you to sign up for either.",
+    a: "Yes, right now. There is no card field anywhere in jobblast and no trial timer. Paid plans are published so you can see where this is going, but nothing charges yet — and accounts created before paid plans start keep Pro free, permanently. Job search runs on keys the server already provides, so there is nothing for you to sign up for either.",
   },
   {
     q: "Which job boards does it search?",
@@ -357,19 +359,46 @@ export default function Home() {
         </div>
       </PhotoBand>
 
-      {/* 8. Cost, stated once */}
-      <section className="border-y border-line bg-surface">
-        <div className="mx-auto max-w-3xl px-6 py-28 text-center">
+      {/* 8. Cost, over a photograph */}
+      <PhotoBand photo="pricing.jpg" alt="" scrim="veil">
+        <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
-            <p className="font-display text-4xl font-semibold sm:text-5xl">
-              Free right now.
-            </p>
-            <div className="mt-10 flex justify-center">
-              <PrimaryCta className="px-8 py-4 text-lg" />
+            {/* Same smoked-glass plate as the other bands, for the same
+                reason: the contrast has to survive a photo swap. */}
+            <div className="inline-block max-w-[56ch] rounded-2xl border border-on-photo/15 bg-black/55 p-7 backdrop-blur-md">
+              <h2 className="font-display text-3xl font-semibold text-on-photo sm:text-4xl">
+                Free while it is early.
+              </h2>
+              <p className="mt-4 text-on-photo-dim">
+                These are the plans for when pricing starts. Everyone who signs
+                up before then keeps Pro, free, permanently.
+              </p>
+            </div>
+          </Reveal>
+
+          {/* Annual pricing, which is the default on /pricing too. The monthly
+              figures live there rather than doubling the numbers here. */}
+          <div className="mt-12 grid items-stretch gap-4 sm:grid-cols-3">
+            {TIER_ORDER.map((tier, i) => (
+              <Reveal key={tier} delay={i * 0.07}>
+                <PlanSummary tier={tier} interval="annual" featured={tier === TIERS.PRO} />
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal delay={0.2} className="mt-10">
+            <div className="flex flex-wrap items-center gap-3">
+              <PrimaryCta />
+              <Link
+                href="/pricing"
+                className="rounded-xl border border-on-photo/30 bg-black/40 px-6 py-3.5 font-medium text-on-photo backdrop-blur-sm transition hover:border-on-photo/60"
+              >
+                Compare plans
+              </Link>
             </div>
           </Reveal>
         </div>
-      </section>
+      </PhotoBand>
 
       {/* 9. FAQ */}
       <section className="mx-auto max-w-3xl px-6 py-28">

@@ -3,7 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Upload, FileText, Search, Inbox, Map, ChartNoAxesColumn, Settings } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  Search,
+  Inbox,
+  Map,
+  ChartNoAxesColumn,
+  BadgeEuro,
+  Settings,
+} from "lucide-react";
 import { Dock, DockItem } from "@/components/motion-primitives/dock";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
@@ -21,13 +30,14 @@ const items = [
   { href: "/queue", label: "Queue", Icon: Inbox },
   { href: "/roadmap", label: "Roadmap", Icon: Map },
   { href: "/stats", label: "Stats", Icon: ChartNoAxesColumn },
+  { href: "/pricing", label: "Pricing", Icon: BadgeEuro },
   { href: "/settings", label: "Settings", Icon: Settings },
 ];
 
 /**
  * A visitor who has not signed in can only be on a public page, so the app
- * dock would be eight links that all bounce to /signin. They get a plain
- * marketing header instead: wordmark, theme toggle, one sign-in link.
+ * dock would be a row of links that nearly all bounce to /signin. They get a
+ * plain marketing header instead: wordmark, pricing, theme toggle, sign in.
  */
 function MarketingHeader() {
   return (
@@ -38,6 +48,15 @@ function MarketingHeader() {
           <span className="font-display text-lg font-semibold">jobblast</span>
         </Link>
         <div className="flex items-center gap-1">
+          {/* Hidden below sm: the header is already at the width limit on a
+              390px screen, and pricing is reachable from the landing band and
+              the footer there. */}
+          <Link
+            href="/pricing"
+            className="hidden rounded-xl px-3 py-2 text-sm font-medium text-muted transition hover:bg-accent-wash hover:text-ink sm:block sm:px-4"
+          >
+            Pricing
+          </Link>
           <ThemeToggle className="flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-muted transition hover:border-line hover:text-ink" />
           <Link
             href="/signin"
@@ -62,8 +81,15 @@ function AppDock({ showAccount }) {
   const pathname = usePathname();
 
   return (
-    <div className="fixed inset-x-0 bottom-5 z-40 flex justify-center">
-      <Dock>
+    // The dock is wider than a phone. `justify-center` alone would centre the
+    // overflow, putting a tab off each edge with no way to reach either, so
+    // the row scrolls instead — and it is `mx-auto` rather than
+    // `justify-center` because centring a flex item that overflows makes its
+    // leading edge unscrollable. On anything wider than the dock this is a
+    // plain centred bar with nothing to scroll. The scrollbar itself is
+    // hidden: it would sit across the icons.
+    <div className="fixed inset-x-0 bottom-5 z-40 flex overflow-x-auto px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <Dock className="mx-auto">
         {items.map(({ href, label, Icon }) => {
           const active = pathname === href;
           return (

@@ -9,9 +9,11 @@ import { Logo } from "@/components/logo";
 // When auth is enabled, the app requires a signed-in user. Public exceptions:
 // the landing page (it is the marketing page, so gating it means nobody can
 // read what jobblast does before creating an account), /signin itself (it
-// would gate itself), the no-account ATS teaser at /check, and the password
-// reset flow at /reset. Local mode never mounts this.
-const PUBLIC = new Set(["/", "/signin", "/check", "/reset"]);
+// would gate itself), the no-account ATS teaser at /check, the pricing page
+// (asking someone to make an account before they can see the price is the
+// fastest way to lose them), and the password reset flow at /reset. Local mode
+// never mounts this.
+const PUBLIC = new Set(["/", "/signin", "/check", "/pricing", "/reset"]);
 
 export function AuthGate({ children, providers = [], freeModel = false }) {
   const { status } = useSession();

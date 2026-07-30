@@ -3,13 +3,17 @@ import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { TAILOR_SCHEMA, TAILOR_SYSTEM_PROMPT, buildTailorPrompt } from "@/lib/reviewer";
 import { getRelevantLearnings, tagsFromProfile } from "@/lib/learnings";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
+import { enforce, recordUse } from "@/lib/entitlements";
+import { FEATURES } from "@/lib/tiers";
 
 // POST /api/resume/tailor — body: { jobId } — re-emphasize the resume's
 // real material for one specific job. Stored per job; downloadable as PDF
 // via /api/resume/pdf?jobId=…
 export async function POST(request) {
-  const { db, data } = await getUserData();
+  const { db, data, userId } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  const blocked = await enforce(userId, FEATURES.TAILORED_RESUME);
+  if (blocked) return blocked;
   if (!data.resumeText) {
     return NextResponse.json(
       { error: "Upload a resume first — tailoring works from the original text" },
@@ -43,6 +47,7 @@ export async function POST(request) {
       learningIds: learnings.ids,
     };
     await db.write();
+    await recordUse(userId, FEATURES.TAILORED_RESUME);
 
     return NextResponse.json({ jobId, markdown: resume_markdown });
   } catch (err) {

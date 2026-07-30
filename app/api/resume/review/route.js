@@ -7,6 +7,11 @@ import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
 // POST /api/resume/review — critique the stored resume: score, strengths,
 // and issues each paired with a concrete fix. Persisted so it survives reload.
+// DELIBERATELY UNGATED, ON EVERY TIER. The ATS score is the thing that proves
+// jobblast is worth anything before anyone has paid, so it takes no
+// entitlement check and increments no counter. `ats_resume_score` is on
+// NEVER_GATED in lib/tiers.js and assertNeverGated() throws if a future change
+// tries to meter it — do not add an enforce() call here.
 export async function POST() {
   const { db, data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });

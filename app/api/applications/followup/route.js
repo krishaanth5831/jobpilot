@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { askClaudeText, ConfigError } from "@/lib/claude";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
+import { enforce, recordUse } from "@/lib/entitlements";
+import { FEATURES } from "@/lib/tiers";
 
 // POST /api/applications/followup — body: { id } — draft a short follow-up
 // note for an application that's gone quiet. Not stored; the user copies it
 // and sends it themselves.
 export async function POST(request) {
-  const { db, data } = await getUserData();
+  const { data, userId } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  const blocked = await enforce(userId, FEATURES.FOLLOW_UP_EMAIL);
+  if (blocked) return blocked;
   const { id } = await request.json();
 
   const application = data.applications.find((a) => a.id === id);
@@ -28,6 +32,7 @@ ${application.coverLetter}
 Write the follow-up note.`,
     });
 
+    await recordUse(userId, FEATURES.FOLLOW_UP_EMAIL);
     return NextResponse.json({ followUp });
   } catch (err) {
     console.error("follow-up draft failed:", err);

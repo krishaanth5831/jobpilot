@@ -6,13 +6,15 @@ import {
   buildInterviewPrepPrompt,
 } from "@/lib/reviewer";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
+import { enforce, recordUse } from "@/lib/entitlements";
+import { FEATURES } from "@/lib/tiers";
 
 // POST /api/interview-prep — body: { jobId, regenerate? }.
 // Likely interview questions + strong sample answers for one job, grounded
 // in the user's actual resume. Cached per job (regenerate to redo); runs on
 // the user's own key — or the free built-in model — via askClaudeJSON.
 export async function POST(request) {
-  const { db, data } = await getUserData();
+  const { db, data, userId } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
 
   const { jobId, regenerate } = await request.json();
@@ -28,6 +30,8 @@ export async function POST(request) {
   data.interviewPrep ??= {};
   const cached = data.interviewPrep[jobId];
   if (cached && !regenerate) return NextResponse.json({ prep: cached });
+  const blocked = await enforce(userId, FEATURES.INTERVIEW_PREP);
+  if (blocked) return blocked;
 
   try {
     const application = data.applications.find((a) => a.jobId === jobId);
@@ -46,6 +50,7 @@ export async function POST(request) {
     const prep = { questions, createdAt: new Date().toISOString() };
     data.interviewPrep[jobId] = prep;
     await db.write();
+    await recordUse(userId, FEATURES.INTERVIEW_PREP);
     return NextResponse.json({ prep });
   } catch (err) {
     console.error("interview prep failed:", err);

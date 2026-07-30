@@ -2,13 +2,17 @@ import { NextResponse } from "next/server";
 import { askClaudeJSON, ConfigError } from "@/lib/claude";
 import { ROADMAP_SCHEMA } from "@/lib/matcher";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
+import { enforce, recordUse } from "@/lib/entitlements";
+import { FEATURES } from "@/lib/tiers";
 
 // POST /api/roadmap — body: { jobId }.
 // For a job the user wants but doesn't qualify for, Claude turns the
 // missing requirements into a concrete, ordered action plan.
 export async function POST(request) {
-  const { db, data } = await getUserData();
+  const { db, data, userId } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  const blocked = await enforce(userId, FEATURES.SKILL_ROADMAP);
+  if (blocked) return blocked;
   if (!data.profile) {
     return NextResponse.json({ error: "Upload a resume first" }, { status: 400 });
   }
@@ -30,6 +34,7 @@ export async function POST(request) {
 
     job.roadmap = roadmap;
     await db.write();
+    await recordUse(userId, FEATURES.SKILL_ROADMAP);
 
     return NextResponse.json({ roadmap });
   } catch (err) {

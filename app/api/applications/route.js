@@ -3,13 +3,17 @@ import { ConfigError } from "@/lib/claude";
 import { draftApplicationFor } from "@/lib/applications";
 import { recordOutcomesById } from "@/lib/learnings";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
+import { canUseFeature, enforce, logLimitHit, recordUse } from "@/lib/entitlements";
+import { CAPABILITIES, FEATURES } from "@/lib/tiers";
 
 // POST /api/applications — body: { jobId }.
 // Only works for jobs Claude marked as qualified. Drafts a tailored cover
 // letter and queues it for human review — jobblast never auto-submits.
 export async function POST(request) {
-  const { db, data } = await getUserData();
+  const { db, data, userId } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+  const blocked = await enforce(userId, FEATURES.COVER_LETTER);
+  if (blocked) return blocked;
   const { jobId } = await request.json();
 
   const job = data.jobs.find((j) => j.id === jobId);
@@ -24,6 +28,7 @@ export async function POST(request) {
   try {
     const application = await draftApplicationFor(data, job);
     await db.write();
+    await recordUse(userId, FEATURES.COVER_LETTER);
     return NextResponse.json({ application });
   } catch (err) {
     console.error("application draft failed:", err);
@@ -34,9 +39,28 @@ export async function POST(request) {
 }
 
 // GET /api/applications — the review queue.
+//
+// Free tier gets the count but not the pipeline: this returns a redacted
+// payload rather than a 402, because "you have 12 applications, upgrade to see
+// them" is a far better prompt than an error page on a screen they can reach
+// from the nav.
 export async function GET() {
-  const { db, data } = await getUserData();
+  const { data, userId } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
+
+  const pipeline = await canUseFeature(userId, CAPABILITIES.PIPELINE_VIEW);
+  if (pipeline.wouldBlock) await logLimitHit(userId, pipeline);
+  if (!pipeline.allowed) {
+    return NextResponse.json({
+      applications: null,
+      count: data.applications.length,
+      upgrade: {
+        feature: CAPABILITIES.PIPELINE_VIEW,
+        tier: pipeline.tier,
+        requiredTier: pipeline.upgradeRequired,
+      },
+    });
+  }
   return NextResponse.json({ applications: data.applications });
 }
 

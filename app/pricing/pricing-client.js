@@ -140,14 +140,18 @@ export function PricingClient({ live = false }) {
           so arriving here from that band feels like the same room. */}
       <PhotoBand photo="pricing.jpg" alt="" priority scrim="pool">
         <div className="mx-auto max-w-3xl px-6 pb-20 pt-36 text-center">
+          {/* NOT "pay for the search": nothing here is metered per search, and
+              a headline that reads that way invites exactly the wrong
+              question. One flat price, however much of it you use. */}
           <h1 className="on-photo-text font-display text-4xl font-semibold leading-[1.06] sm:text-5xl lg:text-6xl">
-            <span className="text-on-photo-dim">Pay for the search,</span>
+            <span className="text-on-photo-dim">One price.</span>
             <br />
-            <span className="text-on-photo">not for the software.</span>
+            <span className="text-on-photo">The whole search.</span>
           </h1>
           <p className="on-photo-text mx-auto mt-6 max-w-[48ch] text-lg leading-relaxed text-on-photo-dim">
-            Three plans. The resume score stays free on all of them, and every
-            plan is free while jobblast is in early access.
+            Nothing is charged per search, per application, or per resume. The
+            resume score stays free on every plan, and every plan is free while
+            jobblast is in early access.
           </p>
         </div>
       </PhotoBand>

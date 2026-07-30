@@ -38,6 +38,15 @@ function MarketingHeader() {
           <span className="font-display text-lg font-semibold">jobblast</span>
         </Link>
         <div className="flex items-center gap-1">
+          {/* Hidden below sm: the header is already at the width limit on a
+              390px screen, and pricing is reachable from the landing band and
+              the footer there. */}
+          <Link
+            href="/pricing"
+            className="hidden rounded-xl px-3 py-2 text-sm font-medium text-muted transition hover:bg-accent-wash hover:text-ink sm:block sm:px-4"
+          >
+            Pricing
+          </Link>
           <ThemeToggle className="flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-muted transition hover:border-line hover:text-ink" />
           <Link
             href="/signin"

@@ -17,6 +17,9 @@ export function SiteFooter() {
           <Link href="/check" className="transition hover:text-ink">
             Free resume check
           </Link>
+          <Link href="/pricing" className="transition hover:text-ink">
+            Pricing
+          </Link>
           <Link href="/signin" className="transition hover:text-ink">
             Sign in
           </Link>

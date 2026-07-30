@@ -1,8 +1,7 @@
 # Landing page photographs
 
-Four photographs, one per full-bleed band on the landing page. Swap one by
-overwriting the file. No code change is needed: the filenames are the
-contract.
+Five photographs, one per full-bleed band. Swap one by overwriting the file.
+No code change is needed: the filenames are the contract.
 
 | File | Where it appears | Aspect | Minimum width |
 | --- | --- | --- | --- |
@@ -10,6 +9,7 @@ contract.
 | `verdict.jpg` | Behind the floating job-match screenshot | 21:9 | 2400px |
 | `steps.jpg` | Behind "How it runs" | 21:9 | 2400px |
 | `toolkit.jpg` | Behind "The rest of the application" | 21:9 | 2000px |
+| `pricing.jpg` | Behind the pricing band, and the `/pricing` header | 21:9 | 2400px |
 
 ## Choosing images
 
@@ -91,6 +91,7 @@ Current set, all Unsplash (free for commercial use, no attribution required):
 | `verdict.jpg` | Braided glacial river from above, blue and gold | `photo-1543157446-a57c71334d95` |
 | `steps.jpg` | Fog through a conifer forest | `photo-1489471289653-9358c5993932` |
 | `toolkit.jpg` | Terraced rice fields from above | `photo-1480996408299-fc0e830b5db1` |
+| `pricing.jpg` | Sandstone mesas at sunrise, Capitol Reef | `-5c1QUt4w-w` (Brett Meliti) |
 
 Fetch any of them again with
 `https://images.unsplash.com/<id>?w=3840&q=95&fm=jpg&fit=max`.

@@ -22,6 +22,7 @@ export async function POST() {
 
   try {
     const { field, companies } = await askClaudeJSON({
+      task: "recommend",
       system: RECOMMEND_SYSTEM_PROMPT,
       prompt: buildRecommendPrompt(data.profile),
       schema: RECOMMEND_SCHEMA,
@@ -43,7 +44,7 @@ export async function POST() {
 
 // GET /api/recommend — the stored recommendations, if any.
 export async function GET() {
-  const { db, data } = await getUserData();
+  const { data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   const rec = data.recommendations;
   return NextResponse.json({

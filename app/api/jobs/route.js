@@ -6,7 +6,7 @@ import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 // the latest search returned so pages can scope to it. Older jobs stay
 // stored because applications and roadmaps reference them.
 export async function GET() {
-  const { db, data } = await getUserData();
+  const { data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   return NextResponse.json({
     jobs: data.jobs,

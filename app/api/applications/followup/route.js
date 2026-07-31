@@ -21,6 +21,7 @@ export async function POST(request) {
 
   try {
     const followUp = await askClaudeText({
+      task: "follow_up_email",
       system:
         "You write short, polite follow-up notes on job applications. Under 120 words, warm but not pushy: reference the role, restate ONE concrete strength drawn from the original cover letter, and ask about the timeline. Never invent claims or fake urgency.",
       prompt: `Role: ${job.title} at ${job.company}

@@ -32,6 +32,7 @@ export async function POST() {
     });
 
     const review = await askClaudeJSON({
+      task: "resume_review",
       system: REVIEW_SYSTEM_PROMPT,
       prompt: buildReviewPrompt(data.resumeText, data.insights, learnings),
       schema: REVIEW_SCHEMA,

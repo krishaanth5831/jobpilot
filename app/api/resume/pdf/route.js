@@ -8,7 +8,7 @@ import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 // download falls back to a markdown rendering of the profile, so it works
 // even before the editor has been saved.
 export async function GET(request) {
-  const { db, data } = await getUserData();
+  const { data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   const jobId = new URL(request.url).searchParams.get("jobId");
   const markdown = jobId

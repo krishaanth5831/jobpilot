@@ -36,6 +36,7 @@ export async function POST(request) {
   try {
     const application = data.applications.find((a) => a.jobId === jobId);
     const { questions } = await askClaudeJSON({
+      task: "interview_prep",
       system: INTERVIEW_PREP_SYSTEM_PROMPT,
       prompt: buildInterviewPrepPrompt({
         profile: data.profile,

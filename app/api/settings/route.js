@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { MANAGED_KEYS, readManagedValues, updateManagedValues } from "@/lib/env-file";
 import { API_KEY_NAMES, isOwnerAccount } from "@/lib/api-keys";
-import { DEFAULT_CLAUDE, isValidEffort, isValidModel } from "@/lib/claude-models";
 import { addCreatorCode, listCreatorCodes, removeCreatorCode } from "@/lib/creator-codes";
 import { deleteAccount, listSignups, normalizeEmail } from "@/lib/accounts";
 import { listLearnings, removeLearning } from "@/lib/learnings";
@@ -74,10 +73,6 @@ export async function GET() {
     creatorCodes,
     signups,
     learnings,
-    claude: {
-      model: isValidModel(data.claudeModel) ? data.claudeModel : DEFAULT_CLAUDE.model,
-      effort: isValidEffort(data.claudeEffort) ? data.claudeEffort : DEFAULT_CLAUDE.effort,
-    },
     // What this account has left of its shared-key allowance. Null when they
     // brought their own key (nothing is metered) or the server has no key to
     // lend. See lib/claude-spend.js.
@@ -165,20 +160,6 @@ export async function POST(request) {
     return GET();
   }
 
-  // AI model preference — per-account model + effort, saved on its own.
-  if (body.claude && typeof body.claude === "object") {
-    const { model, effort } = body.claude;
-    if (model !== undefined && !isValidModel(model)) {
-      return NextResponse.json({ error: `Unknown model: ${model}` }, { status: 400 });
-    }
-    if (effort !== undefined && !isValidEffort(effort)) {
-      return NextResponse.json({ error: `Unknown effort level: ${effort}` }, { status: 400 });
-    }
-    if (model !== undefined) data.claudeModel = model;
-    if (effort !== undefined) data.claudeEffort = effort;
-    await db.write();
-    return GET();
-  }
 
   const entries = Object.entries(body.values ?? {});
   if (entries.length === 0) {

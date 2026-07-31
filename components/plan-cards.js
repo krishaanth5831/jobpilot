@@ -27,7 +27,7 @@ const euros = (n) => `€${n.toFixed(2)}`;
  * `annual` is the per-MONTH price when billed annually, which is the number
  * the card shows big; the yearly charge goes in the small print under it.
  */
-export function priceFor(tier, interval) {
+function priceFor(tier, interval) {
   if (tier === TIERS.FREE) return { amount: "€0", cadence: "forever", note: null };
   const p = PRICING[tier];
   if (interval === "annual") {
@@ -41,7 +41,7 @@ export function priceFor(tier, interval) {
 }
 
 /** The largest annual saving across the paid plans, for the toggle badge. */
-export const bestSaving = () =>
+const bestSaving = () =>
   Math.max(savingsPercent(TIERS.PRO), savingsPercent(TIERS.UNLIMITED));
 
 /** Annual / monthly switch. Annual is the default everywhere it is used. */

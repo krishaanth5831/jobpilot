@@ -37,6 +37,7 @@ export async function POST(request) {
 
   try {
     const { lessons, globalLessons } = await askClaudeJSON({
+      task: "insights",
       system: INSIGHTS_SYSTEM_PROMPT,
       prompt: buildInsightsPrompt({
         profile: data.profile,

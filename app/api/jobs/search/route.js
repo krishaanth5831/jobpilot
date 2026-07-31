@@ -41,6 +41,7 @@ function expandTitles(titles) {
 async function optimizeRole(role) {
   try {
     const { titles } = await askClaudeJSON({
+      task: "query_rewrite",
       system: QUERY_SYSTEM_PROMPT,
       prompt: buildQueryPrompt(role),
       schema: QUERY_SCHEMA,

@@ -23,6 +23,7 @@ export async function POST(request) {
     const text = await extractResumeText(buffer);
 
     const profile = await askClaudeJSON({
+      task: "profile_extract",
       system:
         "You extract structured candidate profiles from resume text. Only include information actually present in the resume — never invent skills, dates, or experience.",
       prompt: `Extract the candidate profile from this resume:\n\n${text}`,

@@ -31,6 +31,7 @@ export async function POST(request) {
     }
     try {
       const { picks } = await askClaudeJSON({
+        task: "template_pick",
         system: TEMPLATE_REC_SYSTEM_PROMPT,
         prompt: buildTemplateRecPrompt(data.profile),
         schema: TEMPLATE_REC_SCHEMA,

@@ -26,6 +26,7 @@ export async function POST(request) {
 
   try {
     const roadmap = await askClaudeJSON({
+      task: "skill_roadmap",
       system:
         "You are a pragmatic career coach for students and early-career developers. Turn skill gaps into a concrete, ordered plan with realistic time estimates and free/cheap resources. Prefer building projects over passive courses.",
       prompt: `Candidate profile:\n${JSON.stringify(data.profile, null, 2)}\n\nTarget job: ${job.title} at ${job.company}\n\nRequirements they already meet:\n${JSON.stringify(job.match.matched_requirements)}\n\nRequirements they are missing:\n${JSON.stringify(job.match.missing_requirements)}\n\nCreate a step-by-step plan to become qualified for this job.`,

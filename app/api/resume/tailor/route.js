@@ -33,6 +33,7 @@ export async function POST(request) {
     });
 
     const { resume_markdown } = await askClaudeJSON({
+      task: "tailored_resume",
       system: TAILOR_SYSTEM_PROMPT,
       prompt: buildTailorPrompt(data.resumeText, data.interview, data.insights, job, learnings),
       schema: TAILOR_SCHEMA,

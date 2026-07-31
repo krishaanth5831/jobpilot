@@ -64,6 +64,7 @@ export async function POST(request) {
       const job = targets[next++];
       try {
         job.match = await askClaudeJSON({
+          task: "job_match",
           system: MATCH_SYSTEM_PROMPT,
           prompt: buildMatchPrompt(data.profile, job),
           schema: MATCH_SCHEMA,

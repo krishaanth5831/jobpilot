@@ -22,6 +22,7 @@ export async function POST() {
 
   try {
     const { field, companies } = await askClaudeJSON({
+      task: "recommend",
       system: RECOMMEND_SYSTEM_PROMPT,
       prompt: buildRecommendPrompt(data.profile),
       schema: RECOMMEND_SCHEMA,

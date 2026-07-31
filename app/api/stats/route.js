@@ -4,7 +4,7 @@ import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 // GET /api/stats — the funnel and outcome numbers, computed from the store.
 // Everything here is derived; nothing extra is written.
 export async function GET() {
-  const { db, data } = await getUserData();
+  const { data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   const jobs = data.jobs ?? [];
   const apps = data.applications ?? [];

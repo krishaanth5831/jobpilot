@@ -85,7 +85,7 @@ export async function POST(request) {
 
 // GET /api/insights — every recorded win and its lessons, newest first.
 export async function GET() {
-  const { db, data } = await getUserData();
+  const { data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   return NextResponse.json({ insights: (data.insights ?? []).toReversed() });
 }

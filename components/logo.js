@@ -25,7 +25,7 @@ const GRID = [
 // Flame gradient, hottest at the nozzle: amber → orange → red tip.
 const FLAME = { 1: "#fbbf24", 2: "#f97316", 3: "#ef4444" };
 
-export const ROCKET_PIXELS = [];
+const ROCKET_PIXELS = [];
 GRID.forEach((row, y) => {
   [...row].forEach((ch, x) => {
     if (ch !== ".") ROCKET_PIXELS.push({ x, y, flame: FLAME[ch] });

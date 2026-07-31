@@ -50,7 +50,7 @@ export async function POST(request) {
 
 // GET /api/resume — the stored profile plus resume-studio state.
 export async function GET() {
-  const { db, data } = await getUserData();
+  const { data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
   return NextResponse.json({
     profile: data.profile,

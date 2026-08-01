@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
-import { effectiveTier, paywallEnabled } from "@/lib/entitlements";
+import { effectiveTier, isUncapped, paywallEnabled } from "@/lib/entitlements";
 import { normalizeEmail } from "@/lib/accounts";
 import { TIERS } from "@/lib/tiers";
 
@@ -46,8 +46,10 @@ export async function GET() {
   // moment, and a third dialog behind them is how people close everything.
   if (!data.onboarding?.completedAt) return no("onboarding");
 
-  // Someone already paying has nothing to be sold.
-  const tier = effectiveTier(data);
+  // Someone already paying has nothing to be sold, and neither does the owner
+  // — selling the operator a plan on their own instance is nonsense.
+  const tier = effectiveTier(data, userId);
+  if (isUncapped(userId)) return no("owner");
   const subscribed = Boolean(data.subscription?.tier);
   if (subscribed) return no("subscribed");
 

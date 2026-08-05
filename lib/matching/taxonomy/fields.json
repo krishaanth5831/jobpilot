@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "_comment": "Academic fields of study, used only by the education component to compare a degree's field against a posting's fieldPreferenceId. Separate from skills.json because 'studied electrical engineering' and 'can use an oscilloscope' are different axes. Families group adjacent disciplines (distance 0.5).",
+  "families": {
+    "ffam:computing": "Computing",
+    "ffam:electrical": "Electrical & computer engineering",
+    "ffam:mechanical": "Mechanical & aerospace",
+    "ffam:built-process": "Civil, chemical & environmental",
+    "ffam:physical-science": "Physical sciences & mathematics",
+    "ffam:life-science": "Life & health sciences",
+    "ffam:business": "Business & economics",
+    "ffam:social-creative": "Social sciences & design"
+  },
+  "fields": [
+    { "id": "field:computer-science", "label": "Computer science", "aliases": ["cs", "computing science", "informatics"], "familyId": "ffam:computing" },
+    { "id": "field:software-engineering", "label": "Software engineering", "aliases": ["software development", "se"], "familyId": "ffam:computing" },
+    { "id": "field:information-systems", "label": "Information systems", "aliases": ["information technology", "it", "mis"], "familyId": "ffam:computing" },
+    { "id": "field:data-science", "label": "Data science", "aliases": ["data analytics", "business analytics"], "familyId": "ffam:computing" },
+    { "id": "field:artificial-intelligence", "label": "Artificial intelligence", "aliases": ["ai", "machine learning", "cognitive science"], "familyId": "ffam:computing" },
+    { "id": "field:cybersecurity", "label": "Cybersecurity", "aliases": ["information security", "network security"], "familyId": "ffam:computing" },
+
+    { "id": "field:electrical-engineering", "label": "Electrical engineering", "aliases": ["ee", "electrical", "electrical and electronic engineering", "electronics engineering"], "familyId": "ffam:electrical" },
+    { "id": "field:computer-engineering", "label": "Computer engineering", "aliases": ["ce", "computer systems engineering"], "familyId": "ffam:electrical" },
+    { "id": "field:mechatronics", "label": "Mechatronics", "aliases": ["mechatronic engineering", "robotics engineering"], "familyId": "ffam:electrical" },
+    { "id": "field:telecommunications", "label": "Telecommunications engineering", "aliases": ["telecom engineering", "communications engineering"], "familyId": "ffam:electrical" },
+
+    { "id": "field:mechanical-engineering", "label": "Mechanical engineering", "aliases": ["me", "mechanical"], "familyId": "ffam:mechanical" },
+    { "id": "field:aerospace-engineering", "label": "Aerospace engineering", "aliases": ["aeronautical engineering", "astronautical engineering"], "familyId": "ffam:mechanical" },
+    { "id": "field:automotive-engineering", "label": "Automotive engineering", "aliases": ["vehicle engineering"], "familyId": "ffam:mechanical" },
+    { "id": "field:industrial-engineering", "label": "Industrial engineering", "aliases": ["manufacturing engineering", "production engineering", "operations research"], "familyId": "ffam:mechanical" },
+    { "id": "field:materials-engineering", "label": "Materials engineering", "aliases": ["materials science", "metallurgical engineering"], "familyId": "ffam:mechanical" },
+
+    { "id": "field:civil-engineering", "label": "Civil engineering", "aliases": ["structural engineering", "construction engineering"], "familyId": "ffam:built-process" },
+    { "id": "field:chemical-engineering", "label": "Chemical engineering", "aliases": ["process engineering", "chemeng"], "familyId": "ffam:built-process" },
+    { "id": "field:environmental-engineering", "label": "Environmental engineering", "aliases": ["environmental science", "sustainability engineering"], "familyId": "ffam:built-process" },
+    { "id": "field:architecture", "label": "Architecture", "aliases": ["architectural engineering", "built environment"], "familyId": "ffam:built-process" },
+
+    { "id": "field:physics", "label": "Physics", "aliases": ["applied physics", "engineering physics"], "familyId": "ffam:physical-science" },
+    { "id": "field:mathematics", "label": "Mathematics", "aliases": ["maths", "math", "applied mathematics"], "familyId": "ffam:physical-science" },
+    { "id": "field:statistics", "label": "Statistics", "aliases": ["applied statistics", "biostatistics"], "familyId": "ffam:physical-science" },
+    { "id": "field:chemistry", "label": "Chemistry", "aliases": ["applied chemistry"], "familyId": "ffam:physical-science" },
+    { "id": "field:earth-science", "label": "Earth sciences", "aliases": ["geology", "geoscience"], "familyId": "ffam:physical-science" },
+
+    { "id": "field:biology", "label": "Biology", "aliases": ["life sciences", "biological sciences", "biotechnology"], "familyId": "ffam:life-science" },
+    { "id": "field:biomedical-engineering", "label": "Biomedical engineering", "aliases": ["bioengineering", "medical engineering"], "familyId": "ffam:life-science" },
+    { "id": "field:medicine", "label": "Medicine", "aliases": ["medical science", "pharmacy"], "familyId": "ffam:life-science" },
+    { "id": "field:nursing", "label": "Nursing", "aliases": ["nursing science"], "familyId": "ffam:life-science" },
+
+    { "id": "field:economics", "label": "Economics", "aliases": ["econometrics"], "familyId": "ffam:business" },
+    { "id": "field:finance", "label": "Finance", "aliases": ["accounting", "financial economics"], "familyId": "ffam:business" },
+    { "id": "field:business-administration", "label": "Business administration", "aliases": ["business", "management", "mba", "commerce"], "familyId": "ffam:business" },
+    { "id": "field:marketing", "label": "Marketing", "aliases": ["advertising"], "familyId": "ffam:business" },
+    { "id": "field:supply-chain", "label": "Supply chain management", "aliases": ["logistics management", "operations management"], "familyId": "ffam:business" },
+
+    { "id": "field:design", "label": "Design", "aliases": ["industrial design", "product design", "graphic design"], "familyId": "ffam:social-creative" },
+    { "id": "field:human-computer-interaction", "label": "Human-computer interaction", "aliases": ["hci", "interaction design", "user experience design"], "familyId": "ffam:social-creative" },
+    { "id": "field:psychology", "label": "Psychology", "aliases": ["behavioural science", "behavioral science"], "familyId": "ffam:social-creative" },
+    { "id": "field:communications", "label": "Communications", "aliases": ["media studies", "journalism"], "familyId": "ffam:social-creative" },
+    { "id": "field:law", "label": "Law", "aliases": ["legal studies"], "familyId": "ffam:social-creative" },
+    { "id": "field:education", "label": "Education", "aliases": ["pedagogy", "teaching"], "familyId": "ffam:social-creative" }
+  ]
+}

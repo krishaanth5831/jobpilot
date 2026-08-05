@@ -1,14 +1,27 @@
 import { NextResponse } from "next/server";
 import { askClaudeJSON, ConfigError } from "@/lib/claude";
-import { MATCH_SCHEMA, MATCH_SYSTEM_PROMPT, buildMatchPrompt } from "@/lib/matcher";
+import {
+  JOB_FACTS_SCHEMA,
+  JOB_FACTS_SYSTEM_PROMPT,
+  buildJobFactsPrompt,
+} from "@/lib/matching/extract";
+import { combinedHitRate, toJobPosting, toUserProfile } from "@/lib/matching/adapt";
+import { computeMatch } from "@/lib/matching/score";
 import { AUTO_APPLY_SCORE, draftApplicationFor } from "@/lib/applications";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 import { autoApplyDisabled, recordUse, takeBudget } from "@/lib/entitlements";
 import { FEATURES } from "@/lib/tiers";
 
 // POST /api/match — body: { jobId } (or { all: true } to match every unmatched job).
-// Claude compares the stored profile against the job description and returns
-// { qualified, score, matched_requirements, missing_requirements, reasoning }.
+//
+// Claude no longer scores anything. It reads the posting and reports the facts
+// it states (lib/matching/extract.js); lib/matching/score.ts then computes a
+// deterministic 0-100 from those facts and the stored profile. Same one Claude
+// call per job as before — the model was demoted from judge to extractor.
+//
+// `job.match` stores the full MatchResult plus two derived compatibility
+// fields, `score` and `qualified`, because the jobs page, stats, roadmap,
+// upgrade prompt and the applications route all read them.
 export async function POST(request) {
   const { db, data, userId } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
@@ -59,16 +72,32 @@ export async function POST(request) {
   let firstError = null;
   let next = 0;
 
+  // Resolved once: the profile is the same for every job in the batch.
+  const adaptedProfile = toUserProfile(data.profile);
+
   async function worker() {
     while (next < targets.length) {
       const job = targets[next++];
       try {
-        job.match = await askClaudeJSON({
-          task: "job_match",
-          system: MATCH_SYSTEM_PROMPT,
-          prompt: buildMatchPrompt(data.profile, job),
-          schema: MATCH_SCHEMA,
+        const facts = await askClaudeJSON({
+          task: "job_facts",
+          system: JOB_FACTS_SYSTEM_PROMPT,
+          prompt: buildJobFactsPrompt(job),
+          schema: JOB_FACTS_SCHEMA,
         });
+
+        const adaptedJob = toJobPosting(facts, { expiresAt: job.expires_at ?? null });
+        const result = computeMatch(adaptedProfile.profile, adaptedJob.posting, {
+          taxonomyHitRate: combinedHitRate(adaptedProfile, adaptedJob),
+        });
+
+        job.match = {
+          ...result,
+          // Derived compatibility fields — see the note at the top of this file.
+          // `qualified` now agrees with the 70-point threshold the marketing
+          // copy has always advertised, instead of being a separate model call.
+          qualified: result.band === "strong" || result.band === "good",
+        };
         job.screened_at = new Date().toISOString();
         matched.push(job);
       } catch (err) {

@@ -42,3 +42,7 @@ next-env.d.ts
 
 # jobpilot runtime data
 /data/db.json
+
+# TypeScript test build output
+.test-build/
+*.tsbuildinfo

@@ -1,0 +1,20 @@
+{
+  // Test build only. Node 20 has no native type stripping (that landed in
+  // 22.6), so `npm test` compiles lib/matching to CommonJS in .test-build/
+  // and runs node:test over the output. CommonJS also means `skills.json`
+  // compiles to a plain require() — no import attributes to get wrong.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".test-build",
+    "rootDir": ".",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "incremental": false,
+    "verbatimModuleSyntax": false
+  },
+  "include": [
+    "lib/matching/**/*.ts",
+    "lib/matching/**/*.json"
+  ]
+}

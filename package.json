@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "tsc -p tsconfig.test.json && node --test \".test-build/lib/matching/__tests__/\""
+    "test": "tsc -p tsconfig.test.json && node --test \".test-build/lib/matching/__tests__/\" \".test-build/lib/resume-health/__tests__/\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",

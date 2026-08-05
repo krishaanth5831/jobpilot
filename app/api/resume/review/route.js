@@ -1,64 +1,90 @@
-import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { askClaudeJSON, ConfigError } from "@/lib/claude";
-import { REVIEW_SCHEMA, REVIEW_SYSTEM_PROMPT, buildReviewPrompt } from "@/lib/reviewer";
-import { getRelevantLearnings, recordOutcomesById, tagsFromProfile } from "@/lib/learnings";
+import { computeHealth } from "@/lib/resume-health/score";
+import { toStoredReview } from "@/lib/resume-health/legacy";
 import { getUserData, SIGN_IN_ERROR } from "@/lib/user-data";
 
-// POST /api/resume/review — critique the stored resume: score, strengths,
-// and issues each paired with a concrete fix. Persisted so it survives reload.
-// DELIBERATELY UNGATED, ON EVERY TIER. The ATS score is the thing that proves
-// jobblast is worth anything before anyone has paid, so it takes no
+// POST /api/resume/review — the resume's ATS health.
+//
+// NO MODEL CALL HAPPENS HERE ANY MORE. The score used to be whatever Claude
+// said it was; it is now computed by lib/resume-health/score.ts, a pure
+// function over facts the parsers and one counting classifier produced at
+// upload time. This route re-runs that pure function over the stored parse
+// report, which is free, instant and deterministic.
+//
+// STILL DELIBERATELY UNGATED, ON EVERY TIER. The ATS score is the thing that
+// proves jobblast is worth anything before anyone has paid, so it takes no
 // entitlement check and increments no counter. `ats_resume_score` is on
 // NEVER_GATED in lib/tiers.js and assertNeverGated() throws if a future change
 // tries to meter it — do not add an enforce() call here.
 export async function POST() {
   const { db, data } = await getUserData();
   if (!data) return NextResponse.json(SIGN_IN_ERROR, { status: 401 });
-  if (!data.resumeText) {
+
+  const stored = data.resumeReview;
+  if (!stored?.parseReport) {
     return NextResponse.json(
-      { error: "Upload a resume first — reviews work from the original text" },
+      {
+        error: data.resumeText
+          ? "Re-upload your resume to get an ATS score — the layout checks need the original PDF."
+          : "Upload a resume first.",
+      },
       { status: 400 }
     );
   }
 
   try {
-    // Global learnings ride into the prompt; their ids are stored on the
-    // review so a later re-review can grade the advice they carried.
-    const learnings = await getRelevantLearnings({
-      db,
-      category: "ats_pattern",
-      contextTags: tagsFromProfile(data.profile),
+    // Recomputed rather than echoed, so a locale change or a scoring-version
+    // bump is reflected without asking the user to upload the file again.
+    const health = computeHealth({
+      parseReport: stored.parseReport,
+      profile: stored.profile ?? emptyProfile(),
+      contentStats: stored.contentStats ?? emptyStats(),
+      rawText: data.resumeText ?? "",
+      locale: data.resumeLocale ?? "NL",
     });
 
-    const review = await askClaudeJSON({
-      task: "resume_review",
-      system: REVIEW_SYSTEM_PROMPT,
-      prompt: buildReviewPrompt(data.resumeText, data.insights, learnings),
-      schema: REVIEW_SCHEMA,
-    });
-
-    // Outcome for the PREVIOUS review's injected patterns: if the resume
-    // changed since then and the score moved, that's a measured result of
-    // following (or fighting) the advice. Same text = re-run noise; skip.
-    const textHash = createHash("sha1").update(data.resumeText).digest("hex").slice(0, 12);
-    const prev = data.resumeReview;
-    if (
-      prev?.learningIds?.length &&
-      prev.textHash &&
-      prev.textHash !== textHash &&
-      typeof prev.score === "number" &&
-      review.score !== prev.score
-    ) {
-      recordOutcomesById(db, prev.learningIds, review.score > prev.score);
-    }
-
-    data.resumeReview = { ...review, learningIds: learnings.ids, textHash };
+    data.resumeReview = {
+      ...toStoredReview(health),
+      // Carried forward: the learnings whose advice this document was shown,
+      // graded on the next upload (app/api/resume/route.js).
+      learningIds: stored.learningIds ?? [],
+      profile: stored.profile ?? null,
+      contentStats: stored.contentStats ?? null,
+    };
     await db.write();
-    return NextResponse.json({ review });
+
+    return NextResponse.json({ review: data.resumeReview });
   } catch (err) {
-    console.error("resume review failed:", err);
-    const message = err instanceof ConfigError ? err.message : "Review failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("resume health scoring failed:", err);
+    return NextResponse.json({ error: "Scoring failed" }, { status: 500 });
   }
+}
+
+function emptyStats() {
+  return {
+    bulletsTotal: 0,
+    bulletsWithMetric: 0,
+    bulletsWithStrongVerb: 0,
+    bulletsPassiveOrDuty: 0,
+    bulletsOverTwoLines: 0,
+    clichePhraseCount: 0,
+    firstPersonPronounCount: 0,
+    tenseInconsistencies: 0,
+    spellingErrors: 0,
+    skillsEvidencedInBullets: [],
+  };
+}
+
+function emptyProfile() {
+  return {
+    skills: [],
+    titles: [],
+    totalMonthsExperience: 0,
+    education: { degreeLevel: 0, fieldId: null, graduationDate: null },
+    location: { city: null, country: null, willingRemote: true, willingRelocate: true },
+    workAuth: [],
+    languages: [],
+    credentials: [],
+    summaryEmbedding: null,
+  };
 }

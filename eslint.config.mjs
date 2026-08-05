@@ -10,6 +10,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Compiled output of `npm test` (tsconfig.test.json). Linting generated
+    // JavaScript reports problems that do not exist in the TypeScript source.
+    ".test-build/**",
   ]),
 ]);
 

@@ -14,6 +14,9 @@ import {
   ClipboardPaste,
   Inbox,
   ChartNoAxesColumn,
+  ScanSearch,
+  Columns2,
+  Sigma,
 } from "lucide-react";
 import { PhotoBand } from "@/components/photo-band";
 import { PlanSummary } from "@/components/plan-cards";
@@ -125,6 +128,42 @@ const toolkit = [
   { Icon: ChartNoAxesColumn, title: "Your funnel, measured", body: "Qualification rate, response rate, and how your scores move as you close gaps." },
 ];
 
+// How the two scores are actually produced. This is the section the hero's
+// secondary link points at, and it exists because "an AI scored your resume"
+// is both vague and, since the scoring engines landed, no longer true: the
+// model reads and counts, and fixed arithmetic in lib/matching/ and
+// lib/resume-health/ produces the number. Keep this copy in step with those.
+const scoring = [
+  {
+    Icon: ScanSearch,
+    label: "Match score",
+    scope: "out of 100, for one job",
+    claim: "How well this posting lines up with what your resume actually shows.",
+    steps: [
+      "Claude reads the posting — and only the posting. It never sees you while it works. It writes down what the advert asks for: the must-have skills, the years wanted, the seniority, where the work is, whether they sponsor a visa.",
+      "Your resume is already a profile in the same shape, with every skill matched against a catalogue of 332. React.js, ReactJS and React are one thing. A skill you used at work counts for more than one you only listed.",
+      "Six parts are then weighed against each other, required skills heaviest. Missing must-haves cost more than their share, because screening is all-or-nothing and the arithmetic follows it.",
+      "Four things stop it dead: no right to work somewhere nobody will sponsor, a missing licence, an onsite role in a country you will not move to, or an advert that has closed. Any one of them and the score is zero, with the reason named.",
+    ],
+    footnote:
+      "Every gap is priced by re-running the whole score with that skill added. “Spark: +10” means it genuinely came out ten points higher — not an estimate.",
+  },
+  {
+    Icon: Columns2,
+    label: "ATS score",
+    scope: "out of 100, for your resume",
+    claim: "Whether the software sitting between you and a human can read your CV at all.",
+    steps: [
+      "Your PDF is opened twice. Once the way cheap screening software reads it — straight down the page, with no understanding of layout. Once properly, with the columns worked out and read in the right order.",
+      "What the careless read loses is the finding. If it drops your phone number, your Experience section or half your job history, that is not a guess about what an ATS might do. It is a record of what one just did.",
+      "The file itself is inspected too: columns, tables, text boxes, a photo, contact details stranded in the page header, skills drawn as rating bars instead of written out. None of that survives into plain text.",
+      "Then one model call, and it only counts. How many bullet points, how many carry a number, how many clichés, how many first-person pronouns. It is never asked whether your resume is any good.",
+    ],
+    footnote:
+      "The photo rule knows where you are applying: a photo costs you points in the US and nothing in the Netherlands, where it is the convention.",
+  },
+];
+
 const faqs = [
   {
     q: "Is it actually free?",
@@ -139,8 +178,12 @@ const faqs = [
     a: "No. It drafts a cover letter for roles you qualify for and puts it in a review queue. You read it, edit it, and submit the application yourself on the company's site. Nothing is ever sent on your behalf.",
   },
   {
-    q: "What does the score actually mean?",
-    a: "It is a judgement of how well what your resume shows lines up with what the posting asks for. Seventy and above counts as qualified. Below that you get the specific missing requirements instead of a rejection three weeks later.",
+    q: "What does the match score actually mean?",
+    a: "It is how well what your resume shows lines up with what the posting asks for. Seventy and above counts as qualified. Below that you get the specific missing requirements instead of a rejection three weeks later. Claude reads the advert and writes down what it wants, then a fixed formula does the scoring — so the same resume and the same posting always give the same number, and every point of it can be accounted for.",
+  },
+  {
+    q: "Is the ATS score just an AI opinion of my resume?",
+    a: "No. Your PDF is opened twice: once the way cheap screening software reads it, straight down the page with no sense of layout, and once properly with the columns resolved. Anything the careless read loses — your phone number, an entire section, half your job history — is a record of what a real parser just did to your file, not a guess. A model is involved, but only to count things like how many bullet points carry a number. It is never asked whether your resume is good.",
   },
   {
     q: "What happens to my resume?",
@@ -253,8 +296,8 @@ export default function Home() {
             A number, and the reason behind it.
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-muted">
-            Claude reads the posting against your resume and scores the fit out
-            of 100. Drag the dial to see where the line sits.
+            Claude reads the posting and writes down what it asks for. A fixed
+            formula does the scoring. Drag the dial to see where the line sits.
           </p>
         </Reveal>
 
@@ -294,7 +337,83 @@ export default function Home() {
         </Reveal>
       </section>
 
-      {/* 6. How it runs, over a photograph */}
+      {/* 6. Where both numbers come from */}
+      <section
+        id="how-scoring-works"
+        className="scroll-mt-24 border-y border-line bg-surface"
+      >
+        <div className="mx-auto max-w-6xl px-6 py-28">
+          <Reveal className="mx-auto max-w-2xl text-center">
+            <Sigma
+              size={22}
+              strokeWidth={1.5}
+              className="mx-auto text-accent"
+              aria-hidden="true"
+            />
+            <h2 className="mt-5 font-display text-4xl font-semibold leading-tight sm:text-5xl">
+              The model reads. The arithmetic decides.
+            </h2>
+            <p className="mt-6 text-lg leading-relaxed text-muted">
+              Two numbers run this product, and neither is an opinion. Claude
+              does what it is genuinely good at — reading a job advert, counting
+              what is on a page — and then a fixed formula turns those facts
+              into a score.
+            </p>
+          </Reveal>
+
+          <div className="mt-14 grid gap-4 lg:grid-cols-2">
+            {scoring.map(({ Icon, label, scope, claim, steps, footnote }, i) => (
+              <Reveal key={label} delay={i * 0.08}>
+                <div className="flex h-full flex-col rounded-2xl border border-line bg-paper p-7 sm:p-9">
+                  <div className="flex items-center gap-3">
+                    <Icon
+                      size={20}
+                      strokeWidth={1.5}
+                      className="text-accent"
+                      aria-hidden="true"
+                    />
+                    <h3 className="font-display text-2xl font-semibold">{label}</h3>
+                    <span className="ml-auto font-mono text-[11px] uppercase tracking-widest text-muted">
+                      {scope}
+                    </span>
+                  </div>
+                  <p className="mt-4 text-lg leading-relaxed text-ink">{claim}</p>
+
+                  {/* Numbered because the order is the explanation: each step
+                      only makes sense once the one above it has happened. */}
+                  <ol className="mt-7 flex flex-col gap-5">
+                    {steps.map((step, n) => (
+                      <li key={n} className="flex gap-4">
+                        <span
+                          className="mt-0.5 shrink-0 font-mono text-sm font-semibold tabular-nums text-accent"
+                          aria-hidden="true"
+                        >
+                          {String(n + 1).padStart(2, "0")}
+                        </span>
+                        <p className="text-sm leading-relaxed text-muted">{step}</p>
+                      </li>
+                    ))}
+                  </ol>
+
+                  <p className="mt-7 border-t border-line pt-5 text-sm leading-relaxed text-muted">
+                    {footnote}
+                  </p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal delay={0.16} className="mt-10">
+            <p className="mx-auto max-w-[62ch] text-center text-muted">
+              Because the last step is arithmetic rather than a judgement, the
+              same resume and the same posting produce the same number every
+              time — and every point of it can be accounted for.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* 7. How it runs, over a photograph */}
       <PhotoBand photo="steps.jpg" alt="" scrim="veil">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
@@ -319,7 +438,7 @@ export default function Home() {
         </div>
       </PhotoBand>
 
-      {/* 7. Everything else, as a bento with one lead tile, over a photograph */}
+      {/* 8. Everything else, as a bento with one lead tile, over a photograph */}
       <PhotoBand photo="toolkit.jpg" alt="" scrim="veil">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
@@ -359,7 +478,7 @@ export default function Home() {
         </div>
       </PhotoBand>
 
-      {/* 8. Cost, over a photograph */}
+      {/* 9. Cost, over a photograph */}
       <PhotoBand photo="pricing.jpg" alt="" scrim="veil">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <Reveal>
@@ -400,7 +519,7 @@ export default function Home() {
         </div>
       </PhotoBand>
 
-      {/* 9. FAQ */}
+      {/* 10. FAQ */}
       <section className="mx-auto max-w-3xl px-6 py-28">
         <Reveal>
           <h2 className="font-display text-3xl font-semibold sm:text-4xl">
@@ -416,7 +535,7 @@ export default function Home() {
         </Reveal>
       </section>
 
-      {/* 10. Footer */}
+      {/* 11. Footer */}
       <SiteFooter />
     </div>
   );

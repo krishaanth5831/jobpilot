@@ -67,7 +67,7 @@ export async function analyzeResumeDetailed(args: AnalyzeArgs): Promise<AnalyzeD
     const geometry = await loadPdfGeometry(buffer);
 
     const naive = naiveParseFromPages(geometry.pages);
-    const rich = richParseFromPages(geometry.pages, legacyProfile);
+    const rich = richParseFromPages(geometry.pages, legacyProfile, geometry.links);
 
     const parseReport = compareParses({
       naive,
@@ -78,6 +78,7 @@ export async function analyzeResumeDetailed(args: AnalyzeArgs): Promise<AnalyzeD
       photoPresent: detectPhoto(geometry),
       fileType,
       pageCount: geometry.pageCount,
+      links: geometry.links,
     });
 
     // The rich text is the true reading order, so it is what gets hashed and
@@ -91,9 +92,15 @@ export async function analyzeResumeDetailed(args: AnalyzeArgs): Promise<AnalyzeD
       : emptyStats();
 
     input = { parseReport, profile: rich.profile, contentStats, rawText, locale };
-  } catch {
+  } catch (err) {
     // A PDF that will not open at all. The corrupt gate turns this into
     // score 0 / unreadable with a reason the user can act on.
+    //
+    // LOGGED, not swallowed. This branch scores a resume zero, and until it
+    // said so there was no way to tell a genuinely broken upload apart from a
+    // bug in the parser — a user reporting "your site gave my good resume a 0"
+    // left no trace on the server at all.
+    console.error("resume-health: PDF parse failed, scoring as unreadable:", err);
     const fallback: HealthInput = {
       parseReport: unreadableReport(fileType),
       profile: emptyProfile(legacyProfile),

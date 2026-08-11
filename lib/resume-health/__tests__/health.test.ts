@@ -690,6 +690,40 @@ describe("dual-parse harness on real PDFs", () => {
     );
   });
 
+  // REGRESSION: a resume whose contact row is "Email / Phone / LinkedIn", each
+  // hyperlinked to the real address, scored 0 / unreadable. The addresses are
+  // in the file as link annotations — which the engine never read — so the
+  // noContact gate fired on a resume anyone could have replied to.
+  it("reads contact details out of link annotations, not just the text layer", () => {
+    const report = resultFor("linked-contact").parseReport;
+    assert.equal(report.document.contact.email, true, "email is in a mailto: link");
+    assert.equal(report.document.contact.phone, true, "phone is in a tel: link");
+    assert.equal(report.document.contact.linkedin, true, "LinkedIn is in a link");
+  });
+
+  it("does not gate a resume whose contact details are only hyperlinks", () => {
+    const result = resultFor("linked-contact");
+    assert.ok(
+      !result.gatesFailed.some((g) => g.gate === "noContact"),
+      `gates fired: ${JSON.stringify(result.gatesFailed)}`,
+    );
+    assert.ok(result.score > 0, "a contactable resume must not score zero");
+    assert.notEqual(result.band, "unreadable");
+  });
+
+  it("still reports hyperlink-only contact details as fields a dumb parser loses", () => {
+    // The deduction must survive the fix: those details really are invisible
+    // to a text-only parser, and telling the user so is the useful part.
+    const report = resultFor("linked-contact").parseReport;
+    assert.ok(report.fieldRecovery < 1, "expected divergence between the two parses");
+    for (const field of ["email address", "phone number", "LinkedIn URL"]) {
+      assert.ok(
+        report.missingFields.includes(field),
+        `expected ${field} in ${JSON.stringify(report.missingFields)}`,
+      );
+    }
+  });
+
   it("rejects a non-PDF cleanly rather than throwing", async () => {
     const result = await analyzeResume({
       buffer: Buffer.from("Sincerely, a .docx"),
@@ -717,13 +751,16 @@ describe("dual-parse harness on real PDFs", () => {
 
 describe("snapshot fixtures", () => {
   // Exact expected values. A diff means the algorithm moved — allowed, but it
-  // needs a HEALTH_VERSION bump and a deliberate review of these five numbers.
+  // needs a HEALTH_VERSION bump and a deliberate review of these six numbers.
   const expected: Record<string, { score: number; rawScore: number; band: string }> = {
     "clean-single-column": { score: 89, rawScore: 95, band: "ats-ready" },
     "canva-two-column": { score: 11, rawScore: 22, band: "will-be-filtered" },
     "word-with-tables": { score: 38, rawScore: 53, band: "will-be-filtered" },
     "scanned-image": { score: 0, rawScore: 0, band: "unreadable" },
     "sparse-student": { score: 40, rawScore: 55, band: "will-be-filtered" },
+    // Was 0 / unreadable before link annotations were read. Below the clean
+    // fixture because a text-only parser genuinely cannot see these details.
+    "linked-contact": { score: 75, rawScore: 85, band: "minor-fixes" },
   };
 
   for (const fixture of ALL_HEALTH_FIXTURES) {

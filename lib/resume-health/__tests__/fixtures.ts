@@ -92,6 +92,67 @@ export const cleanFixture: HealthFixture = {
   }),
 };
 
+/**
+ * The regression fixture for the hyperlink-contact bug.
+ *
+ * Identical content to the clean fixture, except the contact row reads
+ * "Email  Phone  LinkedIn" — three words, each a link annotation pointing at
+ * the real mailto:/tel:/profile URL. Nothing in the text layer looks like a
+ * way to reach this candidate, so the engine used to fire the noContact gate
+ * and score a good resume 0 / unreadable.
+ *
+ * It should score well but NOT perfectly: the details really are invisible to
+ * a text-only parser, which is a genuine deduction — just not a zero.
+ */
+export const linkedContactFixture: HealthFixture = {
+  name: "linked-contact",
+  description: "Clean resume whose contact details exist only as link annotations",
+  file: "linked-contact.pdf",
+  locale: "NL",
+  profile: {
+    name: "A. Candidate",
+    email: "candidate@example.com",
+    location: "Amsterdam, Netherlands",
+    field: "software engineering",
+    education: [
+      { institution: "Delft University", degree: "BSc", field: "Computer Science", graduation_year: "2020" },
+    ],
+    experience: [
+      {
+        title: "Backend Engineer",
+        company: "Northwind Systems",
+        duration: "Mar 2022 - Aug 2025",
+        highlights: [
+          "Reduced median API latency from 480 ms to 120 ms by adding query-level caching",
+          "Migrated 14 services to Docker and Kubernetes, cutting deploy time by 65%",
+        ],
+      },
+      {
+        title: "Junior Developer",
+        company: "Halcyon Labs",
+        duration: "Jun 2020 - Feb 2022",
+        highlights: ["Shipped 3 React features used by 12000 monthly active users"],
+      },
+    ],
+    skills: [
+      "Python", "JavaScript", "TypeScript", "React", "Node.js", "PostgreSQL",
+      "Docker", "Kubernetes", "Terraform", "AWS", "Git", "REST APIs",
+      "pytest", "CI/CD", "Linux",
+    ],
+    projects: [],
+    years_of_experience: 5,
+  },
+  contentStats: stats({
+    bulletsTotal: 7,
+    bulletsWithMetric: 6,
+    bulletsWithStrongVerb: 7,
+    bulletsOverTwoLines: 0,
+    skillsEvidencedInBullets: [
+      "docker", "kubernetes", "ci-cd", "pytest", "postgresql", "react", "python", "nodejs", "rest-api",
+    ],
+  }),
+};
+
 /** The designed CV: two columns, photo, header contact, duty-phrased prose. */
 export const canvaFixture: HealthFixture = {
   name: "canva-two-column",
@@ -214,6 +275,7 @@ export const ALL_HEALTH_FIXTURES: readonly HealthFixture[] = [
   wordFixture,
   scannedFixture,
   sparseFixture,
+  linkedContactFixture,
 ];
 
 export function fixtureBuffer(fixture: HealthFixture): Buffer {

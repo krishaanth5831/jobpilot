@@ -23,7 +23,7 @@ export function Dock({ children, className, magnification = 56, baseSize = 40 })
       <motion.nav
         onPointerMove={(e) => mouseX.set(e.clientX)}
         onPointerLeave={() => mouseX.set(Infinity)}
-        className={`flex items-end gap-2 rounded-2xl border border-neutral-200 bg-white/80 px-3 py-2 backdrop-blur-md dark:border-neutral-800 dark:bg-black/80 ${className ?? ""}`}
+        className={`flex items-end gap-2 rounded-2xl border border-line bg-paper/80 px-3 py-2 backdrop-blur-md ${className ?? ""}`}
       >
         {children}
       </motion.nav>

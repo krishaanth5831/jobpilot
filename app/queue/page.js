@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Check, Copy, ExternalLink, ChevronRight, GraduationCap, RefreshCw, Trash2, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { SlidingNumber } from "@/components/motion-primitives/sliding-number";
 import {
@@ -120,11 +121,10 @@ export default function QueuePage() {
 
   return (
     <PageShell>
-      <h1 className="text-3xl font-bold tracking-tight">Review queue</h1>
-      <p className="mt-2 text-neutral-500">
-        Read each draft, tweak it, apply on the company&apos;s page, then track it
-        below all the way to an offer.
-      </p>
+      <PageHeader
+        title="Review queue"
+        description="Read each draft, tweak it, apply on the company's page, then track it below all the way to an offer."
+      />
 
       {applications.length === 0 ? (
         <div className="mt-10">
@@ -152,7 +152,7 @@ export default function QueuePage() {
             </ul>
           )}
           {pending.length === 0 && (
-            <p className="mt-8 text-sm text-neutral-500">
+            <p className="mt-8 text-sm text-muted">
               No drafts waiting for review.
             </p>
           )}
@@ -160,12 +160,12 @@ export default function QueuePage() {
           {/* Application tracker — kanban board */}
           {tracked.length > 0 && (
             <section className="mt-14">
-              <div className="flex flex-wrap items-end justify-between gap-4 border-b border-neutral-200 pb-4 dark:border-neutral-800">
+              <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4 ">
                 <div>
                   <h2 className="text-xl font-semibold tracking-tight">
                     Application tracker
                   </h2>
-                  <p className="mt-1 text-sm text-neutral-500">
+                  <p className="mt-1 text-sm text-muted">
                     Drag a card to its new stage as you hear back — or use the
                     stage menu on the card.
                   </p>
@@ -229,12 +229,12 @@ function InterviewPrepDialog({ prep, onClose, onRegenerate }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="mx-auto max-w-2xl rounded-2xl bg-white p-6 dark:bg-neutral-950 sm:p-8"
+        className="mx-auto max-w-2xl rounded-2xl bg-surface p-6 sm:p-8"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Interview prep</h2>
-            <p className="mt-0.5 text-sm text-neutral-500">
+            <p className="mt-0.5 text-sm text-muted">
               {prep.job.title} · {prep.job.company}
             </p>
           </div>
@@ -242,14 +242,14 @@ function InterviewPrepDialog({ prep, onClose, onRegenerate }) {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-900 dark:hover:text-white"
+            className="rounded-xl p-2 text-muted transition hover:bg-line hover:text-ink -ink"
           >
             <X size={16} strokeWidth={1.5} aria-hidden="true" />
           </button>
         </div>
 
         {prep.loading ? (
-          <p className="mt-8 pb-4 text-sm text-neutral-500">
+          <p className="mt-8 pb-4 text-sm text-muted">
             Studying the job description and your resume — usually ~20 seconds…
           </p>
         ) : (
@@ -258,18 +258,18 @@ function InterviewPrepDialog({ prep, onClose, onRegenerate }) {
               {(prep.data?.questions ?? []).map((q, i) => (
                 <li
                   key={i}
-                  className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+                  className="rounded-xl border border-line p-4 "
                 >
                   <p className="font-medium leading-snug">
-                    <span className="mr-2 font-mono text-xs text-neutral-400">
+                    <span className="mr-2 font-mono text-xs text-muted">
                       Q{i + 1}
                     </span>
                     {q.question}
                   </p>
-                  <p className="mt-2.5 whitespace-pre-wrap text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+                  <p className="mt-2.5 whitespace-pre-wrap text-sm leading-relaxed text-muted ">
                     {q.answer}
                   </p>
-                  <p className="mt-2.5 border-t border-dashed border-neutral-200 pt-2 text-xs text-neutral-500 dark:border-neutral-800">
+                  <p className="mt-2.5 border-t border-dashed border-line pt-2 text-xs text-muted ">
                     {q.tip}
                   </p>
                 </li>
@@ -285,14 +285,14 @@ function InterviewPrepDialog({ prep, onClose, onRegenerate }) {
                   navigator.clipboard.writeText(text);
                   toast.success("Prep copied — read it before the call");
                 }}
-                className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+                className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-medium transition hover:border-accent "
               >
                 <Copy size={14} strokeWidth={1.5} aria-hidden="true" /> Copy all
               </button>
               <button
                 type="button"
                 onClick={onRegenerate}
-                className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+                className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-medium transition hover:border-accent "
               >
                 <RefreshCw size={14} strokeWidth={1.5} aria-hidden="true" /> Regenerate
               </button>
@@ -314,13 +314,13 @@ function TrackerStats({ tracked }) {
     <div className="flex gap-5 font-mono text-sm">
       <span>
         <SlidingNumber value={active} className="text-xl font-semibold" />
-        <span className="block text-[10px] uppercase tracking-widest text-neutral-500">
+        <span className="block text-[10px] uppercase tracking-widest text-muted">
           in play
         </span>
       </span>
       <span>
         <SlidingNumber value={hired} className="text-xl font-semibold" />
-        <span className="block text-[10px] uppercase tracking-widest text-neutral-500">
+        <span className="block text-[10px] uppercase tracking-widest text-muted">
           hired
         </span>
       </span>
@@ -364,11 +364,11 @@ function KanbanBoard({ tracked, jobsById, onStage, onDelete, onPrep }) {
               onDrop={(e) => dropOn(id, e)}
               className={`w-60 shrink-0 rounded-2xl border p-3 transition ${
                 dragOver === id
-                  ? "border-black bg-neutral-50 dark:border-white dark:bg-neutral-900"
-                  : "border-neutral-200 dark:border-neutral-800"
+                  ? "border-accent bg-accent-wash"
+                  : "border-line"
               }`}
             >
-              <p className="flex items-center justify-between px-1 text-xs font-medium uppercase tracking-widest text-neutral-500">
+              <p className="flex items-center justify-between px-1 text-xs font-medium uppercase tracking-widest text-muted">
                 {label}
                 <span className="font-mono tabular-nums">{cards.length}</span>
               </p>
@@ -384,7 +384,7 @@ function KanbanBoard({ tracked, jobsById, onStage, onDelete, onPrep }) {
                   />
                 ))}
                 {cards.length === 0 && (
-                  <p className="rounded-xl border border-dashed border-neutral-200 px-3 py-4 text-center text-xs text-neutral-400 dark:border-neutral-800">
+                  <p className="rounded-xl border border-dashed border-line px-3 py-4 text-center text-xs text-muted ">
                     Drop here
                   </p>
                 )}
@@ -435,10 +435,10 @@ function KanbanCard({ app, job, onStage, onDelete, onPrep }) {
         e.dataTransfer.setData("text/plain", app.id);
         e.dataTransfer.effectAllowed = "move";
       }}
-      className={`cursor-grab rounded-xl border bg-white p-3 active:cursor-grabbing dark:bg-neutral-950 ${
+      className={`cursor-grab rounded-xl border bg-surface p-3 active:cursor-grabbing ${
         isHired
-          ? "border-black dark:border-white"
-          : "border-neutral-200 dark:border-neutral-800"
+          ? "border-accent"
+          : "border-line"
       } ${isRejected ? "opacity-60" : ""}`}
     >
       <p
@@ -447,8 +447,8 @@ function KanbanCard({ app, job, onStage, onDelete, onPrep }) {
       >
         {job ? job.title : app.jobId}
       </p>
-      {job && <p className="truncate text-xs text-neutral-500">{job.company}</p>}
-      <p className="mt-1 font-mono text-[11px] text-neutral-500">
+      {job && <p className="truncate text-xs text-muted">{job.company}</p>}
+      <p className="mt-1 font-mono text-[11px] text-muted">
         applied {new Date(app.createdAt).toLocaleDateString()}
       </p>
 
@@ -457,7 +457,7 @@ function KanbanCard({ app, job, onStage, onDelete, onPrep }) {
           type="button"
           onClick={draftFollowUp}
           disabled={nudging}
-          className="mt-2 w-full rounded-lg border border-dashed border-neutral-300 px-2 py-1.5 text-left text-[11px] text-neutral-500 transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+          className="mt-2 w-full rounded-xl border border-dashed border-line px-2 py-1.5 text-left text-[11px] text-muted transition hover:border-accent disabled:opacity-50 "
         >
           {nudging
             ? "Drafting follow-up…"
@@ -470,7 +470,7 @@ function KanbanCard({ app, job, onStage, onDelete, onPrep }) {
         <button
           type="button"
           onClick={onPrep}
-          className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-black px-2 py-1.5 text-[11px] font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+          className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-2 py-1.5 text-[11px] font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px "
         >
           <GraduationCap size={12} strokeWidth={1.5} aria-hidden="true" />
           Interview prep
@@ -483,7 +483,7 @@ function KanbanCard({ app, job, onStage, onDelete, onPrep }) {
           value={app.status}
           onChange={(e) => onStage(e.target.value)}
           aria-label="Move to stage"
-          className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-transparent px-2 py-1 text-xs text-neutral-600 outline-none focus:border-neutral-500 dark:border-neutral-800 dark:text-neutral-300 dark:bg-neutral-950"
+          className="min-w-0 flex-1 rounded-xl border border-line bg-transparent px-2 py-1 text-xs text-muted outline-none focus:border-accent "
         >
           {STAGES.map(({ id, label }) => (
             <option key={id} value={id}>
@@ -498,7 +498,7 @@ function KanbanCard({ app, job, onStage, onDelete, onPrep }) {
             rel="noreferrer"
             aria-label="Open job page"
             title="Open job page"
-            className="rounded-lg border border-neutral-200 p-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+            className="rounded-xl border border-line p-1.5 text-muted transition hover:border-accent hover:text-ink -ink"
           >
             <ExternalLink size={12} strokeWidth={1.5} aria-hidden="true" />
           </a>
@@ -508,7 +508,7 @@ function KanbanCard({ app, job, onStage, onDelete, onPrep }) {
           onClick={onDelete}
           aria-label="Delete application"
           title="Delete application"
-          className="rounded-lg border border-neutral-200 p-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+          className="rounded-xl border border-line p-1.5 text-muted transition hover:border-accent hover:text-ink -ink"
         >
           <Trash2 size={12} strokeWidth={1.5} aria-hidden="true" />
         </button>
@@ -547,21 +547,21 @@ function ApplicationRow({ app, job, onPatch }) {
 
   return (
     <MorphingDialog>
-      <MorphingDialogTrigger className="w-full rounded-2xl border border-neutral-200 bg-white p-5 transition hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-600">
+      <MorphingDialogTrigger className="w-full rounded-2xl border border-line bg-surface p-5 transition hover:border-accent">
         <span className="flex items-center justify-between gap-4">
           <span className="min-w-0">
             <span className="block truncate font-semibold">
               {job ? `${job.title} · ${job.company}` : app.jobId}
             </span>
-            <span className="mt-0.5 block truncate text-sm text-neutral-500">
+            <span className="mt-0.5 block truncate text-sm text-muted">
               {draft.split("\n").find(Boolean)}
             </span>
           </span>
           <span className="flex shrink-0 items-center gap-3">
-            <span className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600 dark:border-neutral-700 dark:text-neutral-400">
+            <span className="rounded-full border border-line px-3 py-1 text-xs font-medium text-muted ">
               Pending review
             </span>
-            <ChevronRight size={16} strokeWidth={1.5} className="text-neutral-400" aria-hidden="true" />
+            <ChevronRight size={16} strokeWidth={1.5} className="text-muted" aria-hidden="true" />
           </span>
         </span>
       </MorphingDialogTrigger>
@@ -573,7 +573,7 @@ function ApplicationRow({ app, job, onPatch }) {
               {job ? job.title : "Application"}
             </h2>
             {job && (
-              <p className="mt-0.5 text-sm text-neutral-500">
+              <p className="mt-0.5 text-sm text-muted">
                 {job.company} · {job.location}
               </p>
             )}
@@ -581,14 +581,14 @@ function ApplicationRow({ app, job, onPatch }) {
           <MorphingDialogClose />
         </div>
 
-        <label className="mt-5 block text-xs font-medium uppercase tracking-widest text-neutral-500">
+        <label className="mt-5 block text-xs font-medium uppercase tracking-widest text-muted">
           Cover letter
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={saveDraft}
             rows={12}
-            className="mt-2 w-full resize-y rounded-xl border border-neutral-200 bg-transparent p-4 font-sans text-sm normal-case tracking-normal leading-relaxed text-black outline-none focus:border-neutral-500 dark:border-neutral-800 dark:text-white"
+            className="mt-2 w-full resize-y rounded-xl border border-line bg-transparent p-4 font-sans text-sm normal-case tracking-normal leading-relaxed text-ink outline-none focus:border-accent"
           />
         </label>
 
@@ -596,7 +596,7 @@ function ApplicationRow({ app, job, onPatch }) {
           <button
             type="button"
             onClick={copyDraft}
-            className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+            className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-medium transition hover:border-accent "
           >
             <Copy size={14} strokeWidth={1.5} aria-hidden="true" /> Copy
           </button>
@@ -605,7 +605,7 @@ function ApplicationRow({ app, job, onPatch }) {
               href={job.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+              className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-medium transition hover:border-accent "
             >
               <ExternalLink size={14} strokeWidth={1.5} aria-hidden="true" /> Open job page
             </a>
@@ -613,7 +613,7 @@ function ApplicationRow({ app, job, onPatch }) {
           <button
             type="button"
             onClick={markSubmitted}
-            className="ml-auto inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+            className="ml-auto inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px "
           >
             <Check size={14} strokeWidth={1.5} aria-hidden="true" /> Mark as submitted
           </button>

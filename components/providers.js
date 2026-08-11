@@ -26,7 +26,7 @@ export function Providers({ children, authEnabled = false, providers = [], freeM
         toastOptions={{
           classNames: {
             toast:
-              "!rounded-xl !border !border-neutral-200 !bg-white !text-black dark:!border-neutral-800 dark:!bg-neutral-950 dark:!text-white",
+              "!rounded-xl !border !border-line !bg-surface !text-ink",
           },
         }}
       />

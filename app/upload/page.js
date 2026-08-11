@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { FileText, GraduationCap, Briefcase, FolderGit2, Wrench, RefreshCw } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { PageHeader } from "@/components/ui/page-header";
 import { AiLabel } from "@/components/ai-loading";
 import { BorderTrail } from "@/components/motion-primitives/border-trail";
 import { GlowEffect } from "@/components/motion-primitives/glow-effect";
@@ -60,11 +61,10 @@ export default function UploadPage() {
 
   return (
     <PageShell>
-      <h1 className="text-3xl font-bold tracking-tight">Upload your resume</h1>
-      <p className="mt-2 text-neutral-500">
-        PDF only. Claude extracts your skills, experience, education, and projects —
-        nothing is invented.
-      </p>
+      <PageHeader
+        title="Upload your resume"
+        description="PDF only. Claude extracts your skills, experience, education, and projects — nothing is invented."
+      />
 
       <div className="relative mt-8 rounded-2xl">
         {/* Accent glow is an animation state: only while dragging a file over */}
@@ -73,14 +73,14 @@ export default function UploadPage() {
           {...getRootProps({
             className: `relative flex cursor-pointer flex-col items-center gap-3 overflow-hidden rounded-2xl border border-dashed px-6 py-14 text-center transition ${
               isDragActive
-                ? "border-neutral-500 bg-neutral-50 dark:border-neutral-400 dark:bg-neutral-950"
-                : "border-neutral-300 hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+                ? "border-accent bg-accent-wash"
+                : "border-line hover:border-accent "
             }`,
           })}
         >
           <input {...getInputProps()} aria-label="Resume PDF" />
           {status === "uploading" && <BorderTrail size={72} duration={2.4} />}
-          <FileText size={28} strokeWidth={1.5} className="text-neutral-400" aria-hidden="true" />
+          <FileText size={28} strokeWidth={1.5} className="text-muted" aria-hidden="true" />
           {status === "uploading" ? (
             <AiLabel>Reading your resume…</AiLabel>
           ) : (
@@ -92,14 +92,14 @@ export default function UploadPage() {
                     ? "Drop a new PDF to re-analyze"
                     : "Drag a PDF here, or click to browse"}
               </p>
-              <p className="text-sm text-neutral-500">Max one file · PDF</p>
+              <p className="text-sm text-muted">Max one file · PDF</p>
             </>
           )}
         </div>
       </div>
 
       {status === "error" && (
-        <p className="mt-4 text-sm text-neutral-500">
+        <p className="mt-4 text-sm text-muted">
           Something went wrong — check the server logs and try again.
         </p>
       )}
@@ -113,10 +113,10 @@ function ProfileCards({ profile }) {
   return (
     <AnimatedGroup className="mt-10 flex flex-col" asChild="section">
       {/* Identity */}
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-neutral-200 pb-6 dark:border-neutral-800">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6 ">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">{profile.name}</h2>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-muted">
             {profile.email} · {profile.location}
           </p>
         </div>
@@ -124,7 +124,7 @@ function ProfileCards({ profile }) {
           <span className="font-mono text-3xl font-semibold">
             <SlidingNumber value={profile.skills?.length ?? 0} />
           </span>
-          <span className="block text-xs uppercase tracking-widest text-neutral-500">
+          <span className="block text-xs uppercase tracking-widest text-muted">
             skills found
           </span>
         </p>
@@ -143,7 +143,7 @@ function ProfileCards({ profile }) {
           {(profile.skills ?? []).map((skill) => (
             <li
               key={skill}
-              className="rounded-full border border-neutral-200 px-3 py-1 text-sm dark:border-neutral-800"
+              className="rounded-full border border-line px-3 py-1 text-sm "
             >
               {skill}
             </li>
@@ -157,24 +157,24 @@ function ProfileCards({ profile }) {
         title={
           <span className="flex items-center gap-2">
             <Briefcase size={16} strokeWidth={1.5} aria-hidden="true" /> Experience
-            <span className="font-mono text-xs text-neutral-500">
+            <span className="font-mono text-xs text-muted">
               {profile.years_of_experience} yr{profile.years_of_experience === 1 ? "" : "s"}
             </span>
           </span>
         }
       >
-        <ol className="ml-2 space-y-6 border-l border-neutral-200 pl-6 dark:border-neutral-800">
+        <ol className="ml-2 space-y-6 border-l border-line pl-6 ">
           {(profile.experience ?? []).map((exp, i) => (
             <li key={i} className="relative">
               <span
-                className="absolute -left-[27px] top-1.5 h-2 w-2 rounded-full bg-black dark:bg-white"
+                className="absolute -left-[27px] top-1.5 h-2 w-2 rounded-full bg-accent "
                 aria-hidden="true"
               />
               <p className="font-medium">
-                {exp.title} <span className="text-neutral-500">· {exp.company}</span>
+                {exp.title} <span className="text-muted">· {exp.company}</span>
               </p>
-              <p className="font-mono text-xs text-neutral-500">{exp.duration}</p>
-              <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-neutral-500">
+              <p className="font-mono text-xs text-muted">{exp.duration}</p>
+              <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted">
                 {(exp.highlights ?? []).map((h, j) => (
                   <li key={j}>{h}</li>
                 ))}
@@ -196,11 +196,11 @@ function ProfileCards({ profile }) {
           {(profile.projects ?? []).map((project) => (
             <div
               key={project.name}
-              className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+              className="rounded-xl border border-line p-4 "
             >
               <p className="font-medium">{project.name}</p>
-              <p className="mt-1 text-sm text-neutral-500">{project.description}</p>
-              <p className="mt-2 font-mono text-xs text-neutral-500">
+              <p className="mt-1 text-sm text-muted">{project.description}</p>
+              <p className="mt-2 font-mono text-xs text-muted">
                 {(project.technologies ?? []).join(" · ")}
               </p>
             </div>
@@ -222,7 +222,7 @@ function ProfileCards({ profile }) {
               <p className="font-medium">
                 {edu.degree} in {edu.field}
               </p>
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-muted">
                 {edu.institution} · <span className="font-mono">{edu.graduation_year}</span>
               </p>
             </li>
@@ -230,7 +230,7 @@ function ProfileCards({ profile }) {
         </ul>
       </Disclosure>
 
-      <p className="mt-6 flex items-center gap-2 text-xs text-neutral-500">
+      <p className="mt-6 flex items-center gap-2 text-xs text-muted">
         <RefreshCw size={12} strokeWidth={1.5} aria-hidden="true" />
         Wrong or outdated? Drop a newer PDF above to re-extract.
       </p>

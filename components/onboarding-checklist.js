@@ -56,12 +56,12 @@ export function OnboardingChecklist() {
   return (
     <section
       aria-label="Getting started checklist"
-      className="mt-8 rounded-2xl border border-neutral-200 p-5 dark:border-neutral-800"
+      className="mt-8 rounded-2xl border border-line bg-surface p-5 "
     >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="font-semibold tracking-tight">Get set up in two minutes</h2>
-          <p className="mt-0.5 text-sm text-neutral-500">
+          <p className="mt-0.5 text-sm text-muted">
             {done} of {STEPS.length} done — finish these and jobblast starts
             working for you.
           </p>
@@ -71,7 +71,7 @@ export function OnboardingChecklist() {
           onClick={dismiss}
           aria-label="Dismiss checklist"
           title="Dismiss"
-          className="rounded-lg p-1.5 text-neutral-400 transition hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-900 dark:hover:text-white"
+          className="rounded-xl p-1.5 text-muted transition hover:bg-line hover:text-ink -ink"
         >
           <X size={15} strokeWidth={1.5} aria-hidden="true" />
         </button>
@@ -88,18 +88,18 @@ export function OnboardingChecklist() {
                 href={step.href}
                 className={`flex h-full flex-col rounded-xl border p-3.5 transition ${
                   isDone
-                    ? "border-neutral-200 opacity-60 dark:border-neutral-800"
+                    ? "border-line opacity-60 "
                     : isNext
-                      ? "border-black dark:border-white"
-                      : "border-neutral-200 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                      ? "border-accent"
+                      : "border-line hover:border-accent"
                 }`}
               >
                 <span className="flex items-center gap-2 text-sm font-medium">
                   <span
                     className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${
                       isDone
-                        ? "bg-black text-white dark:bg-white dark:text-black"
-                        : "border border-neutral-300 text-neutral-500 dark:border-neutral-700"
+                        ? "bg-accent text-accent-ink"
+                        : "border border-line text-muted "
                     }`}
                   >
                     {isDone ? (
@@ -110,7 +110,7 @@ export function OnboardingChecklist() {
                   </span>
                   <span className={isDone ? "line-through" : ""}>{step.title}</span>
                 </span>
-                <span className="mt-1.5 text-xs leading-relaxed text-neutral-500">
+                <span className="mt-1.5 text-xs leading-relaxed text-muted">
                   {step.blurb}
                 </span>
               </Link>

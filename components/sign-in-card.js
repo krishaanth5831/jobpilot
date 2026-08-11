@@ -41,7 +41,7 @@ function ProviderIcon({ id }) {
 }
 
 const inputClass =
-  "w-full rounded-xl border border-neutral-300 bg-transparent px-3.5 py-2.5 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-700";
+  "w-full rounded-xl border border-line bg-transparent px-3.5 py-2.5 text-sm outline-none placeholder:text-muted focus:border-accent ";
 
 export function SignInCard({ providers = [], freeModel = false }) {
   const pathname = usePathname();
@@ -110,12 +110,12 @@ export function SignInCard({ providers = [], freeModel = false }) {
           <h1 className="mt-6 text-2xl font-bold tracking-tight">
             {isSignup ? "Create your account" : "Sign in to jobblast"}
           </h1>
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-2 text-sm text-muted">
             Your resume, matches, and applications live in your account — sign
             in from any device and they&apos;re right there.
           </p>
           {isSignup && freeModel && (
-            <p className="mt-3 rounded-xl border border-neutral-200 px-4 py-2.5 text-xs text-neutral-500 dark:border-neutral-800">
+            <p className="mt-3 rounded-xl border border-line px-4 py-2.5 text-xs text-muted ">
               New accounts include free built-in AI (Llama 3.3) — no API key
               needed. For noticeably better results, add your own Claude API
               key later in Settings.
@@ -172,14 +172,14 @@ export function SignInCard({ providers = [], freeModel = false }) {
           {!isSignup && (
             <Link
               href="/reset"
-              className="-mt-1 self-end text-xs text-neutral-500 underline underline-offset-2 hover:text-black dark:hover:text-white"
+              className="-mt-1 self-end text-xs text-muted underline underline-offset-2 hover:text-accent"
             >
               Forgot password?
             </Link>
           )}
 
           {error && (
-            <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+            <p className="text-sm font-medium text-accent" role="alert">
               {error}
             </p>
           )}
@@ -187,7 +187,7 @@ export function SignInCard({ providers = [], freeModel = false }) {
           <button
             type="submit"
             disabled={busy !== null}
-            className="mt-1 inline-flex items-center justify-center rounded-xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+            className="mt-1 inline-flex items-center justify-center rounded-xl bg-accent px-4 py-3 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px disabled:opacity-50 "
           >
             {busy === "form"
               ? isSignup
@@ -199,7 +199,7 @@ export function SignInCard({ providers = [], freeModel = false }) {
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-neutral-500">
+        <p className="mt-4 text-center text-sm text-muted">
           {isSignup ? "Already have an account?" : "New to jobblast?"}{" "}
           <button
             type="button"
@@ -207,7 +207,7 @@ export function SignInCard({ providers = [], freeModel = false }) {
               setMode(isSignup ? "signin" : "signup");
               setError(null);
             }}
-            className="font-medium text-black underline underline-offset-2 dark:text-white"
+            className="font-medium text-accent underline underline-offset-2"
           >
             {isSignup ? "Sign in" : "Create an account"}
           </button>
@@ -215,10 +215,10 @@ export function SignInCard({ providers = [], freeModel = false }) {
 
         {providers.length > 0 && (
           <>
-            <div className="my-6 flex items-center gap-3 text-xs text-neutral-400">
-              <span className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
+            <div className="my-6 flex items-center gap-3 text-xs text-muted">
+              <span className="h-px flex-1 bg-line " />
               or
-              <span className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
+              <span className="h-px flex-1 bg-line " />
             </div>
             <div className="flex flex-col gap-3">
               {providers.map(({ id, label }) => (
@@ -230,7 +230,7 @@ export function SignInCard({ providers = [], freeModel = false }) {
                     signIn(id, { callbackUrl });
                   }}
                   disabled={busy !== null}
-                  className="inline-flex items-center justify-center gap-3 rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-900"
+                  className="inline-flex items-center justify-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-sm font-medium text-ink transition hover:bg-line disabled:opacity-50 "
                 >
                   <ProviderIcon id={id} />
                   {busy === id ? "Redirecting…" : `Continue with ${label}`}

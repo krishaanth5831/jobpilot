@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Logo } from "@/components/logo";
 
 const inputClass =
-  "w-full rounded-xl border border-neutral-300 bg-transparent px-3.5 py-2.5 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-700";
+  "w-full rounded-xl border border-line bg-transparent px-3.5 py-2.5 text-sm outline-none placeholder:text-muted focus:border-accent ";
 
 export function ResetClient() {
   const token = useSearchParams().get("token");
@@ -54,7 +54,7 @@ function RequestForm() {
     return (
       <>
         <h1 className="mt-6 text-2xl font-bold tracking-tight">Check your email</h1>
-        <p className="mt-2 text-sm text-neutral-500">
+        <p className="mt-2 text-sm text-muted">
           If an account exists for <span className="font-medium">{email}</span>,
           a reset link is on its way. The link works for one hour — check spam
           if it doesn&apos;t arrive.
@@ -72,7 +72,7 @@ function RequestForm() {
   return (
     <>
       <h1 className="mt-6 text-2xl font-bold tracking-tight">Reset your password</h1>
-      <p className="mt-2 text-sm text-neutral-500">
+      <p className="mt-2 text-sm text-muted">
         Enter your account&apos;s email and we&apos;ll send you a link to set a
         new password.
       </p>
@@ -88,21 +88,21 @@ function RequestForm() {
           aria-label="Email"
         />
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="text-sm font-medium text-accent" role="alert">
             {error}
           </p>
         )}
         <button
           type="submit"
           disabled={busy}
-          className="mt-1 inline-flex items-center justify-center rounded-xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+          className="mt-1 inline-flex items-center justify-center rounded-xl bg-accent px-4 py-3 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px disabled:opacity-50 "
         >
           {busy ? "Sending…" : "Email me a reset link"}
         </button>
       </form>
       <Link
         href="/signin"
-        className="mt-4 text-sm text-neutral-500 underline underline-offset-2"
+        className="mt-4 text-sm text-muted underline underline-offset-2"
       >
         Back to sign in
       </Link>
@@ -141,12 +141,12 @@ function NewPasswordForm({ token }) {
     return (
       <>
         <h1 className="mt-6 text-2xl font-bold tracking-tight">Password updated</h1>
-        <p className="mt-2 text-sm text-neutral-500">
+        <p className="mt-2 text-sm text-muted">
           Your new password is set — sign in with it now.
         </p>
         <Link
           href="/signin"
-          className="mt-6 inline-flex items-center justify-center rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+          className="mt-6 inline-flex items-center justify-center rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px "
         >
           Sign in
         </Link>
@@ -157,7 +157,7 @@ function NewPasswordForm({ token }) {
   return (
     <>
       <h1 className="mt-6 text-2xl font-bold tracking-tight">Set a new password</h1>
-      <p className="mt-2 text-sm text-neutral-500">
+      <p className="mt-2 text-sm text-muted">
         Choose a new password for your account (8+ characters).
       </p>
       <form onSubmit={onSubmit} className="mt-8 flex w-full flex-col gap-3">
@@ -173,14 +173,14 @@ function NewPasswordForm({ token }) {
           aria-label="New password"
         />
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="text-sm font-medium text-accent" role="alert">
             {error}
           </p>
         )}
         <button
           type="submit"
           disabled={busy}
-          className="mt-1 inline-flex items-center justify-center rounded-xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+          className="mt-1 inline-flex items-center justify-center rounded-xl bg-accent px-4 py-3 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px disabled:opacity-50 "
         >
           {busy ? "Saving…" : "Set new password"}
         </button>

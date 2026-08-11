@@ -120,7 +120,7 @@ function Dialog({ variant, achievements, onClose }) {
               {euros(pro.annual)}
             </span>
             <span className="text-sm text-muted">/ month</span>
-            <span className="ml-auto rounded-lg bg-accent-wash px-2 py-0.5 text-xs font-medium text-accent">
+            <span className="ml-auto rounded-xl bg-accent-wash px-2 py-0.5 text-xs font-medium text-accent">
               −{savingsPercent(TIERS.PRO)}%
             </span>
           </p>

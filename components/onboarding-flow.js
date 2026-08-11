@@ -89,7 +89,7 @@ function ChoiceQuestion({ question, value, onPick }) {
           >
             <span
               aria-hidden="true"
-              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg font-mono text-xs ${
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-xl font-mono text-xs ${
                 active ? "bg-accent text-accent-ink" : "bg-paper text-muted"
               }`}
             >

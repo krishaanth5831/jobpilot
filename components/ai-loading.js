@@ -20,7 +20,7 @@ export function AiLabel({ children, className }) {
 export function AiCard({ busy = false, children, className }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800 ${className ?? ""}`}
+      className={`relative overflow-hidden rounded-xl border border-line ${className ?? ""}`}
     >
       {children}
       {busy && <BorderTrail size={72} duration={2.6} />}

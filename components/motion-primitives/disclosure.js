@@ -10,7 +10,7 @@ export function Disclosure({ title, children, defaultOpen = false, className }) 
   const contentId = useId();
 
   return (
-    <div className={`border-b border-neutral-200 dark:border-neutral-800 ${className ?? ""}`}>
+    <div className={`border-b border-line ${className ?? ""}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -22,7 +22,7 @@ export function Disclosure({ title, children, defaultOpen = false, className }) 
         <motion.span
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2 }}
-          className="shrink-0 text-neutral-500"
+          className="shrink-0 text-muted"
         >
           <ChevronDown size={16} strokeWidth={1.5} aria-hidden="true" />
         </motion.span>

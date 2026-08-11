@@ -22,8 +22,10 @@ const GRID = [
   "....3....",
 ];
 
-// Flame gradient, hottest at the nozzle: amber → orange → red tip.
-const FLAME = { 1: "#fbbf24", 2: "#f97316", 3: "#ef4444" };
+// Flame gradient, hottest at the nozzle: pale sand → terracotta → deep tip.
+// Drawn from the accent ramp rather than raw hexes, so the mark shifts with
+// the theme instead of staying lit for a light background.
+const FLAME = { 1: "var(--accent-to)", 2: "var(--accent)", 3: "var(--accent-hover)" };
 
 const ROCKET_PIXELS = [];
 GRID.forEach((row, y) => {

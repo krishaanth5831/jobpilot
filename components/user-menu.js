@@ -27,7 +27,7 @@ export function UserMenu() {
         disabled={busy}
         aria-label="Sign in"
         title="Sign in"
-        className="flex h-full w-full items-center justify-center rounded-xl border border-transparent transition hover:bg-neutral-100 disabled:opacity-50 dark:hover:bg-neutral-900"
+        className="flex h-full w-full items-center justify-center rounded-xl border border-transparent transition hover:bg-line disabled:opacity-50 "
       >
         <LogIn size={18} strokeWidth={1.5} aria-hidden="true" />
       </button>
@@ -45,7 +45,7 @@ export function UserMenu() {
       disabled={busy}
       aria-label={`Signed in as ${session.user.email} — sign out`}
       title={`${session.user.email} — click to sign out`}
-      className="group relative flex h-full w-full items-center justify-center rounded-xl border border-transparent transition hover:bg-neutral-100 disabled:opacity-50 dark:hover:bg-neutral-900"
+      className="group relative flex h-full w-full items-center justify-center rounded-xl border border-transparent transition hover:bg-line disabled:opacity-50 "
     >
       {session.user.image ? (
         // eslint-disable-next-line @next/next/no-img-element -- external avatar host varies by provider
@@ -57,7 +57,7 @@ export function UserMenu() {
           className="rounded-full group-hover:hidden"
         />
       ) : (
-        <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-black font-mono text-[11px] text-white group-hover:hidden dark:bg-white dark:text-black">
+        <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-accent font-mono text-[11px] text-accent-ink group-hover:hidden ">
           {initial}
         </span>
       )}

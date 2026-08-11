@@ -106,7 +106,7 @@ export function TemplatePreview({ template: t, markdown, scale = 1, wrap = false
     return (
       <div
         aria-hidden="true"
-        className="aspect-[17/22] w-full overflow-hidden rounded-lg bg-white text-neutral-900"
+        className="aspect-[17/22] w-full overflow-hidden rounded-xl bg-white text-neutral-900"
         style={{ fontFamily: FONT_STACKS[t.font], padding: pad }}
       >
         {header.map((b, i) =>
@@ -122,7 +122,7 @@ export function TemplatePreview({ template: t, markdown, scale = 1, wrap = false
         )}
         <div className="flex" style={{ marginTop: gap, gap: px(8) }}>
           <div
-            className="w-[34%] shrink-0 rounded-sm"
+            className="w-[34%] shrink-0 rounded-xl"
             style={{ backgroundColor: t.sidebarTint ?? "#f3f4f6", padding: `${px(4)}px ${px(6)}px` }}
           >
             {column(sidebar)}
@@ -138,7 +138,7 @@ export function TemplatePreview({ template: t, markdown, scale = 1, wrap = false
   return (
     <div
       aria-hidden="true"
-      className="aspect-[17/22] w-full overflow-hidden rounded-lg bg-white text-neutral-900"
+      className="aspect-[17/22] w-full overflow-hidden rounded-xl bg-white text-neutral-900"
       style={{ fontFamily: FONT_STACKS[t.font], padding: pad }}
     >
       {blocks.map((block, i) => {

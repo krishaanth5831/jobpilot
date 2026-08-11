@@ -5,6 +5,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Search, MapPin, ExternalLink, Sparkles, ClipboardPaste, Download, Building2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card } from "@/components/ui/card";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { AiLabel } from "@/components/ai-loading";
 import { EmptyState } from "@/components/empty-state";
@@ -317,22 +319,21 @@ export default function JobsPage() {
 
   return (
     <PageShell>
-      <h1 className="text-3xl font-bold tracking-tight">Find jobs</h1>
-      <p className="mt-2 text-neutral-500">
-        Live postings pulled from job boards worldwide — filter by country,
-        type, and level; every result is screened against your resume.
-      </p>
+      <PageHeader
+        title="Find jobs"
+        description="Live postings pulled from job boards worldwide — filter by country, type, and level; every result is screened against your resume."
+      />
 
       <OnboardingChecklist />
 
       {/* Expandable search toolbar */}
       <form
         onSubmit={search}
-        className="mt-8 rounded-2xl border border-neutral-200 p-3 dark:border-neutral-800"
+        className="mt-8 rounded-2xl border border-line bg-surface p-3 "
       >
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex min-w-48 flex-1 items-center gap-2">
-            <Search size={16} strokeWidth={1.5} className="shrink-0 text-neutral-500" aria-hidden="true" />
+            <Search size={16} strokeWidth={1.5} className="shrink-0 text-muted" aria-hidden="true" />
             <input
               value={role}
               onChange={(e) => setRole(e.target.value)}
@@ -340,13 +341,13 @@ export default function JobsPage() {
               placeholder="Role, e.g. frontend intern"
               required
               aria-label="Role"
-              className="w-full bg-transparent py-2 outline-none placeholder:text-neutral-400"
+              className="w-full bg-transparent py-2 outline-none placeholder:text-muted"
             />
           </div>
           <button
             type="submit"
             disabled={searching || matching}
-            className="rounded-xl bg-black px-5 py-2.5 font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+            className="rounded-xl bg-accent px-5 py-2.5 font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px disabled:opacity-50 "
           >
             {searching ? "Searching…" : "Search"}
           </button>
@@ -358,14 +359,14 @@ export default function JobsPage() {
           }`}
         >
           <div className="overflow-hidden">
-            <div className="mt-2 flex items-center gap-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
-              <MapPin size={16} strokeWidth={1.5} className="shrink-0 text-neutral-500" aria-hidden="true" />
+            <div className="mt-2 flex items-center gap-2 border-t border-line pt-3 ">
+              <MapPin size={16} strokeWidth={1.5} className="shrink-0 text-muted" aria-hidden="true" />
               <input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Location (optional) — leave blank to search worldwide, then filter by country below"
                 aria-label="Location"
-                className="w-full bg-transparent py-1 text-sm outline-none placeholder:text-neutral-400"
+                className="w-full bg-transparent py-1 text-sm outline-none placeholder:text-muted"
               />
             </div>
           </div>
@@ -373,9 +374,9 @@ export default function JobsPage() {
       </form>
 
       {searchedAs && !searching && (
-        <p className="mt-2 text-sm text-neutral-500">
+        <p className="mt-2 text-sm text-muted">
           Searched job boards for{" "}
-          <span className="font-medium text-black dark:text-white">{searchedAs}</span> — the
+          <span className="font-medium text-ink">{searchedAs}</span> — the
           common title recruiters post.
         </p>
       )}
@@ -387,7 +388,7 @@ export default function JobsPage() {
             type="button"
             onClick={recommend}
             disabled={recommending || searching || matching}
-            className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+            className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-medium transition hover:border-accent disabled:opacity-50 "
           >
             <Sparkles size={14} strokeWidth={1.5} aria-hidden="true" />
             {recs ? "Refresh recommendations" : "Recommend for me"}
@@ -396,7 +397,7 @@ export default function JobsPage() {
             type="button"
             onClick={() => setShowPaste((v) => !v)}
             aria-expanded={showPaste}
-            className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500"
+            className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-medium transition hover:border-accent "
           >
             <ClipboardPaste size={14} strokeWidth={1.5} aria-hidden="true" />
             Paste a job
@@ -405,7 +406,7 @@ export default function JobsPage() {
             <AiLabel>Reading your resume for companies that hire in your field…</AiLabel>
           ) : (
             !recs && (
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-muted">
                 Companies worldwide that hire in your field — straight from your
                 resume. Click any to see their openings.
               </p>
@@ -417,7 +418,7 @@ export default function JobsPage() {
         {showPaste && (
           <form
             onSubmit={pasteJob}
-            className="mt-3 rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800"
+            className="mt-3 rounded-2xl border border-line bg-surface p-4 "
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <input
@@ -425,13 +426,13 @@ export default function JobsPage() {
                 required
                 placeholder="Job title *"
                 aria-label="Job title"
-                className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+                className="rounded-xl border border-line bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent "
               />
               <input
                 name="company"
                 placeholder="Company"
                 aria-label="Company"
-                className="rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+                className="rounded-xl border border-line bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent "
               />
             </div>
             <input
@@ -439,7 +440,7 @@ export default function JobsPage() {
               type="url"
               placeholder="Link to the posting (where you'd apply)"
               aria-label="Job URL"
-              className="mt-3 w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+              className="mt-3 w-full rounded-xl border border-line bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent "
             />
             <textarea
               name="description"
@@ -447,20 +448,20 @@ export default function JobsPage() {
               rows={6}
               placeholder="Paste the full job description *"
               aria-label="Job description"
-              className="mt-3 w-full resize-y rounded-xl border border-neutral-200 bg-transparent p-3 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+              className="mt-3 w-full resize-y rounded-xl border border-line bg-transparent p-3 text-sm outline-none placeholder:text-muted focus:border-accent "
             />
             <div className="mt-3 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setShowPaste(false)}
-                className="text-sm text-neutral-500 transition hover:text-black dark:hover:text-white"
+                className="text-sm text-muted transition hover:text-accent"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={pasting || matching}
-                className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+                className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px disabled:opacity-50 "
               >
                 {pasting ? "Adding…" : "Add & screen"}
               </button>
@@ -470,7 +471,7 @@ export default function JobsPage() {
 
         {recs?.companies?.length > 0 && !recommending && (
           <div className="mt-4">
-            <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
+            <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted">
               Companies to target{recs.field ? ` · ${recs.field}` : ""} ({recs.companies.length}) — click to see their openings
             </p>
             <ul className="flex flex-wrap gap-2">
@@ -484,7 +485,7 @@ export default function JobsPage() {
                     }}
                     disabled={searching || matching}
                     title={c.reason}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-3 py-1.5 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-medium transition hover:border-accent disabled:opacity-50 "
                   >
                     <Building2 size={13} strokeWidth={1.5} aria-hidden="true" />
                     {c.name}
@@ -496,7 +497,7 @@ export default function JobsPage() {
                   <button
                     type="button"
                     onClick={() => setShowAllCompanies((v) => !v)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-black px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px "
                   >
                     {showAllCompanies
                       ? "Show fewer"
@@ -515,14 +516,14 @@ export default function JobsPage() {
           <AnimatedBackground
             defaultValue={filter}
             onValueChange={(id) => id && setFilter(id)}
-            className="rounded-full bg-neutral-100 dark:bg-neutral-900"
+            className="rounded-full bg-surface"
           >
             {FILTERS.map(({ id, label }) => (
               <button
                 key={id}
                 data-id={id}
                 type="button"
-                className="rounded-full px-4 py-1.5 text-sm font-medium text-neutral-500 transition data-[checked=true]:text-black dark:data-[checked=true]:text-white"
+                className="rounded-full px-4 py-1.5 text-sm font-medium text-muted transition data-[checked=true]:text-accent"
               >
                 {label}
               </button>
@@ -534,7 +535,7 @@ export default function JobsPage() {
               value={countryFilter}
               onChange={(e) => setCountryFilter(e.target.value)}
               aria-label="Filter by country"
-              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+              className="rounded-full border border-line bg-transparent px-3 py-1.5 text-sm font-medium text-muted outline-none transition hover:border-accent"
             >
               <option value="all">All countries ({jobs.length})</option>
               {countries.map((c) => (
@@ -550,7 +551,7 @@ export default function JobsPage() {
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               aria-label="Filter by job type"
-              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+              className="rounded-full border border-line bg-transparent px-3 py-1.5 text-sm font-medium text-muted outline-none transition hover:border-accent"
             >
               <option value="all">Any type</option>
               {EMPLOYMENT_ORDER.filter((t) => typeCounts.has(t)).map((t) => (
@@ -566,7 +567,7 @@ export default function JobsPage() {
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value)}
               aria-label="Filter by experience level"
-              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+              className="rounded-full border border-line bg-transparent px-3 py-1.5 text-sm font-medium text-muted outline-none transition hover:border-accent"
             >
               <option value="all">Any level</option>
               {LEVEL_ORDER.filter((l) => levelCounts.has(l)).map((l) => (
@@ -582,7 +583,7 @@ export default function JobsPage() {
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
               aria-label="Job source"
-              className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+              className="rounded-full border border-line bg-transparent px-3 py-1.5 text-sm font-medium text-muted outline-none transition hover:border-accent"
             >
               <option value="all">All sources</option>
               {sources.map((s) => (
@@ -599,8 +600,8 @@ export default function JobsPage() {
             aria-pressed={remoteOnly}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
               remoteOnly
-                ? "bg-black text-white dark:bg-white dark:text-black"
-                : "border border-neutral-200 text-neutral-500 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                ? "bg-accent text-accent-ink"
+                : "border border-line text-muted hover:border-accent"
             }`}
           >
             Remote only
@@ -610,7 +611,7 @@ export default function JobsPage() {
             value={sort}
             onChange={(e) => setSort(e.target.value)}
             aria-label="Sort results"
-            className="rounded-full border border-neutral-200 bg-transparent px-3 py-1.5 text-sm font-medium text-neutral-500 outline-none transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+            className="rounded-full border border-line bg-transparent px-3 py-1.5 text-sm font-medium text-muted outline-none transition hover:border-accent"
           >
             <option value="score">Best match</option>
             <option value="newest">Newest</option>
@@ -623,7 +624,7 @@ export default function JobsPage() {
               <button
                 type="button"
                 onClick={screenMore}
-                className="ml-auto rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+                className="ml-auto rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px "
               >
                 Screen {Math.min(unscreenedVisible.length, SCREEN_BATCH)} more
               </button>
@@ -635,15 +636,14 @@ export default function JobsPage() {
       {/* Results */}
       {searching ? (
         <ul className="mt-6 flex flex-col gap-4" aria-busy="true">
+          {/* Same surface as JobCard, so results settle in place instead of
+              popping when the search resolves. */}
           {[0, 1, 2].map((i) => (
-            <li
-              key={i}
-              className="rounded-2xl border border-neutral-200 p-6 dark:border-neutral-800"
-            >
+            <Card as="li" key={i} className="p-6">
               <TextShimmer className="text-lg font-semibold">Searching job boards…</TextShimmer>
-              <div className="mt-3 h-3 w-2/3 rounded bg-neutral-100 dark:bg-neutral-900" />
-              <div className="mt-2 h-3 w-1/3 rounded bg-neutral-100 dark:bg-neutral-900" />
-            </li>
+              <div className="mt-3 h-3 w-2/3 rounded-xl bg-line" />
+              <div className="mt-2 h-3 w-1/3 rounded-xl bg-line" />
+            </Card>
           ))}
         </ul>
       ) : visible.length === 0 ? (

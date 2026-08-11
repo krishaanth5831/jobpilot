@@ -44,10 +44,10 @@ export function CheckClient() {
     <PageShell>
       <div className="flex flex-col items-center text-center">
         <Logo size={40} />
-        <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="mt-6 font-display text-3xl font-semibold sm:text-4xl">
           Is your resume ATS-proof?
         </h1>
-        <p className="mt-3 max-w-xl text-neutral-500">
+        <p className="mt-3 max-w-xl text-muted">
           Most resumes are rejected by software before a human ever reads them.
           Paste yours below for an instant score — free, no account needed.
         </p>
@@ -60,16 +60,16 @@ export function CheckClient() {
           rows={12}
           placeholder="Paste your full resume text here…"
           aria-label="Resume text"
-          className="w-full resize-y rounded-2xl border border-neutral-200 bg-transparent p-5 text-sm leading-relaxed outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+          className="w-full resize-y rounded-2xl border border-line bg-transparent p-5 text-sm leading-relaxed outline-none placeholder:text-muted focus:border-accent "
         />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-muted">
             Your text is scored and discarded — never stored.
           </p>
           <button
             type="submit"
             disabled={checking || text.trim().length < 200}
-            className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+            className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px disabled:opacity-50 "
           >
             <ScanSearch size={15} strokeWidth={1.5} aria-hidden="true" />
             {checking ? "Checking…" : "Check my resume"}
@@ -79,12 +79,12 @@ export function CheckClient() {
 
       {result && (
         <section className="mt-10" aria-label="Your ATS check results">
-          <div className="flex flex-col items-center rounded-2xl border border-neutral-200 p-8 text-center dark:border-neutral-800">
-            <p className="text-xs font-medium uppercase tracking-widest text-neutral-500">
+          <div className="flex flex-col items-center rounded-2xl border border-line bg-surface p-8 text-center ">
+            <p className="text-xs font-medium uppercase tracking-widest text-muted">
               ATS score
             </p>
             <p className="mt-1 text-6xl font-bold tabular-nums">{result.score}</p>
-            <p className="mt-3 max-w-lg text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+            <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted">
               {result.summary}
             </p>
           </div>
@@ -93,9 +93,9 @@ export function CheckClient() {
             {result.topIssues.map((issue, i) => (
               <li
                 key={i}
-                className="flex items-start gap-3 rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-800"
+                className="flex items-start gap-3 rounded-xl border border-line px-4 py-3 "
               >
-                <span className="mt-0.5 shrink-0 rounded-full border border-neutral-300 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-neutral-500 dark:border-neutral-700">
+                <span className="mt-0.5 shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted ">
                   {SEVERITY_LABELS[issue.severity] ?? issue.severity}
                 </span>
                 <span className="text-sm leading-relaxed">{issue.problem}</span>
@@ -103,21 +103,21 @@ export function CheckClient() {
             ))}
           </ul>
 
-          <div className="mt-4 rounded-2xl border border-dashed border-neutral-300 p-6 text-center dark:border-neutral-700">
+          <div className="mt-4 rounded-2xl border border-dashed border-line p-6 text-center ">
             <p className="flex items-center justify-center gap-2 font-medium">
               <Lock size={14} strokeWidth={1.5} aria-hidden="true" />
               {hiddenIssues > 0
                 ? `${hiddenIssues} more issue${hiddenIssues === 1 ? "" : "s"} found`
                 : "Get the concrete fix for every issue"}
             </p>
-            <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted">
               A free account unlocks the full review with a concrete fix for
               each issue, an AI resume rebuild, and job matching against your
               real experience — free built-in AI included, no card needed.
             </p>
             <Link
               href="/signin"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px "
             >
               See the full review free
               <ArrowRight size={15} strokeWidth={1.5} aria-hidden="true" />

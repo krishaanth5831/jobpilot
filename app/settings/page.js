@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Check, Copy, ExternalLink, KeyRound, Plus, Trash2, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { PageHeader } from "@/components/ui/page-header";
 import { UsageMeters } from "@/components/usage-meters";
 
 // The settings sections, in render order. Per-user keys ("user" scope) save
@@ -117,27 +118,31 @@ function SignupsChart({ signups }) {
           <div
             key={d.key}
             title={`${d.label}: ${d.count} signup${d.count === 1 ? "" : "s"}`}
-            className={`flex-1 rounded-t-sm ${
+            // Three states, one hue: today at full accent, any other day with
+            // signups at a wash of it, empty days as a bare hairline. Square
+            // tops — the radius rule governs containers and controls, and a
+            // rounded 8px bar reads as a pill rather than a measurement.
+            className={`flex-1 ${
               d.key === todayKey
-                ? "bg-black dark:bg-white"
+                ? "bg-accent"
                 : d.count > 0
-                  ? "bg-neutral-400 dark:bg-neutral-500"
-                  : "bg-neutral-200 dark:bg-neutral-800"
+                  ? "bg-accent/45"
+                  : "bg-line"
             }`}
             style={{ height: `${Math.max(6, (d.count / max) * 100)}%` }}
           />
         ))}
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
         <span className="tabular-nums">{last30} in the last 30 days</span>
         <span aria-hidden="true">·</span>
-        <span className="font-medium tabular-nums text-black dark:text-white">
+        <span className="font-medium tabular-nums text-ink">
           {todays.length} today
         </span>
         {[...todayByCode.entries()].map(([code, n]) => (
           <span
             key={code}
-            className="rounded-full bg-neutral-100 px-2 py-0.5 font-mono text-[11px] font-medium text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300"
+            className="rounded-full bg-line px-2 py-0.5 font-mono text-[11px] font-medium text-muted "
           >
             {n} via {code}
           </span>
@@ -303,12 +308,10 @@ export default function SettingsPage() {
 
   return (
     <PageShell>
-      <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-      <p className="mt-2 text-neutral-500">
-        Job search already works — there&apos;s nothing you need to sign up for.
-        The one optional extra is your own Claude key, saved to your account on
-        this server (never shared with other users) and applied immediately.
-      </p>
+      <PageHeader
+        title="Settings"
+        description="Job search already works — there's nothing you need to sign up for. The one optional extra is your own Claude key, saved to your account on this server (never shared with other users) and applied immediately."
+      />
 
       <UsageMeters />
 
@@ -317,23 +320,23 @@ export default function SettingsPage() {
         const statusMap = statusFor(group);
         return (
         <section key={title} className="mt-10">
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-3 dark:border-neutral-800">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3 ">
             <div>
               <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-              <p className="mt-0.5 text-sm text-neutral-500">{description}</p>
+              <p className="mt-0.5 text-sm text-muted">{description}</p>
             </div>
             <a
               href={href}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 font-mono text-xs text-neutral-500 hover:underline"
+              className="inline-flex items-center gap-1.5 font-mono text-xs text-muted hover:underline"
             >
               {linkLabel} <ExternalLink size={11} strokeWidth={1.5} aria-hidden="true" />
             </a>
           </div>
 
           {group.freeModelBanner && info?.freeModel?.active && (
-            <p className="mt-4 rounded-xl border border-neutral-200 px-4 py-3 text-sm text-neutral-500 dark:border-neutral-800">
+            <p className="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-muted ">
               You&apos;re currently on the <strong>free built-in model</strong>{" "}
               (Llama 3.3 70B) — it works out of the box, but it&apos;s shared by
               every account on this server and Claude is noticeably better at
@@ -342,7 +345,7 @@ export default function SettingsPage() {
             </p>
           )}
           {group.scope === "auth" && info?.envWritable === false && (
-            <p className="mt-4 rounded-xl border border-neutral-200 px-4 py-3 text-sm text-neutral-500 dark:border-neutral-800">
+            <p className="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-muted ">
               On this host, sign-in settings are environment variables: set
               them in the Vercel dashboard (Project → Settings → Environment
               Variables), then redeploy. The status badges below still show
@@ -356,16 +359,16 @@ export default function SettingsPage() {
               const readOnly = group.scope === "auth" && info?.envWritable === false;
               return (
                 <label key={key} className="block">
-                  <span className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
+                  <span className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted">
                     {label}
                     {required && <span className="normal-case tracking-normal">(required)</span>}
                     {fieldInfo?.set && !cleared ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-black px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-white dark:bg-white dark:text-black">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-accent-ink ">
                         <Check size={10} strokeWidth={2.5} aria-hidden="true" />
                         configured {fieldInfo.hint}
                       </span>
                     ) : (
-                      <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-neutral-500 dark:border-neutral-700">
+                      <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-muted ">
                         {cleared ? "will be cleared on save" : "not set"}
                       </span>
                     )}
@@ -388,14 +391,14 @@ export default function SettingsPage() {
                         fieldInfo?.set ? "Paste a new value to replace" : "Paste your key"
                       }
                       aria-label={`${title} ${label}`}
-                      className="w-full rounded-xl border border-neutral-200 bg-transparent px-3 py-2.5 font-mono text-sm outline-none placeholder:font-sans placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+                      className="w-full rounded-xl border border-line bg-transparent px-3 py-2.5 font-mono text-sm outline-none placeholder:font-sans placeholder:text-muted focus:border-accent "
                     />
                     {fieldInfo?.set && !cleared && (
                       <button
                         type="button"
                         onClick={() => clearKey(key)}
                         title="Clear this key"
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 px-3 text-xs font-medium text-neutral-500 transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 text-xs font-medium text-muted transition hover:border-accent"
                       >
                         <X size={12} strokeWidth={1.5} aria-hidden="true" /> Clear
                       </button>
@@ -411,9 +414,9 @@ export default function SettingsPage() {
 
       {info?.isOwner && (
         <section className="mt-10">
-          <div className="border-b border-neutral-200 pb-3 dark:border-neutral-800">
+          <div className="border-b border-line pb-3 ">
             <h2 className="text-xl font-semibold tracking-tight">Creator codes</h2>
-            <p className="mt-0.5 text-sm text-neutral-500">
+            <p className="mt-0.5 text-sm text-muted">
               Give each influencer their own code, then watch how many accounts
               each one brings in. They can share their code directly (typed at
               sign-up) or use their share link, which lands people on sign-up
@@ -435,19 +438,19 @@ export default function SettingsPage() {
               placeholder="New code, e.g. ALEX20"
               spellCheck={false}
               aria-label="New creator code"
-              className="w-full max-w-xs rounded-xl border border-neutral-200 bg-transparent px-3 py-2.5 font-mono text-sm uppercase outline-none placeholder:font-sans placeholder:normal-case placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800"
+              className="w-full max-w-xs rounded-xl border border-line bg-transparent px-3 py-2.5 font-mono text-sm uppercase outline-none placeholder:font-sans placeholder:normal-case placeholder:text-muted focus:border-accent "
             />
             <button
               type="submit"
               disabled={!newCode.trim()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px disabled:opacity-50 "
             >
               <Plus size={13} strokeWidth={2} aria-hidden="true" /> Add
             </button>
           </form>
 
           {(info.creatorCodes ?? []).length === 0 ? (
-            <p className="mt-4 text-sm text-neutral-500">
+            <p className="mt-4 text-sm text-muted">
               No codes yet — add one above to start tracking signups.
             </p>
           ) : (
@@ -455,10 +458,10 @@ export default function SettingsPage() {
               {info.creatorCodes.map(({ code, signups }) => (
                 <li
                   key={code}
-                  className="flex flex-wrap items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-800"
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-line px-4 py-3 "
                 >
                   <span className="font-mono text-sm font-semibold">{code}</span>
-                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
+                  <span className="rounded-full bg-line px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted ">
                     {signups} {signups === 1 ? "sign-up" : "sign-ups"}
                   </span>
                   <span className="ml-auto flex gap-1.5">
@@ -466,7 +469,7 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => copyShareLink(code)}
                       title="Copy share link"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-500 transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-1.5 text-xs font-medium text-muted transition hover:border-accent"
                     >
                       <Copy size={12} strokeWidth={1.5} aria-hidden="true" /> Share link
                     </button>
@@ -475,7 +478,7 @@ export default function SettingsPage() {
                       onClick={() => creatorCodeAction({ remove: code }, "Creator code removed")}
                       title="Remove this code"
                       aria-label={`Remove ${code}`}
-                      className="inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+                      className="inline-flex items-center rounded-xl border border-line px-2.5 py-1.5 text-muted transition hover:border-accent hover:text-ink -ink"
                     >
                       <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
                     </button>
@@ -489,10 +492,10 @@ export default function SettingsPage() {
 
       {info?.isOwner && (
         <section className="mt-10">
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-3 dark:border-neutral-800">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3 ">
             <div>
               <h2 className="text-xl font-semibold tracking-tight">Signups</h2>
-              <p className="mt-0.5 text-sm text-neutral-500">
+              <p className="mt-0.5 text-sm text-muted">
                 Everyone who has created an account, newest first — with when
                 each one last used the app (accurate to five minutes), then the
                 date they joined. Only you can see this section.
@@ -502,7 +505,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={copyAllEmails}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-500 transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-1.5 text-xs font-medium text-muted transition hover:border-accent"
               >
                 <Copy size={12} strokeWidth={1.5} aria-hidden="true" /> Copy emails
               </button>
@@ -514,7 +517,7 @@ export default function SettingsPage() {
               <p className="text-3xl font-bold tabular-nums">
                 {(info.signups ?? []).length}
               </p>
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-muted">
                 total {(info.signups ?? []).length === 1 ? "account" : "accounts"}
               </p>
             </div>
@@ -522,7 +525,7 @@ export default function SettingsPage() {
               <p className="text-3xl font-bold tabular-nums">
                 {activeThisWeek(info.signups ?? [])}
               </p>
-              <p className="text-sm text-neutral-500">active this week</p>
+              <p className="text-sm text-muted">active this week</p>
             </div>
           </div>
 
@@ -533,12 +536,12 @@ export default function SettingsPage() {
               {info.signups.map(({ email, name, createdAt, creatorCode, lastActiveAt }) => (
                 <li
                   key={email}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-800"
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line px-4 py-3 "
                 >
                   <span className="font-mono text-sm font-medium">{email}</span>
-                  {name && <span className="text-sm text-neutral-500">{name}</span>}
+                  {name && <span className="text-sm text-muted">{name}</span>}
                   {creatorCode && (
-                    <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 font-mono text-xs font-medium text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
+                    <span className="rounded-full bg-line px-2.5 py-0.5 font-mono text-xs font-medium text-muted ">
                       {creatorCode}
                     </span>
                   )}
@@ -551,15 +554,15 @@ export default function SettingsPage() {
                       }
                       className={`text-xs tabular-nums ${
                         timeAgo(lastActiveAt)
-                          ? "text-black dark:text-white"
-                          : "text-neutral-400"
+                          ? "text-ink"
+                          : "text-muted"
                       }`}
                     >
                       {timeAgo(lastActiveAt) ?? "—"}
                     </span>
                     <span
                       title={createdAt ? `Joined ${new Date(createdAt).toLocaleString()}` : undefined}
-                      className="text-xs tabular-nums text-neutral-400"
+                      className="text-xs tabular-nums text-muted"
                     >
                       {createdAt
                         ? new Date(createdAt).toLocaleDateString(undefined, {
@@ -574,7 +577,7 @@ export default function SettingsPage() {
                       onClick={() => deleteSignup(email)}
                       title="Delete this account"
                       aria-label={`Delete ${email}`}
-                      className="inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+                      className="inline-flex items-center rounded-xl border border-line px-2.5 py-1.5 text-muted transition hover:border-accent hover:text-ink -ink"
                     >
                       <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
                     </button>
@@ -588,16 +591,16 @@ export default function SettingsPage() {
 
       {info?.isOwner && (
         <section className="mt-10">
-          <div className="border-b border-neutral-200 pb-3 dark:border-neutral-800">
+          <div className="border-b border-line pb-3 ">
             <h2 className="text-xl font-semibold tracking-tight">Feedback</h2>
-            <p className="mt-0.5 text-sm text-neutral-500">
+            <p className="mt-0.5 text-sm text-muted">
               What people said when the in-app prompt asked them. Every account
               except yours gets asked once per visit. Only you can see this.
             </p>
           </div>
 
           {(info.feedback ?? []).length === 0 ? (
-            <p className="mt-4 text-sm text-neutral-500">
+            <p className="mt-4 text-sm text-muted">
               Nothing yet. Replies show up here as people send them.
             </p>
           ) : (
@@ -605,13 +608,13 @@ export default function SettingsPage() {
               {info.feedback.map((entry) => (
                 <li
                   key={entry.id}
-                  className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+                  className="rounded-xl border border-line p-4 "
                 >
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="font-mono text-sm font-medium">
                       {entry.email ?? "unknown"}
                     </span>
-                    <span className="text-xs tabular-nums text-neutral-400">
+                    <span className="text-xs tabular-nums text-muted">
                       {entry.createdAt
                         ? new Date(entry.createdAt).toLocaleString()
                         : ""}
@@ -621,7 +624,7 @@ export default function SettingsPage() {
                       onClick={() => dismissFeedback(entry.id)}
                       title="Clear this entry"
                       aria-label="Clear this entry"
-                      className="ml-auto inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+                      className="ml-auto inline-flex items-center rounded-xl border border-line px-2.5 py-1.5 text-muted transition hover:border-accent hover:text-ink -ink"
                     >
                       <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
                     </button>
@@ -635,7 +638,7 @@ export default function SettingsPage() {
                       .filter(([, value]) => value)
                       .map(([label, value]) => (
                         <div key={label} className="flex gap-3">
-                          <dt className="w-16 shrink-0 text-xs uppercase tracking-wide text-neutral-400">
+                          <dt className="w-16 shrink-0 text-xs uppercase tracking-wide text-muted">
                             {label}
                           </dt>
                           <dd className="whitespace-pre-wrap">{value}</dd>
@@ -651,9 +654,9 @@ export default function SettingsPage() {
 
       {info?.isOwner && (
         <section className="mt-10">
-          <div className="border-b border-neutral-200 pb-3 dark:border-neutral-800">
+          <div className="border-b border-line pb-3 ">
             <h2 className="text-xl font-semibold tracking-tight">Learnings</h2>
-            <p className="mt-0.5 text-sm text-neutral-500">
+            <p className="mt-0.5 text-sm text-muted">
               What the AI has learned from real outcomes across all accounts —
               generalized patterns only, never anyone&apos;s actual resume. The
               best-evidenced ones are injected into reviews, tailoring, and
@@ -663,7 +666,7 @@ export default function SettingsPage() {
           </div>
 
           {(info.learnings ?? []).length === 0 ? (
-            <p className="mt-4 text-sm text-neutral-500">
+            <p className="mt-4 text-sm text-muted">
               Nothing learned yet — patterns appear as applications get
               outcomes.
             </p>
@@ -672,13 +675,13 @@ export default function SettingsPage() {
               {info.learnings.map(({ id, category, pattern, successCount, failureCount, sampleSize, confidence }) => (
                 <li
                   key={id}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-800"
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-line px-4 py-3 "
                 >
-                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 font-mono text-xs font-medium text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
+                  <span className="rounded-full bg-line px-2.5 py-0.5 font-mono text-xs font-medium text-muted ">
                     {LEARNING_LABELS[category] ?? category}
                   </span>
                   <span className="min-w-0 flex-1 basis-64 text-sm">{pattern}</span>
-                  <span className="text-xs tabular-nums text-neutral-400">
+                  <span className="text-xs tabular-nums text-muted">
                     {sampleSize === 0
                       ? "no outcomes yet"
                       : `${successCount}✓ ${failureCount}✗ · ${Math.round(confidence * 100)}% conf.`}
@@ -688,7 +691,7 @@ export default function SettingsPage() {
                     onClick={() => learningAction({ remove: id }, "Learning removed")}
                     title="Delete this learning"
                     aria-label={`Delete learning: ${pattern}`}
-                    className="inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-neutral-400 transition hover:border-neutral-400 hover:text-black dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:text-white"
+                    className="inline-flex items-center rounded-xl border border-line px-2.5 py-1.5 text-muted transition hover:border-accent hover:text-ink -ink"
                   >
                     <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
                   </button>
@@ -700,10 +703,10 @@ export default function SettingsPage() {
       )}
 
       <section className="mt-10">
-        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-3 dark:border-neutral-800">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3 ">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Auto-apply</h2>
-            <p className="mt-0.5 text-sm text-neutral-500">
+            <p className="mt-0.5 text-sm text-muted">
               When on, any job scoring above the match threshold gets a cover
               letter drafted straight into your review queue. jobblast never
               submits for you — you still send every application yourself.
@@ -718,16 +721,16 @@ export default function SettingsPage() {
             onClick={() => toggleAutoApply(!info?.autoApply)}
             disabled={!info}
             className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition disabled:opacity-50 ${
-              info?.autoApply ? "bg-black dark:bg-white" : "bg-neutral-300 dark:bg-neutral-700"
+              info?.autoApply ? "bg-accent " : "bg-line "
             }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition dark:bg-black ${
+              className={`inline-block h-4 w-4 transform rounded-full bg-surface transition ${
                 info?.autoApply ? "translate-x-6" : "translate-x-1"
               }`}
             />
           </button>
-          <span className="text-sm text-neutral-600 dark:text-neutral-300">
+          <span className="text-sm text-muted ">
             {info?.autoApply ? "On — drafting applications automatically" : "Off — draft applications yourself"}
           </span>
         </label>
@@ -738,15 +741,15 @@ export default function SettingsPage() {
           type="button"
           onClick={save}
           disabled={!dirty || saving}
-          className="inline-flex items-center gap-2 rounded-xl bg-black px-6 py-3 font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black"
+          className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px disabled:opacity-50 "
         >
           <KeyRound size={15} strokeWidth={1.5} aria-hidden="true" />
           {saving ? "Saving…" : "Save changes"}
         </button>
-        {!dirty && <p className="text-sm text-neutral-500">Nothing to save yet.</p>}
+        {!dirty && <p className="text-sm text-muted">Nothing to save yet.</p>}
       </div>
 
-      <p className="mt-8 text-xs text-neutral-500">
+      <p className="mt-8 text-xs text-muted">
         Keys never leave this server, and they belong to your account alone —
         other users can&apos;t see or use them. This page only ever shows
         whether a key is set plus its last four characters.

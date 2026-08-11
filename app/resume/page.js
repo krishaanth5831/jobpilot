@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Check, X, Minus, Copy, Download, Plus, Trash2, RefreshCw, RotateCcw, Sparkles, Trophy, Maximize2, ChevronDown, ChevronUp } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { PageHeader } from "@/components/ui/page-header";
 import { TemplatePreview } from "@/components/template-preview";
 import { TEMPLATES, DEFAULT_TEMPLATE, getTemplate } from "@/lib/resume-templates";
 import { profileToDoc, profileToMarkdown } from "@/lib/resume-doc";
@@ -53,11 +54,10 @@ export default function ResumePage() {
 
   return (
     <PageShell width="max-w-5xl">
-      <h1 className="text-3xl font-bold tracking-tight">Resume studio</h1>
-      <p className="mt-2 max-w-2xl text-neutral-500">
-        See how ATS-friendly your resume is, edit it right here, and download it
-        in whichever template fits — no rewrites you didn&apos;t make.
-      </p>
+      <PageHeader
+        title="Resume studio"
+        description="See how ATS-friendly your resume is, edit it right here, and download it in whichever template fits — no rewrites you didn't make."
+      />
 
       {loaded && !ready && (
         <div className="mt-10">
@@ -96,10 +96,10 @@ export default function ResumePage() {
 
 function SectionHeader({ step, title, description }) {
   return (
-    <div className="border-b border-neutral-200 pb-4 dark:border-neutral-800">
-      <p className="font-mono text-xs text-neutral-500">0{step}</p>
+    <div className="border-b border-line pb-4 ">
+      <p className="font-mono text-xs text-muted">0{step}</p>
       <h2 className="mt-1 text-xl font-semibold tracking-tight">{title}</h2>
-      <p className="mt-1 max-w-2xl text-sm text-neutral-500">{description}</p>
+      <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p>
     </div>
   );
 }
@@ -151,10 +151,10 @@ function ReviewSection({ review, onReview }) {
               </TextScramble>
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-muted">
                   Checks parseability, standard sections, dates, and keyword match.
                 </p>
-                <button type="button" onClick={runReview} className="rounded-xl bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-85 dark:bg-white dark:text-black">
+                <button type="button" onClick={runReview} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px ">
                   Check ATS score
                 </button>
               </div>
@@ -166,10 +166,10 @@ function ReviewSection({ review, onReview }) {
       {review && (
         <div className="mt-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <p className="max-w-lg text-neutral-600 dark:text-neutral-300">{review.summary}</p>
+            <p className="max-w-lg text-muted ">{review.summary}</p>
             <p className="font-mono text-4xl font-semibold tabular-nums">
               <AnimatedNumber value={review.score} />
-              <span className="text-sm text-neutral-500">/100 ATS</span>
+              <span className="text-sm text-muted">/100 ATS</span>
             </p>
           </div>
 
@@ -180,17 +180,17 @@ function ReviewSection({ review, onReview }) {
                 return (
                   <li
                     key={i}
-                    className="flex items-start gap-2.5 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800"
+                    className="flex items-start gap-2.5 rounded-xl border border-line p-3 "
                   >
                     <Icon
                       size={14}
                       strokeWidth={check.status === "pass" ? 2.5 : 2}
-                      className={`mt-0.5 shrink-0 ${check.status === "fail" ? "text-black dark:text-white" : "text-neutral-400"}`}
+                      className={`mt-0.5 shrink-0 ${check.status === "fail" ? "text-ink" : "text-muted"}`}
                       aria-hidden="true"
                     />
                     <span>
                       <span className="text-sm font-medium">{check.label}</span>
-                      <span className="mt-0.5 block text-xs text-neutral-500">{check.detail}</span>
+                      <span className="mt-0.5 block text-xs text-muted">{check.detail}</span>
                     </span>
                   </li>
                 );
@@ -201,7 +201,7 @@ function ReviewSection({ review, onReview }) {
           {review.strengths?.length > 0 && (
             <ul className="mt-5 space-y-1.5">
               {review.strengths.map((s) => (
-                <li key={s} className="flex items-start gap-2.5 text-sm text-neutral-500">
+                <li key={s} className="flex items-start gap-2.5 text-sm text-muted">
                   <Check size={14} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
                   {s}
                 </li>
@@ -212,21 +212,21 @@ function ReviewSection({ review, onReview }) {
           <ul className="mt-6 flex flex-col gap-3">
             {issues.map((issue, i) => (
               <InView key={i} as="li" transition={{ duration: 0.3, ease: "easeOut", delay: i * 0.05 }}>
-                <div className="rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800">
+                <div className="rounded-2xl border border-line bg-surface p-4 ">
                   <div className="flex items-center gap-2">
                     <span
                       className={`rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase ${
                         issue.severity === "critical"
-                          ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                          : "border-neutral-200 text-neutral-400 dark:border-neutral-800 dark:text-neutral-600"
+                          ? "border-accent bg-accent text-accent-ink"
+                          : "border-line text-muted "
                       }`}
                     >
                       {issue.severity}
                     </span>
                     <span className="text-sm font-medium">{issue.section}</span>
                   </div>
-                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{issue.problem}</p>
-                  <p className="mt-2 border-l-2 border-neutral-200 pl-3 text-sm text-neutral-500 dark:border-neutral-800">
+                  <p className="mt-2 text-sm text-muted ">{issue.problem}</p>
+                  <p className="mt-2 border-l-2 border-line pl-3 text-sm text-muted ">
                     {issue.fix}
                   </p>
                 </div>
@@ -238,7 +238,7 @@ function ReviewSection({ review, onReview }) {
             type="button"
             onClick={runReview}
             disabled={busy}
-            className="mt-4 inline-flex items-center gap-2 text-sm text-neutral-500 transition hover:text-black disabled:opacity-50 dark:hover:text-white"
+            className="mt-4 inline-flex items-center gap-2 text-sm text-muted transition hover:text-ink disabled:opacity-50 -ink"
           >
             <RefreshCw size={13} strokeWidth={1.5} className={busy ? "animate-spin" : ""} aria-hidden="true" />
             {busy ? "Re-checking…" : "Re-check"}
@@ -252,7 +252,7 @@ function ReviewSection({ review, onReview }) {
 /* ---------- 02 · Edit ---------- */
 
 const inputCls =
-  "w-full rounded-lg border border-neutral-200 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-500 dark:border-neutral-800";
+  "w-full rounded-xl border border-line bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent ";
 
 function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, onSaved }) {
   const [saving, setSaving] = useState(false);
@@ -325,20 +325,20 @@ function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, o
 
       {/* Toolbar */}
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <span className="font-mono text-xs text-neutral-500">
+        <span className="font-mono text-xs text-muted">
           {dirty ? "unsaved changes" : "saved"}
         </span>
         <span className="ml-auto flex flex-wrap gap-2">
-          <button type="button" onClick={resetToUploaded} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600">
+          <button type="button" onClick={resetToUploaded} className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-1.5 text-xs font-medium transition hover:border-accent">
             <RotateCcw size={12} strokeWidth={1.5} aria-hidden="true" /> Reset
           </button>
-          <button type="button" onClick={copyMarkdown} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600">
+          <button type="button" onClick={copyMarkdown} className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-1.5 text-xs font-medium transition hover:border-accent">
             <Copy size={12} strokeWidth={1.5} aria-hidden="true" /> Copy
           </button>
-          <button type="button" onClick={save} disabled={!dirty || saving} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500">
+          <button type="button" onClick={save} disabled={!dirty || saving} className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-1.5 text-xs font-medium transition hover:border-accent disabled:opacity-50 ">
             <Check size={12} strokeWidth={1.5} aria-hidden="true" /> {saving ? "Saving…" : "Save"}
           </button>
-          <button type="button" onClick={downloadPdf} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-85 disabled:opacity-50 dark:bg-white dark:text-black">
+          <button type="button" onClick={downloadPdf} disabled={saving} className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3 py-1.5 text-xs font-medium text-accent-ink transition hover:bg-accent-hover active:translate-y-px disabled:opacity-50 ">
             <Download size={12} strokeWidth={1.5} aria-hidden="true" /> Download PDF
           </button>
         </span>
@@ -422,7 +422,7 @@ function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, o
         <div className="order-1 lg:order-2">
           <div className="lg:sticky lg:top-6">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs font-medium uppercase tracking-widest text-neutral-500">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted">
                 Live preview · {template.name}
               </p>
               <span className="flex gap-1">
@@ -431,7 +431,7 @@ function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, o
                   onClick={() => setMinimized((v) => !v)}
                   aria-label={minimized ? "Show preview" : "Minimize preview"}
                   title={minimized ? "Show preview" : "Minimize preview"}
-                  className="rounded-md p-1 text-neutral-400 transition hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-900 dark:hover:text-white"
+                  className="rounded-xl p-1 text-muted transition hover:bg-line hover:text-ink -ink"
                 >
                   {minimized ? (
                     <ChevronDown size={14} strokeWidth={1.5} aria-hidden="true" />
@@ -444,7 +444,7 @@ function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, o
                   onClick={() => setExpanded(true)}
                   aria-label="Maximize preview"
                   title="Maximize preview"
-                  className="rounded-md p-1 text-neutral-400 transition hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-900 dark:hover:text-white"
+                  className="rounded-xl p-1 text-muted transition hover:bg-line hover:text-ink -ink"
                 >
                   <Maximize2 size={14} strokeWidth={1.5} aria-hidden="true" />
                 </button>
@@ -452,10 +452,10 @@ function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, o
             </div>
             {!minimized && (
               <>
-                <div className="overflow-hidden rounded-xl border border-neutral-200 shadow-sm dark:border-neutral-800">
+                <div className="overflow-hidden rounded-xl border border-line shadow-sm ">
                   <TemplatePreview template={template} markdown={markdown} scale={1.9} wrap />
                 </div>
-                <p className="mt-2 text-xs text-neutral-500">
+                <p className="mt-2 text-xs text-muted">
                   Updates as you type — maximize it for a full-size page. Pick a
                   different template below.
                 </p>
@@ -473,13 +473,13 @@ function EditorSection({ doc, savedDoc, profile, template, markdown, onChange, o
         >
           <div className="mx-auto w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-xs font-medium uppercase tracking-widest text-neutral-300">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted">
                 Live preview · {template.name}
               </p>
               <button
                 type="button"
                 onClick={() => setExpanded(false)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-600 px-3 py-1.5 text-xs font-medium text-neutral-200 transition hover:border-neutral-400 hover:text-white"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-1.5 text-xs font-medium text-muted transition hover:border-accent hover:text-accent-ink"
               >
                 <X size={12} strokeWidth={1.5} aria-hidden="true" /> Close
               </button>
@@ -498,9 +498,9 @@ function FieldGroup({ label, onAdd, addLabel, children }) {
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-xs font-medium uppercase tracking-widest text-neutral-500">{label}</h3>
+        <h3 className="text-xs font-medium uppercase tracking-widest text-muted">{label}</h3>
         {onAdd && (
-          <button type="button" onClick={onAdd} className="inline-flex items-center gap-1 text-xs font-medium text-neutral-500 transition hover:text-black dark:hover:text-white">
+          <button type="button" onClick={onAdd} className="inline-flex items-center gap-1 text-xs font-medium text-muted transition hover:text-accent">
             <Plus size={12} strokeWidth={2} aria-hidden="true" /> {addLabel}
           </button>
         )}
@@ -512,12 +512,12 @@ function FieldGroup({ label, onAdd, addLabel, children }) {
 
 function EntryCard({ onRemove, children }) {
   return (
-    <div className="relative rounded-2xl border border-neutral-200 p-4 pr-10 dark:border-neutral-800">
+    <div className="relative rounded-2xl border border-line bg-surface p-4 pr-10 ">
       <button
         type="button"
         onClick={onRemove}
         aria-label="Remove"
-        className="absolute right-3 top-3 rounded-md p-1 text-neutral-400 transition hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-900 dark:hover:text-white"
+        className="absolute right-3 top-3 rounded-xl p-1 text-muted transition hover:bg-line hover:text-ink -ink"
       >
         <Trash2 size={14} strokeWidth={1.5} aria-hidden="true" />
       </button>
@@ -526,7 +526,7 @@ function EntryCard({ onRemove, children }) {
   );
 }
 
-const Empty = ({ children }) => <p className="text-sm text-neutral-500">{children}</p>;
+const Empty = ({ children }) => <p className="text-sm text-muted">{children}</p>;
 
 /* ---------- 03 · Template ---------- */
 
@@ -571,12 +571,12 @@ function TemplateSection({ markdown, template, onTemplate }) {
       />
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-neutral-500">Previewed with your live resume above.</p>
+        <p className="text-sm text-muted">Previewed with your live resume above.</p>
         <button
           type="button"
           onClick={() => post({ recommend: true }, "Top 3 templates picked for your profile")}
           disabled={busy}
-          className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:border-neutral-500 disabled:opacity-50 dark:border-neutral-700 dark:hover:border-neutral-500"
+          className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-medium transition hover:border-accent disabled:opacity-50 "
         >
           <Sparkles size={13} strokeWidth={1.5} aria-hidden="true" />
           {picks ? "Re-recommend" : "Recommend 3 for me"}
@@ -599,8 +599,8 @@ function TemplateSection({ markdown, template, onTemplate }) {
                 <span
                   className={`block overflow-hidden rounded-xl border-2 transition ${
                     isSelected
-                      ? "border-black dark:border-white"
-                      : "border-neutral-200 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+                      ? "border-accent"
+                      : "border-line hover:border-accent"
                   }`}
                 >
                   <TemplatePreview template={t} markdown={markdown} />
@@ -609,13 +609,13 @@ function TemplateSection({ markdown, template, onTemplate }) {
                   <span className="text-xs font-medium">{t.name}</span>
                   {isSelected && <Check size={11} strokeWidth={2.5} aria-hidden="true" />}
                   {reason && (
-                    <span className="ml-auto rounded-full bg-black px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white dark:bg-white dark:text-black">
+                    <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-accent-ink ">
                       pick
                     </span>
                   )}
                 </span>
                 {reason && (
-                  <span className="mt-0.5 block px-0.5 text-[11px] leading-snug text-neutral-500">
+                  <span className="mt-0.5 block px-0.5 text-[11px] leading-snug text-muted">
                     {reason}
                   </span>
                 )}
@@ -644,7 +644,7 @@ function InsightsSection({ insights }) {
       />
 
       {lessons.length === 0 ? (
-        <p className="mt-5 flex items-start gap-2.5 text-sm text-neutral-500">
+        <p className="mt-5 flex items-start gap-2.5 text-sm text-muted">
           <Trophy size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" aria-hidden="true" />
           Nothing recorded yet — when you mark an application as Hired in the
           queue, the winning traits of that resume and cover letter land here
@@ -654,16 +654,16 @@ function InsightsSection({ insights }) {
         <ul className="mt-5 flex flex-col gap-3">
           {lessons.map((lesson, i) => (
             <InView key={i} as="li" transition={{ duration: 0.3, ease: "easeOut", delay: i * 0.04 }}>
-              <div className="rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800">
+              <div className="rounded-2xl border border-line bg-surface p-4 ">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-neutral-400 dark:border-neutral-800 dark:text-neutral-600">
+                  <span className="rounded border border-line px-1.5 py-0.5 font-mono text-[10px] uppercase text-muted ">
                     {lesson.category.replace("_", " ")}
                   </span>
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-neutral-400 dark:text-neutral-600">
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
                     from {lesson.from}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{lesson.insight}</p>
+                <p className="mt-2 text-sm text-muted ">{lesson.insight}</p>
               </div>
             </InView>
           ))}

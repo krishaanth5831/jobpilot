@@ -95,7 +95,7 @@ export function MorphingDialogContainer({ children }) {
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8">
           <motion.div
-            className="absolute inset-0 bg-white/80 backdrop-blur-sm dark:bg-black/80"
+            className="absolute inset-0 bg-paper/80 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -108,7 +108,7 @@ export function MorphingDialogContainer({ children }) {
             role="dialog"
             aria-modal="true"
             tabIndex={-1}
-            className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950"
+            className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-line bg-surface p-6 "
           >
             {children}
           </motion.div>
@@ -125,7 +125,7 @@ export function MorphingDialogClose({ className }) {
       type="button"
       onClick={() => setOpen(false)}
       aria-label="Close dialog"
-      className={`rounded-lg border border-neutral-200 p-2 transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600 ${className ?? ""}`}
+      className={`rounded-xl border border-line p-2 transition hover:border-accent ${className ?? ""}`}
     >
       <X size={14} strokeWidth={1.5} aria-hidden="true" />
     </button>

@@ -29,8 +29,11 @@ import type {
   Severity,
 } from "./types";
 
-/** Bumped on any change that can move a score. Persisted with every result. */
-export const HEALTH_VERSION = "1.0.0";
+/** Bumped on any change that can move a score. Persisted with every result.
+ *  1.1.0 — contact details carried by link annotations are read off the
+ *  document, so a resume that hyperlinks its email no longer fails the
+ *  noContact gate and score 0. */
+export const HEALTH_VERSION = "1.1.0";
 
 export { TAXONOMY_VERSION };
 

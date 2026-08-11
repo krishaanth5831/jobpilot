@@ -6,7 +6,7 @@
 // naming those specific fields produces the single most useful message this
 // engine can show a user.
 
-import { SECTION_NAMES } from "./naive";
+import { SECTION_NAMES, contactFromLinks, mergeContact } from "./naive";
 import { detectFontEmbedding, detectHeaderFooter, detectMultiColumn, detectShapes, detectTables, measureTextIntegrity } from "./layout";
 import type { FontDescriptor, PageGeometry } from "./layout";
 import type { NaiveParse } from "./naive";
@@ -42,6 +42,8 @@ export interface CompareInput {
   photoPresent: boolean;
   fileType: string;
   pageCount: number;
+  /** Link-annotation targets. Contact details are often only here. */
+  links?: readonly string[];
 }
 
 /**
@@ -50,6 +52,7 @@ export interface CompareInput {
  */
 export function compareParses(input: CompareInput): ParseReport {
   const { naive, rich, pages, fonts, hasTextLayer, photoPresent, fileType, pageCount } = input;
+  const linkedContact = contactFromLinks(input.links ?? []);
 
   const missingFields: string[] = [];
   let recovered = 0;
@@ -92,7 +95,16 @@ export function compareParses(input: CompareInput): ParseReport {
   const document: DocumentFacts = {
     pageCount,
     photoPresent,
-    contact: naive.contact,
+    // What the FILE contains, not what the dumb parser found: the naive text
+    // plus the link annotations. Both are hard facts read off the document —
+    // deliberately excluding the LLM-extracted profile, which must never be
+    // able to talk a gate into passing.
+    //
+    // The divergence above is computed from `naive.contact` and is unaffected,
+    // so a detail that exists only as a hyperlink still costs field recovery
+    // and still produces the "write it as plain text" fix. It just no longer
+    // triggers the noContact gate, which claims nobody can reply at all.
+    contact: mergeContact(naive.contact, linkedContact),
     sections: {
       experience: naive.sections.experience,
       education: naive.sections.education,

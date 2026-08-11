@@ -18,6 +18,7 @@ import {
   PHONE_PATTERN,
   SECTION_NAMES,
   SECTION_PATTERNS,
+  contactFromLinks,
   naiveParseFromPages,
   toMonthIndex,
   type NaiveContact,
@@ -122,9 +123,14 @@ export function layoutAwareText(pages: readonly PageGeometry[]): {
 export function richParseFromPages(
   pages: readonly PageGeometry[],
   legacyProfile: LegacyProfile | null | undefined,
+  links: readonly string[] = [],
 ): RichParse {
   const { text, lines } = layoutAwareText(pages);
   const { profile } = toUserProfile(legacyProfile);
+  // A hyperlinked email is an email. It is not in the text layer, so the naive
+  // side will still miss it and the divergence will still be reported — but
+  // the document does have one, and the rich side is where that is recorded.
+  const linked = contactFromLinks(links);
 
   const sections = {} as Record<SectionName, boolean>;
   for (const name of SECTION_NAMES) {
@@ -148,12 +154,13 @@ export function richParseFromPages(
     lines,
     profile,
     contact: {
-      email: EMAIL_PATTERN.test(text) || (legacyProfile?.email ?? "").includes("@"),
-      phone: PHONE_PATTERN.test(text),
+      email:
+        EMAIL_PATTERN.test(text) || linked.email || (legacyProfile?.email ?? "").includes("@"),
+      phone: PHONE_PATTERN.test(text) || linked.phone,
       city:
         lines.slice(0, 10).some((l) => CITY_PATTERN.test(l.trim())) ||
         profile.location.city !== null,
-      linkedin: LINKEDIN_PATTERN.test(text),
+      linkedin: LINKEDIN_PATTERN.test(text) || linked.linkedin,
     },
     sections: {
       ...sections,
@@ -220,7 +227,7 @@ export async function richParse(
 ): Promise<RichParse> {
   const { loadPdfGeometry } = await import("./pdf");
   const geometry = await loadPdfGeometry(buffer);
-  return richParseFromPages(geometry.pages, legacyProfile);
+  return richParseFromPages(geometry.pages, legacyProfile, geometry.links);
 }
 
 export { COLUMN_CLUSTER_TOLERANCE };

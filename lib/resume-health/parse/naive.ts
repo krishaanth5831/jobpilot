@@ -53,6 +53,48 @@ export interface NaiveContact {
   linkedin: boolean;
 }
 
+/**
+ * Contact details carried by the document's link annotations rather than its
+ * text — a header of icons or the bare words "Email", "Phone", "LinkedIn",
+ * each hyperlinked to the real address.
+ *
+ * There is no city here: a link cannot express one.
+ */
+export function contactFromLinks(links: readonly string[]): Omit<NaiveContact, "city"> {
+  let email = false;
+  let phone = false;
+  let linkedin = false;
+
+  for (const link of links) {
+    const trimmed = link.trim();
+    if (/^mailto:/i.test(trimmed) && EMAIL_PATTERN.test(trimmed.slice("mailto:".length))) {
+      email = true;
+    }
+    // `tel:` is the only unambiguous phone signal — a bare number in a URL is
+    // far more often an id than a phone number.
+    if (/^tel:/i.test(trimmed) && /\d{5,}/.test(trimmed.replace(/[\s().-]/g, ""))) {
+      phone = true;
+    }
+    if (LINKEDIN_PATTERN.test(trimmed)) linkedin = true;
+  }
+
+  return { email, phone, linkedin };
+}
+
+/** Union of two contact readings — used where the question is whether the
+ *  detail exists in the file at all, not whether a dumb parser found it. */
+export function mergeContact(
+  base: NaiveContact,
+  extra: Partial<NaiveContact>,
+): NaiveContact {
+  return {
+    email: base.email || extra.email === true,
+    phone: base.phone || extra.phone === true,
+    city: base.city || extra.city === true,
+    linkedin: base.linkedin || extra.linkedin === true,
+  };
+}
+
 export interface NaiveParse {
   /** Text in raw document order — interleaved and wrong for multi-column. */
   text: string;

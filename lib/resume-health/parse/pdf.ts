@@ -57,6 +57,17 @@ export interface PdfGeometry {
   /** False for a scanned resume: pages render, but carry no selectable text. */
   hasTextLayer: boolean;
   pageCount: number;
+  /**
+   * Target URLs of every link annotation in the document, in page order.
+   *
+   * Contact details are routinely published ONLY as a hyperlink — a header row
+   * of icons or the words "Email / Phone / LinkedIn", each wrapping a
+   * `mailto:`, `tel:` or profile URL. That address is really in the file, in a
+   * standard structure, and is exactly what other resume tools read; it is
+   * simply not in the text layer. Ignoring it made a perfectly contactable
+   * resume look like it had no way to reply to it at all.
+   */
+  links: string[];
 }
 
 /** Below this fraction of page area, an image is a logo, icon or rule — not a
@@ -123,65 +134,79 @@ export async function loadPdfGeometry(buffer: Buffer): Promise<PdfGeometry> {
 
   const pages: PageGeometry[] = [];
   const images: PlacedImage[] = [];
+  const links: string[] = [];
   const fontNames = new Set<string>();
   const nonEmbedded = new Set<string>();
 
   try {
     for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
-      const page = (await doc.getPage(pageNumber)) as {
-        getViewport: (o: { scale: number }) => { width: number; height: number };
-        getTextContent: () => Promise<{ items: unknown[] }>;
-        getOperatorList: () => Promise<{ fnArray: number[]; argsArray: unknown[] }>;
-        commonObjs: { has: (k: string) => boolean; get: (k: string) => unknown };
-      };
+      // ONE BAD PAGE MUST NOT COST THE WHOLE DOCUMENT. A page whose content
+      // stream or font table will not decode used to throw out of this loop,
+      // and the caller turned that into score 0 / "unreadable" for a resume
+      // whose other pages were perfectly readable.
+      try {
+        const page = (await doc.getPage(pageNumber)) as {
+          getViewport: (o: { scale: number }) => { width: number; height: number };
+          getTextContent: () => Promise<{ items: unknown[] }>;
+          getOperatorList: () => Promise<{ fnArray: number[]; argsArray: unknown[] }>;
+          getAnnotations: () => Promise<unknown[]>;
+          commonObjs: { has: (k: string) => boolean; get: (k: string) => unknown };
+        };
 
-      const viewport = page.getViewport({ scale: 1 });
-      const textContent = await page.getTextContent();
+        const viewport = page.getViewport({ scale: 1 });
+        const textContent = await page.getTextContent();
 
-      const runs: TextRun[] = [];
-      for (const item of textContent.items) {
-        if (!isTextItem(item)) continue;
-        const text = item.str ?? "";
-        const transform = item.transform ?? [];
-        const x = transform[4];
-        const y = transform[5];
-        if (typeof x !== "number" || typeof y !== "number") continue;
-        const fontName = item.fontName ?? "";
-        if (fontName !== "") fontNames.add(fontName);
-        runs.push({
-          text,
-          x,
-          y,
-          width: item.width ?? 0,
-          height: item.height ?? 0,
-          fontName,
-        });
-      }
-
-      const { rects, pageImages } = await collectPaths(page, OPS, pageNumber);
-      images.push(...pageImages);
-
-      // Font embedding: pdfjs only populates commonObjs once the operator list
-      // has been built, which collectPaths has just done. Guarded because the
-      // shape of these internals is not part of pdfjs's public contract — a
-      // miss reports "embedded", never a false accusation.
-      for (const name of fontNames) {
-        try {
-          if (!page.commonObjs.has(name)) continue;
-          const font = page.commonObjs.get(name) as { data?: unknown } | null;
-          if (font !== null && font !== undefined && !font.data) nonEmbedded.add(name);
-        } catch {
-          // Ignore — treated as embedded.
+        const runs: TextRun[] = [];
+        for (const item of textContent.items) {
+          if (!isTextItem(item)) continue;
+          const text = item.str ?? "";
+          const transform = item.transform ?? [];
+          const x = transform[4];
+          const y = transform[5];
+          if (typeof x !== "number" || typeof y !== "number") continue;
+          const fontName = item.fontName ?? "";
+          if (fontName !== "") fontNames.add(fontName);
+          runs.push({
+            text,
+            x,
+            y,
+            width: item.width ?? 0,
+            height: item.height ?? 0,
+            fontName,
+          });
         }
-      }
 
-      pages.push({
-        pageNumber,
-        width: viewport.width,
-        height: viewport.height,
-        runs,
-        rects,
-      });
+        links.push(...(await collectLinks(page)));
+
+        const { rects, pageImages } = await collectPaths(page, OPS, pageNumber);
+        images.push(...pageImages);
+
+        // Font embedding: pdfjs only populates commonObjs once the operator list
+        // has been built, which collectPaths has just done. Guarded because the
+        // shape of these internals is not part of pdfjs's public contract — a
+        // miss reports "embedded", never a false accusation.
+        for (const name of fontNames) {
+          try {
+            if (!page.commonObjs.has(name)) continue;
+            const font = page.commonObjs.get(name) as { data?: unknown } | null;
+            if (font !== null && font !== undefined && !font.data) nonEmbedded.add(name);
+          } catch {
+            // Ignore — treated as embedded.
+          }
+        }
+
+        pages.push({
+          pageNumber,
+          width: viewport.width,
+          height: viewport.height,
+          runs,
+          rects,
+        });
+      } catch (err) {
+        // Skipped, not fatal. Named in the log so a support report about one
+        // odd resume can be traced to the exact page that would not decode.
+        console.warn(`resume-health: skipped unreadable page ${pageNumber}:`, err);
+      }
     }
   } finally {
     await doc.destroy().catch(() => undefined);
@@ -195,7 +220,40 @@ export async function loadPdfGeometry(buffer: Buffer): Promise<PdfGeometry> {
     images,
     hasTextLayer,
     pageCount: doc.numPages,
+    links,
   };
+}
+
+/**
+ * Target URLs of a page's link annotations.
+ *
+ * URL ONLY — the annotation's rectangle, appearance stream and any other
+ * content are ignored. Guarded end to end: annotations are optional metadata,
+ * and a document that will not surface them is simply a document with no
+ * links, never a parse failure.
+ */
+async function collectLinks(page: {
+  getAnnotations: () => Promise<unknown[]>;
+}): Promise<string[]> {
+  let annotations: unknown[];
+  try {
+    annotations = await page.getAnnotations();
+  } catch {
+    return [];
+  }
+
+  const urls: string[] = [];
+  for (const annotation of annotations) {
+    if (typeof annotation !== "object" || annotation === null) continue;
+    const record = annotation as { url?: unknown; unsafeUrl?: unknown };
+    // `url` is the sanitised form pdfjs would navigate to; `unsafeUrl` is the
+    // raw target. Either is fine for reading an address out of, and some
+    // schemes only survive in one of them.
+    for (const candidate of [record.url, record.unsafeUrl]) {
+      if (typeof candidate === "string" && candidate !== "") urls.push(candidate);
+    }
+  }
+  return urls;
 }
 
 /**

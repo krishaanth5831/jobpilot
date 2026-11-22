@@ -51,7 +51,7 @@ There's nothing to install — jobblast runs in your browser:
 
 ### Getting your API keys
 
-jobblast works on a bring-your-own-keys model: your account uses *your* keys and *your* credits, so nobody else can spend them and you're never billed for anyone else. You paste each key once on the Settings page; after that jobblast only ever shows the last 4 characters.
+Keys you add are your own: they are stored on your account only, spend *your* credits, and nobody else can use them. You paste each key once on the Settings page; after that jobblast only ever shows the last 4 characters.
 
 **No key is strictly required to try it.** A new account first runs real Claude on the site's own key, up to a small one-off allowance, and after that on a free built-in model (Llama 3.3 70B on Groq) where the site offers one. Adding your own Claude key switches you to Claude for good, on your own credits. Adzuna and JSearch are optional extras — without them the keyless job boards (Greenhouse, Lever, Remotive, and the rest) still work.
 
@@ -80,7 +80,7 @@ jobblast works on a bring-your-own-keys model: your account uses *your* keys and
 
 ### Cost
 
-You don't pick a model: each task in the app has a fixed model and thinking effort, set in one place (`lib/claude-tasks.js`). **Claude Haiku 4.5** does almost everything (search-query rewriting, resume extraction, match reading, cover letters). **Claude Sonnet 5**, at low effort, is used only for the three tasks where judgment is the product: the resume review, the skill roadmap and tailored resumes. Opus is never used. Calls use structured outputs (JSON schema), so verdicts and roadmaps come back machine-readable, not as prose. With your own key, everything spends only your own credits.
+You don't pick a model: each task in the app has a fixed model and thinking effort, set in one place (`lib/claude-tasks.js`). **Claude Haiku 4.5** does almost everything: rewriting search queries, reading your resume into a profile, the counts behind the ATS score, cover letters. **Claude Sonnet 5**, at low effort, is used only where judgment is the product: the skill roadmap and tailored resumes. Opus is never used. The match score and the ATS score themselves are computed by code, not by a model. Calls use structured outputs (JSON schema), so results come back machine-readable, not as prose. With your own key, everything spends only your own credits.
 
 ## Run it yourself
 
@@ -173,6 +173,14 @@ The app is a normal Next.js server app; [jobblast.nl](https://www.jobblast.nl) r
 On your own server (a VPS, `npm run build && npm start`), no Redis is needed: data stays in `data/db.json`. Back that file up.
 
 The `site/` folder is a separate static pitch page, deployed to GitHub Pages by `.github/workflows/pages.yml`.
+
+### Troubleshooting
+
+- **The owner-only Settings panels don't show up.** `OWNER_EMAIL` doesn't match the email you signed up with (it defaults to the maintainer's). Set it in `.env.local` and restart `npm run dev`.
+- **"No AI model is configured".** There is no Claude key on your account or the server, and no `GROQ_API_KEY`. Add one of them (Settings page or `.env.local`).
+- **Password reset email never arrives.** Without `RESEND_API_KEY` the link is printed in the terminal running the server. With Resend, `RESEND_FROM` must use a domain you verified there.
+- **Logged out at random on Vercel.** Set `AUTH_SECRET` or add Redis; otherwise each serverless instance makes up its own secret.
+- **No jobs from Adzuna or JSearch.** Those need keys; the keyless boards still work without them. `ADZUNA_COUNTRY` (default `us`) picks the Adzuna country when a search names none.
 
 ## Tech
 
